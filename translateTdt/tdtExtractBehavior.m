@@ -12,9 +12,15 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
 %
 % Example:
 %    sessDir = 'data/Joule/tdtData/Countermanding/Joule-180714-093508';
+%    sessDir10 = ...
+%    'data/Joule/tdtData/troubleshootEventCodes/Joule-180720-121327'; %//<10
+%    sessDir5 = ...
+%    'data/Joule/tdtData/troubleshootEventCodes/Joule-180720-120340'; %//<5
+%    sessDir2 = ...
+%    'data/Joule/tdtData/troubleshootEventCodes/Joule-180720-120804'; %//<2
 %    outDir = 'dataProcessed/Joule/Countermanding';
-%    evDefFile = 'data/Joule/TEMPO/currentProcLib/EVENTDEF.pro; ...TEMPO_EV_SEAS_rig029.m';
-%    infosDefFile = 'data/Joule/currentProcLib/CMD/INFOS.pro';
+%    evDefFile = 'data/Joule/TEMPO/currentProcLib/EVENTDEF.pro'; %...TEMPO_EV_SEAS_rig029.m
+%    infosDefFile = 'data/Joule/TEMPO/currentProcLib/CMD/INFOS.pro';
 %
 %    [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl] = ...
 %            tdtExtractBehavior(sessDir, outDir, evDefFile, infosDefFile);
@@ -45,13 +51,13 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     
     %%  Process Rig specific event codes and event names   %
     [evCodec.code2Name, evCodec.name2Code] = ...
-        getCodeDefs(regexprep(eventCodecFile,'[/\\]',filesep), isProFile(eventCodecFile));
+        getCodeDefs(regexprep(eventCodecFile,'[/\\]',filesep));
     
   %%  Process Infos specific codes  %%
   %   Infos specific names are indexed by their order of occurrance in the
   %   INFOS.pro file (see INFOS.pro file for details)
     [infosCodec.code2Name, infosCodec.name2Code] = ...
-        getCodeDefs(regexprep(infosCodecFile,'[/\\]',filesep), isProFile(infosCodecFile));
+        getCodeDefs(regexprep(infosCodecFile,'[/\\]',filesep));
     
     %%  Read TDT events and event times   %%
     [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath);
@@ -153,7 +159,7 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
                 unknownCodeCount = unknownCodeCount + 1;
                 unknownCodes(unknownCodeCount) = code;
                 dynCol = num2str(1,'code_%d');
-                if ~any(contains(trialUnknownEventTimesTbl.Properties,VariableNames,dynCol))
+                if ~any(contains(trialUnknownEventTimesTbl.Properties.VariableNames,dynCol))
                     trialUnknownEventTimesTbl.(dynCol)(trlNo) = codeTime;
                 end
                 

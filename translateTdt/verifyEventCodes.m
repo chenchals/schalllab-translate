@@ -2,8 +2,17 @@ function [tblEventCount] = verifyEventCodes(sessionDir, eventCodecFile)
 %VERIFYEVENTCODES Check of eventCodes for task/trial integrety
 %   Detailed explanation goes here
 % Example:
-% sessDir = 'data/Joule/tdtData/Countermanding/Joule-180714-093508';
-% evDefFile = 'data/Joule/tdtSetup/TEMPO_EV_SEAS_rig029.m';
+%    sessDir = 'data/Joule/tdtData/Countermanding/Joule-180714-093508';
+%    sessDir10 = ...
+%    'data/Joule/tdtData/troubleshootEventCodes/Joule-180720-121327'; %//<10
+%    sessDir5 = ...
+%    'data/Joule/tdtData/troubleshootEventCodes/Joule-180720-120340'; %//<5
+%    sessDir2 = ...
+%    'data/Joule/tdtData/troubleshootEventCodes/Joule-180720-120804'; %//<2
+%    outDir = 'dataProcessed/Joule/Countermanding';
+%    evDefFile = 'data/Joule/TEMPO/currentProcLib/EVENTDEF.pro';%...TEMPO_EV_SEAS_rig029.m
+%    infosDefFile = 'data/Joule/TEMPO/currentProcLib/CMD/INFOS.pro';
+
 % T=verifyEventCodes(sessDir,evDefFile);
 % Output:
 % read up to t=5581.44s
@@ -31,7 +40,7 @@ function [tblEventCount] = verifyEventCodes(sessionDir, eventCodecFile)
 % ********************************
 
 
-    codes2Verify =[ 1501, NaN, 1666, 1667, 2998, 2999, 0];
+    codes2Verify =[ 2681, 1501, 2680, 1666, 1667, 2998, 2999, 0];
     
     tdtFun = @TDTbin2mat;
     if ispc
@@ -39,13 +48,11 @@ function [tblEventCount] = verifyEventCodes(sessionDir, eventCodecFile)
     end
     % Normalize filepaths
     normFilepath = @(x) regexprep(x,'[/\\]',filesep);
-    isProFile = @(x) contains(x,'.pro');
-
 
     %%  Process Rig specific event codes and event names   %
      eventCodecFile = normFilepath(eventCodecFile);
     [evCodec.code2Name, evCodec.name2Code] = ...
-        getCodeDefs(eventCodecFile, isProFile(eventCodecFile));
+        getCodeDefs(eventCodecFile);
 
     %% Read events form TDT tank/block path %%
     % Get raw TDT events codes and event times
