@@ -73,19 +73,21 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     % end
     %%  TODO: Process TDT events and infoCodes into trials  %%
     decodeEvent = @(x)  evCodec.name2Code(x);
-    taskCodes = (1500:1510)';
+    taskStartCodes = (1501:1510)';
+    taskEndCode = decodeEvent('CmanEnd_');
     trialStartCode = decodeEvent('TrialStart_');
     eotCode = decodeEvent('Eot_');
     endInfosCode = decodeEvent('EndInfos_');
     
     % Now check for valid TASK blocks
     nEvents = numel(tdtEvents);
-    iTaskStart =  find(ismember(tdtEvents,taskCodes));
+    iTaskStart =  find(ismember(tdtEvents,taskStartCodes));
+    iTaskEnd =  find(ismember(tdtEvents,taskEndCode));
     % Split event codes and times into task chunks
     [evCodes, evTimes]=arrayfun(@(i) deal(...
-        tdtEvents(iTaskStart(i):iTaskStart(i+1)),...
-        tdtEventTimes(iTaskStart(i):iTaskStart(i+1))),...
-        (1:length(iTaskStart)-1)','UniformOutput',false);
+        tdtEvents(iTaskStart(i):iTaskEnd(i)),...
+        tdtEventTimes(iTaskStart(i):iTaskEnd(i))),...
+        (1:length(iTaskStart))','UniformOutput',false);
     
     % Add an extra Event at the end to help in arryfun below
     iTrialStartTemp = [find(tdtEvents==trialStartCode);nEvents+1];% all TrialStart_
@@ -99,19 +101,19 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     % above as the index into the tdtEvents, hence lines below change the
     % nEvents+1 to NaN.  
     iTrialStart = iTrialStartTemp(arrayfun(@(i) min([...
-        find(iTrialStartTemp>iTaskStart(i) & iTrialStartTemp<iTaskStart(i+1),1);...
+        find(iTrialStartTemp>iTaskStart(i) & iTrialStartTemp<iTaskEnd(i),1);...
         numel(iTrialStartTemp)]),...% extra index here
-        (1:length(iTaskStart)-1)'));
+        (1:length(iTaskStart))'));
     
     iEot = iEotTemp(arrayfun(@(i) min([...
-        find(iEotTemp>iTaskStart(i) & iEotTemp<iTaskStart(i+1),1);...
+        find(iEotTemp>iTaskStart(i) & iEotTemp<iTaskEnd(i),1);...
         numel(iEotTemp)]),...% extra index here
-        (1:length(iTaskStart)-1)'));
+        (1:length(iTaskStart))'));
     
     iEndInfos = iEndInfosTemp(arrayfun(@(i) min([...
-        find(iEndInfosTemp>iTaskStart(i) & iEndInfosTemp<iTaskStart(i+1),1);...
+        find(iEndInfosTemp>iTaskStart(i) & iEndInfosTemp<iTaskEnd(i),1);...
         numel(iEndInfosTemp)]),...
-        (1:length(iTaskStart)-1)'));    
+        (1:length(iTaskStart))'));    
     % Set the extra index to NaN
     iTrialStart(iTrialStart>nEvents) = NaN;
     iEot(iEot>nEvents) = NaN;
@@ -119,13 +121,16 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     % augment thes above indices (into tdtEvs/tdtEvTms).
     % Rows of augment, evCodes evTimes correspond to putative trial numbers
     % 
-    augmented = [iTrialStart iEot iEndInfos];
+    augmented = [iTrialStart iEot iEndInfos iTaskStart iTaskEnd];
     % Find indices row indicces of augmented above where iTrialStart, iEot,
     % iEndInfos are NOT NaN for the Row aka complete cases.
     % NOTE: Here we are using only  trials where iEndInfos is NOT NAN 
     % NOTE: Could have used al three indices above...
     trialsWithEndInfos = find(sum(isnan(augmented(:,3)),2)==0);
     validTrials = trialsWithEndInfos;
+    
+    trialsWithTaskStartAndTaskEnd = find(sum(isnan(augmented(:,4:5)),2)==0);
+    validTrials = trialsWithTaskStartAndTaskEnd;
     % prune evCodes and evTimes to valid task chunks
     trialCodes = evCodes(validTrials);
     trialTimes = evTimes(validTrials);
@@ -172,7 +177,7 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     % Prune columns where values for all rows is NaN
     % Get only columns with at least one non NaN value in the colum
     % 
-    trialEventTimesTbl = trialEventTimesTbl(:,any(~ismissing(trialEventTimesTbl)));
+    % trialEventTimesTbl = trialEventTimesTbl(:,any(~ismissing(trialEventTimesTbl)));
     
 %     T2 = trialEventTimesTbl;
 %     T2(:,all(ismissing(T2)))=[];
