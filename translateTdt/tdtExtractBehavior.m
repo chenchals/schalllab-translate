@@ -7,7 +7,10 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
 %   sessionDir: Location where TDT data files are saved
 %   outputDir : Location of procesed base directory, a sub-dir with
 %               sessionName will be created here for processed session
-%   eventCodecFile : The .m file that has Names for eventCodes
+%   eventCodecFile : File that contains the event code definitions.  This
+%                    can be one of the following files:
+%                    (1) EVENTDEF.pro file used to acquire data (preferred) OR
+%                    (2) TEMPO_XXXX_rigDDD.m file used for translation
 %   infosdCodecFile : The INFOS.pro file that has Names for InfoCodes
 %
 % Example:
@@ -36,6 +39,9 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     % Initialize output files
     oFiles = {};
 
+    useTaskEndCode = true;
+    
+    
     % Normalize input path and extract sessionName
     blockPath = regexprep(sessionDir,'[/\\]',filesep);
     % sessionName
@@ -74,7 +80,7 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     %%  TODO: Process TDT events and infoCodes into trials  %%
     decodeEvent = @(x)  evCodec.name2Code(x);
     taskStartCodes = (1501:1510)';
-    taskEndCode = decodeEvent('CmanEnd_');
+    
     trialStartCode = decodeEvent('TrialStart_');
     eotCode = decodeEvent('Eot_');
     endInfosCode = decodeEvent('EndInfos_');
@@ -82,7 +88,11 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     % Now check for valid TASK blocks
     nEvents = numel(tdtEvents);
     iTaskStart =  find(ismember(tdtEvents,taskStartCodes));
-    iTaskEnd =  find(ismember(tdtEvents,taskEndCode));
+    if useTaskEndCode    
+        iTaskEnd = find(ismember(tdtEvents,decodeEvent('CmanEnd_'))); %#ok<UNRCH>
+    else
+        iTaskEnd = [iTaskStart(2:end);nEvents];
+    end
     % Split event codes and times into task chunks
     [evCodes, evTimes]=arrayfun(@(i) deal(...
         tdtEvents(iTaskStart(i):iTaskEnd(i)),...
@@ -126,11 +136,13 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     % iEndInfos are NOT NaN for the Row aka complete cases.
     % NOTE: Here we are using only  trials where iEndInfos is NOT NAN 
     % NOTE: Could have used al three indices above...
-    trialsWithEndInfos = find(sum(isnan(augmented(:,3)),2)==0);
-    validTrials = trialsWithEndInfos;
-    
-    trialsWithTaskStartAndTaskEnd = find(sum(isnan(augmented(:,4:5)),2)==0);
-    validTrials = trialsWithTaskStartAndTaskEnd;
+    if ~useTaskEndCode
+        trialsWithEndInfos = find(sum(isnan(augmented(:,3)),2)==0);
+        validTrials = trialsWithEndInfos;
+    else        
+        trialsWithTaskStartAndTaskEnd = find(sum(isnan(augmented(:,4:5)),2)==0);
+        validTrials = trialsWithTaskStartAndTaskEnd;
+    end
     % prune evCodes and evTimes to valid task chunks
     trialCodes = evCodes(validTrials);
     trialTimes = evTimes(validTrials);
@@ -177,8 +189,8 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     % Prune columns where values for all rows is NaN
     % Get only columns with at least one non NaN value in the colum
     % 
-    % trialEventTimesTbl = trialEventTimesTbl(:,any(~ismissing(trialEventTimesTbl)));
-    
+     %trialEventTimesTbl = trialEventTimesTbl(:,any(~ismissing(trialEventTimesTbl)));
+     trialEventTimesTbl(:,all(ismissing(trialEventTimesTbl)))=[];
 %     T2 = trialEventTimesTbl;
 %     T2(:,all(ismissing(T2)))=[];
     

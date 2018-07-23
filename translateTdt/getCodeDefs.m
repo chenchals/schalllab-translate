@@ -1,11 +1,27 @@
 function [code2Name, name2Code] = getCodeDefs(codesFile)
-%GETCODEDEFS Parse files conatining event or infos definitions into
-%code-name pairs
-
-    % Matching expressins are different for 
-    %   1. INFOS.pro file OR
-    %   2. EVENTDEF.pro file OR
-    %   3. ....rigXXXXX.m file
+%GETCODEDEFS Parse files conatining declarations for Event or Info codes.
+%
+%   codesFile : File that contains declarations for (Code, Name) pairs.
+%               This file can be one of the following files that contains
+%               *specific* matching expressions to extract [Code-Name]
+%               pairs. Ensure that there are no duplicate codes or
+%               different names for same code. If there are duplicates, the
+%               call will issue a warning and proceed. This should be
+%               treated as an error in experiment setup files.
+%               Matching expressins are different for different files:
+% ________________________________________________________________________
+% |   Filename    |  Matching Expression                                 |
+% ------------------------------------------------------------------------
+% |INFOS.pro      |'^\s*Event_fifo.*InfosZero\s*\+\s*\(*(\w*)\s*.*;'     |
+% |EVENTDEF.pro   |'^declare hide constant\s+([A-Z]\w*)\s*=\s*(\d{1,4});'|
+% |....rigXXXXX.m |'EV\.([A-Z]\w*)\s*=\s*(\d{1,4});'                     |
+% ------------------------------------------------------------------------
+%
+% Example:
+% codesFile = 'data/Joule/TEMPO/currentProcLib/EVENTDEF.pro';
+% [evCodec.code2Name, evCodec.name2Code] = getCodeDefs(codesFile);
+%
+% See also GETRELCODES, VERIFYEVENTCODES, TDTEXTRACTBEHAVIOR
     
     isInfosDefFile = false;
     if contains(codesFile,'INFOS.pro')

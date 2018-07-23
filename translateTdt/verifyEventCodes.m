@@ -1,6 +1,15 @@
-function [tblEventCount] = verifyEventCodes(sessionDir, eventCodecFile)
-%VERIFYEVENTCODES Check of eventCodes for task/trial integrety
-%   Detailed explanation goes here
+function [tblEventCount, tblCountCodes] = verifyEventCodes(sessionDir, eventCodecFile, varargin)
+%VERIFYEVENTCODES Check of eventCodes for task/trial integrity of TEMPT ->
+%TDT Event code communication.
+%
+%   sessionDir: Location where TDT data files are saved
+%   eventCodecFile : File that contains the event code definitions.  This
+%                    can be one of the following files:
+%                    (1) EVENTDEF.pro file used to acquire data (preferred) OR
+%                    (2) TEMPO_XXXX_rigDDD.m file used for translation
+%
+%   tblEventCount : A table of all event counts, excluding codes 0 and any
+%                   codes >=3000 (only EVENTDEF codes
 % Example:
 %    sessDir = 'data/Joule/tdtData/Countermanding/Joule-180714-093508';
 %    sessDir10 = ...
@@ -40,7 +49,7 @@ function [tblEventCount] = verifyEventCodes(sessionDir, eventCodecFile)
 % ********************************
 
 
-    codes2Verify =[ 2681, 1501, 2680, 1666, 1667, 2998, 2999, 0];
+    codes2Verify =[ 2681, 1501, 2680, 1666, 1667, 2998, 2999, 2776, 2777];
     
     tdtFun = @TDTbin2mat;
     if ispc
@@ -61,6 +70,10 @@ function [tblEventCount] = verifyEventCodes(sessionDir, eventCodecFile)
     
     % Assume STRB data
     events = tdtRaw.epocs.STRB.data;
+    events(events==0) = [];
+    events(events>=3000) = [];
+    events = [events;NaN];
+ 
     
     tblEventCount = struct();
 
@@ -87,10 +100,28 @@ function [tblEventCount] = verifyEventCodes(sessionDir, eventCodecFile)
     end
     % table of codes
     tblEventCount = struct2table(tblEventCount);
+  
+    
+    tblCountCodes.JuceStop_ = getRelCodes(2776,events,evCodec);
+    tblCountCodes.CmdEnd_ = getRelCodes(2680,events,evCodec);
+    tblCountCodes.CmdHeader_ = getRelCodes(1501,events,evCodec);
+    tblCountCodes.TrialStart_ = getRelCodes(1666,events,evCodec);
+    tblCountCodes.Eot_ = getRelCodes(1667,events,evCodec);
+    tblCountCodes.C2731 = getRelCodes(2731,events,evCodec);
+    tblCountCodes.C2732 = getRelCodes(2732,events,evCodec);
+    tblCountCodes.C2740 = getRelCodes(2740,events,evCodec);
+    tblCountCodes.C2741 = getRelCodes(2741,events,evCodec);
+       
+    
     fprintf('\n********************************\n');
     fprintf('%s\n%s\n',sessionDir,eventCodecFile);
     display(tblEventCount);
+    fns = fieldnames(tblCountCodes);
+    for ii = 1:numel(fns)
+        display(tblCountCodes.(fns{ii}));
+    end
     fprintf('\n********************************\n');
-  
+
+    
 end
 
