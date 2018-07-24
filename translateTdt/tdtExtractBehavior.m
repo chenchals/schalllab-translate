@@ -79,6 +79,7 @@ function [trialsTbl, evCodec, infosCodec, tdtInfos ] = tdtExtractBehavior(sessio
     decodeEvent = @(x)  evCodec.name2Code(x);
     taskStartCodes = (1501:1510)';
     
+    % codes
     trialStartCode = decodeEvent('TrialStart_');
     eotCode = decodeEvent('Eot_');
     startInfosCode = decodeEvent('StartInfos_');
@@ -100,18 +101,13 @@ function [trialsTbl, evCodec, infosCodec, tdtInfos ] = tdtExtractBehavior(sessio
     nTasks = size(evCodes,1);
     colNames = evCodec.name2Code.keys';
     colCodes = cell2mat(evCodec.name2Code.values'); 
-    colNames = [colNames;'TaskType_';'GoodTrial';'HasInfosCodes';'HasTrialStartAndEot';'HasStartInfosAndEndInfos'];
+    colNames = [colNames;'TaskBlock';'TaskType_';'GoodTrial';'HasInfosCodes';'HasTrialStartAndEot';'HasStartInfosAndEndInfos'];
     %trialsTbl = cell2table(cell(0,numel(colNames)));
     trialsTbl = array2table(nan(nTasks,numel(colNames)));
     trialsTbl.DuplicateEventCodes = cell(nTasks,1);
     trialsTbl.Properties.VariableNames(1:end-1) = colNames;
     warning('OFF','MATLAB:table:RowsAddedExistingVars');
     ignoreDuplicateEvents = [2777 2776];% manual juice...
-    % codes
-    trialStartCode = evCodec.name2Code('TrialStart_');
-    trialEndCode = evCodec.name2Code('Eot_');
-    infosStartCode = evCodec.name2Code('StartInfos_');
-    infosEndCode = evCodec.name2Code('EndInfos_');
 
 tic
     for t = 1:nTasks
@@ -126,10 +122,11 @@ tic
         tms = tmsTemp(iUniq);
         iInfos = allC(allC >= 3000);
         % default some vars to be present
+        trialsTbl.TaskBlock(t) = t;
         trialsTbl.GoodTrial(t) = 1;
         trialsTbl.HasInfosCodes(t) = 1;
-        trialsTbl.HasTrialStartAndEot(t) = ismember(trialStartCode, evs) && ismember(trialEndCode, evs);
-        trialsTbl.HasStartInfosAndEndInfos(t) = ismember(infosStartCode, evs) && ismember(infosEndCode, evs);
+        trialsTbl.HasTrialStartAndEot(t) = ismember(trialStartCode, evs) && ismember(eotCode, evs);
+        trialsTbl.HasStartInfosAndEndInfos(t) = ismember(startInfosCode, evs) && ismember(endInfosCode, evs);
         
         if numel(evs) ~= numel(ilt3000)
             warning('Task block %d has duplicate event codes\n',t);
