@@ -39,7 +39,7 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     % Initialize output files
     oFiles = {};
 
-    useTaskEndCode = true;
+    useTaskEndCode = false;
     
     
     % Normalize input path and extract sessionName
@@ -52,9 +52,7 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     if ~exist(outputDir,'dir')
         mkdir(outputDir);
     end
-    
-    isProFile = @(x) contains(x,'.pro');
-    
+      
     %%  Process Rig specific event codes and event names   %
     [evCodec.code2Name, evCodec.name2Code] = ...
         getCodeDefs(regexprep(eventCodecFile,'[/\\]',filesep));
@@ -83,6 +81,7 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     
     trialStartCode = decodeEvent('TrialStart_');
     eotCode = decodeEvent('Eot_');
+    startInfosCode = decodeEvent('StartInfos_');
     endInfosCode = decodeEvent('EndInfos_');
     
     % Now check for valid TASK blocks
@@ -91,13 +90,58 @@ function [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, tri
     if useTaskEndCode    
         iTaskEnd = find(ismember(tdtEvents,decodeEvent('CmanEnd_'))); %#ok<UNRCH>
     else
-        iTaskEnd = [iTaskStart(2:end);nEvents];
+        iTaskEnd = [iTaskStart(2:end)-1;nEvents];
     end
     % Split event codes and times into task chunks
     [evCodes, evTimes]=arrayfun(@(i) deal(...
         tdtEvents(iTaskStart(i):iTaskEnd(i)),...
-        tdtEventTimes(iTaskStart(i):iTaskEnd(i))),...
+        tdtEventTimes(iTaskStart(i):iTaskEnd(i)).*1000),...% convert to ms
         (1:length(iTaskStart))','UniformOutput',false);
+    nTasks = size(evCodes,1);
+    colNames = evCodec.name2Code.keys';
+    colCodes = cell2mat(evCodec.name2Code.values'); 
+    colNames = [colNames;'TaskType_';'GoodTrial';'HasInfosCodes'];
+    %trialsTbl = cell2table(cell(0,numel(colNames)));
+    trialsTbl = array2table(nan(nTasks,numel(colNames)));
+    trialsTbl.DuplicateEventCodes = cell(nTasks,1);
+    trialsTbl.Properties.VariableNames(1:end-1) = colNames;
+    warning('OFF','MATLAB:table:RowsAddedExistingVars');
+    ignoreDuplicateEvents = [2777 2776];% manual juice...
+tic
+    for t = 1:nTasks
+        allC = evCodes{t};
+        allT = evTimes{t};
+        ilt3000 = find(allC < 3000);
+        evCodesTemp = allC(ilt3000);
+        tmsTemp = allT(ilt3000);
+        % check unique Event codes
+        [evs,iUniq] = unique(evCodesTemp,'stable');
+        dups = evCodesTemp(setdiff(1:numel(evCodesTemp),iUniq));
+        tms = tmsTemp(iUniq);
+        iInfos = allC(allC >= 3000);
+        trialsTbl.GoodTrial(t) = 1;
+        trialsTbl.HasInfoCodes(t) = 1;
+        if numel(evs) ~= numel(ilt3000)
+            warning('Task block %d has duplicate event codes\n',t);
+            trialsTbl.DuplicateEventCodes(t) = {unique(dups)'}; 
+            if setdiff(unique(dups),ignoreDuplicateEvents)
+               trialsTbl.GoodTrial(t) = 0;
+            end
+        end
+        if isempty(iInfos)
+            warning('Task block %d has NO INFO codes\n',t);
+            trialsTbl.HasInfoCodes(t) = 0;
+            trialsTbl.GoodTrial(t) = 0;
+        end
+        if intersect(taskStartCodes, evs)
+            trialsTbl.TaskType_(t) = intersect(taskStartCodes, evs);
+        end
+
+        iTblCols = arrayfun(@(x) min([find(colCodes==x,1),NaN]),evs);
+        trialsTbl(t,iTblCols(~isnan(iTblCols))) = num2cell(tms(~isnan(iTblCols))');
+    end
+   toc 
+    
     
     % Add an extra Event at the end to help in arryfun below
     iTrialStartTemp = [find(tdtEvents==trialStartCode);nEvents+1];% all TrialStart_
@@ -208,12 +252,9 @@ end
 
 %% Sub-functions %%
 function [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath,varargin)
-    % TDT function to use when reading raw TDT files
-    % I think you can use TDTbin2mat regardless of PC/~PC
+    % Using functions form TDTSDK for reading raw TDT files
+    % 
     tdtFun = @TDTbin2mat;
-    if ispc
-        tdtFun = @TDT2mat;
-    end
     % Get raw TDT events codes and event times
     tdtRaw = tdtFun(blockPath,'TYPE',{'epocs','scalars'},'VERBOSE',0); 
     % Use STROBE data when available
@@ -251,3 +292,5 @@ function [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath,varargin)
     clear tdtRaw
 
 end
+
+

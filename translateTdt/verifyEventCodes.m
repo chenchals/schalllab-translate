@@ -99,7 +99,13 @@ function [tblEventCount, tblCountCodes] = verifyEventCodes(sessionDir, eventCode
     % table of codes
     tblEventCount = struct2table(tblEventCount);
     sortrows(tblEventCount,'evCode');
-  
+    fprintf('\n********************************');
+    fprintf('%s\n%s\n',sessionDir,eventCodecFile);
+    display(tblEventCount);
+    
+    
+  doRelCodes = false;
+  if doRelCodes
     for ii = 1: numel(codes2Verify)
         c = codes2Verify(ii);
         if find(events==c,1,'first')
@@ -112,13 +118,12 @@ function [tblEventCount, tblCountCodes] = verifyEventCodes(sessionDir, eventCode
         end   
     end
     
-    fprintf('\n********************************\n');
-    fprintf('%s\n%s\n',sessionDir,eventCodecFile);
-    display(tblEventCount);
     fns = fieldnames(tblCountCodes);
     for ii = 1:numel(fns)
         display(tblCountCodes.(fns{ii}));
     end
+    
+  end
     fprintf('\n********************************\n');
 
     
