@@ -8,9 +8,10 @@ function data = TDT2mat(tank, block, varargin)
 %
 %   data.epocs      contains all epoc store data (onsets, offsets, values)
 %   data.snips      contains all snippet store data (timestamps, channels,
-%                   and raw data)
+%                   raw data, and sampling rate)
 %   data.streams    contains all continuous data (sampling rate and raw
 %                   data)
+%   data.scalars    contains all scalar data (samples and timestamps)
 %   data.info       contains additional information about the block
 %
 %   data = TDT2mat(TANK, BLOCK,'parameter',value,...)
@@ -20,7 +21,8 @@ function data = TDT2mat(tank, block, varargin)
 %      'T1'         scalar, retrieve data starting at T1 (default = 0 for
 %                       beginning of recording)
 %      'T2'         scalar, retrieve data ending at T2 (default = 0 for end
-%                       of recording)
+%                       of recording). Can be negative to remove time from
+%                       end of recording.
 %      'SORTNAME'   string, specify sort ID to use when extracting snippets
 %      'VERBOSE'    boolean, set to false to disable console output
 %      'TYPE'       array of scalars or cell array of strings, specifies 
@@ -48,6 +50,8 @@ function data = TDT2mat(tank, block, varargin)
 %      'CHANNEL'    integer, choose a single channel to extract from stream
 %                       or snippet events (default = 0 for all channels).
 %      'TTX'        COM.TTank_X object that is already connected to a tank/block
+%      'JUSTBLOCKS' boolean, only return block names for given tank name
+%                       (default = false)
 %
 
 data = struct('epocs', [], 'snips', [], 'streams', [], 'scalars', []);
@@ -65,6 +69,7 @@ CHANNEL  = 0;
 STORE    = '';
 BITWISE  = '';
 TTX      = [];
+JUSTBLOCKS = false;
 
 MAXEVENTS = 1e6;
 MAXCHANNELS = 1024;
@@ -90,31 +95,34 @@ for i = 1:2:length(varargin)
     eval([upper(varargin{i}) '=varargin{i+1};']);
 end
 
+ALLOWED_TYPES = {'ALL','EPOCS','SNIPS','STREAMS','SCALARS'};
+
 if iscell(TYPE)
-    types = [];
+    types = zeros(1, numel(TYPE));
     for i = 1:numel(TYPE)
-       if strcmpi(TYPE{i}, 'EPOCS')
-           types = [types 2];
-       elseif strcmpi(TYPE{i}, 'SNIPS')
-           types = [types 3];
-       elseif strcmpi(TYPE{i}, 'STREAMS')
-           types = [types 4];
-       elseif strcmpi(TYPE{i}, 'SCALARS')
-           types = [types 5];
-       elseif strcmpi(TYPE{i}, 'ALL')
-           types = 1:5;
-           break
-       end
+        ind = find(strcmpi(ALLOWED_TYPES, TYPE{i}));
+        if isempty(ind)
+            error('Unrecognized type: %s\nAllowed types are: %s', TYPE{i}, sprintf('%s ', ALLOWED_TYPES{:}))
+        end
+        if ind == 1
+            types = 1:5;
+            break;
+        end
+        types(i) = ind;
     end
-    TYPE = types;
 else
-    if ~isnumeric(TYPE), error('TYPE must be a scalar or number vector'), end
-    if TYPE == 1, TYPE = 1:5; end
+    if ~isnumeric(TYPE), error('TYPE must be a scalar, number vector, or cell array of strings'), end
+    if TYPE == 1
+        types = 1:5;
+    else
+        types = TYPE;
+    end
 end
+TYPE = unique(types);
 
 ReadEventsOptions = 'ALL';
 if NODATA, ReadEventsOptions = 'NODATA'; end
-if any(mod(CHANNEL,1) ~= 0), error('CHANNEL must be a scalar'), end
+if ~isscalar(CHANNEL), error('CHANNEL must be a scalar'), end
 if CHANNEL < 0, error('CHANNEL must be non-negative'), end
 CHANNEL = int32(CHANNEL);
 
@@ -138,13 +146,36 @@ if ~bUseOutsideTTX
         error(['Problem connecting to server: ' SERVER])
     end
     
+    if JUSTBLOCKS
+        % return all block names from the tank
+        tank = [tank filesep block];
+        if TTX.OpenTank(tank, 'R') ~= 1
+            error(['Problem opening tank: ' tank]);
+        end
+        blocks{1} = TTX.QueryBlockName(0);
+        i = 1;
+        while strcmp(blocks{i}, '') == 0
+            i = i+1;
+            blocks{i} = TTX.QueryBlockName(i); %#ok<AGROW>
+        end
+        blocks(end) = [];
+
+        % make sure blocks are in ascending order
+        bidx = cellfun(@(x) str2num(x(find(x=='-',1,'last')+1:end)),blocks); %#ok<ST2NM>
+        [temp,i] = sort(bidx);
+        blocks = blocks(i);
+
+        data = blocks;
+        return
+    end
+    
     % open tank
     if TTX.OpenTank(tank, 'R') ~= 1
         TTX.ReleaseServer;
         close(h);
         error(['Problem opening tank: ' tank]);
     end
-
+    
     % select block
     if TTX.SelectBlock(['~' block]) ~= 1
         block_name = TTX.QueryBlockName(0);
@@ -153,7 +184,8 @@ if ~bUseOutsideTTX
             block_ind = block_ind+1;
             block_name = TTX.QueryBlockName(block_ind);
             if strcmp(block_name, block)
-                error(['Block found, but problem selecting it: ' block]);
+                error(['Block found, but problem selecting it: ' block sprintf('\n') ...
+                    'Bad TBK file? Try running the TankRestore tool to correct. See http://www.tdt.com/technotes/#0935.htm']);
             end
         end
         error(['Block not found: ' block]);
@@ -164,6 +196,10 @@ end
 start = TTX.CurBlockStartTime;
 stop = TTX.CurBlockStopTime;
 total = stop-start;
+
+if T2 < 0
+    T2 = total + T2;
+end
 
 data.info.tankpath = TTX.GetTankItem(tank, 'PT');
 data.info.blockname = block;
@@ -201,7 +237,7 @@ if VERBOSE
 end
 
 % set global tank server defaults
-TTX.SetGlobalV('WavesMemLimit',1e9);
+TTX.SetGlobalV('WavesMemLimit',1e7);
 TTX.SetGlobalV('MaxReturn',MAXEVENTS);
 TTX.SetGlobalV('T1', T1);
 TTX.SetGlobalV('T2', T2);
@@ -210,6 +246,8 @@ ranges_size = size(RANGES,2);
 
 if ranges_size > 0
     data.time_ranges = RANGES;
+else
+    data.time_ranges = [0;Inf];
 end
 
 % parse stores
@@ -235,8 +273,12 @@ for i = 1:length(lStores)
     end
     
     if ~strcmp(name, 'xWav')
-        TTX.GetCodeSpecs(lStores(i));
-        type = TTX.EvTypeToString(TTX.EvType);
+        if TTX.GetCodeSpecs(lStores(i))
+            type = TTX.EvTypeToString(TTX.EvType);
+        else
+            TTX.GetCodeSpecsLazy(lStores(i));
+            type = TTX.EvTypeToString(TTX.EvType);
+        end
         % catch RS4 header (33073)
         if bitand(TTX.EvType, 33025) == 33025, type = 'Stream'; end
     else
@@ -247,7 +289,10 @@ for i = 1:length(lStores)
     
     switch type
         case 'Strobe+'
-            if ~any(TYPE==2), continue; end
+            if ~any(TYPE==2)
+                if VERBOSE, disp('skipping'), end
+                continue
+            end
             if VERBOSE, fprintf('Data Size:\t%d\n',TTX.EvDataSize), end
             
             if ranges_size > 0
@@ -292,7 +337,10 @@ for i = 1:length(lStores)
             end
             data.epocs.(varname).name = name;
         case 'Scalar'
-            if ~any(TYPE==5), continue; end
+            if ~any(TYPE==5)
+                if VERBOSE, disp('skipping'), end
+                continue
+            end
             if VERBOSE, fprintf('Data Size:\t%d\n',TTX.EvDataSize), end
             if ranges_size > 0
                 for ff = 1:ranges_size
@@ -330,10 +378,45 @@ for i = 1:length(lStores)
             else
                 N = TTX.ReadEventsSimple(name);
                 if N > 0
-                    data.scalars.(varname).data = TTX.ParseEvV(0, N)'';
-                    data.scalars.(varname).ts = TTX.ParseEvInfoV(0, N, 6)'';
-                    channels = TTX.ParseEvInfoV(0, N, 4)'';
-                    
+                    if N == MAXEVENTS
+                        if VERBOSE, fprintf('Max Total Events (%d) Reached. Looping through time\n', MAXEVENTS), end
+                        firstloop = 1;
+
+                        time_slices = 10;
+                        if T2 < 0.00001, T2 = total + 3; end
+                        dT = (T2-T1)/time_slices;
+                        currT1 = T1;
+                        currT2 = currT1+dT;
+                        for dt = 1:time_slices+1
+                            NTIME = TTX.ReadEventsV(MAXEVENTS, name, CHANNEL, 0, currT1, currT2, ReadEventsOptions);
+                            if NTIME > 0
+                                if NTIME == MAXEVENTS
+                                    warning(sprintf('Max Events (%d) reached on time slice %d, contact TDT\n', MAXEVENTS, dt));
+                                else
+                                    if firstloop
+                                        if ~NODATA
+                                            data.scalars.(varname).data = TTX.ParseEvV(0, NTIME)';
+                                        end
+                                        channels = TTX.ParseEvInfoV(0, NTIME, 4)';
+                                        data.scalars.(varname).ts = TTX.ParseEvInfoV(0, NTIME, 6)';
+                                        firstloop = 0;
+                                    else
+                                        if ~NODATA
+                                            data.scalars.(varname).data = cat(1, data.scalars.(varname).data, TTX.ParseEvV(0, NTIME)');
+                                        end
+                                        channels = cat(1, channels, TTX.ParseEvInfoV(0, NTIME, 4)');
+                                        data.scalars.(varname).ts = cat(1, data.scalars.(varname).ts, TTX.ParseEvInfoV(0, NTIME, 6)');
+                                    end
+                                end
+                            end
+                            currT1 = currT2;
+                            currT2 = currT1+dT;
+                        end
+                    else
+                        data.scalars.(varname).data = TTX.ParseEvV(0, N)'';
+                        data.scalars.(varname).ts = TTX.ParseEvInfoV(0, N, 6)'';
+                        channels = TTX.ParseEvInfoV(0, N, 4)'';
+                    end
                     % organize data by channel
                     maxchannel = max(channels);
                     newdata = zeros(maxchannel, numel(data.scalars.(varname).data)/maxchannel);
@@ -349,7 +432,10 @@ for i = 1:length(lStores)
             end
             if N > 0, data.scalars.(varname).name = name; end
         case 'Stream'
-            if ~any(TYPE==4), continue; end
+            if ~any(TYPE==4)
+                if VERBOSE, disp('skipping'), end
+                continue
+            end
             if ~strcmp(STORE, '') && ~strcmp(STORE, name), continue; end
             if VERBOSE, fprintf('Samp Rate:\t%f\n',TTX.EvSampFreq), end
             
@@ -359,69 +445,90 @@ for i = 1:length(lStores)
             num_channels = max(TTX.ParseEvInfoV(0, N, 4));
             if VERBOSE, fprintf('Channels:\t%d\n', num_channels), end                
 
+            % skip if we don't have this channel in the data store
+            if CHANNEL > 0 && num_channels < CHANNEL
+                continue
+            end
+            
             % loop through ranges, if there are any
-            for ic = 1:length(CHANNEL),
-                tmpChannel = CHANNEL(ic);
-                TTX.SetGlobalV('Channel', tmpChannel);
-                if ranges_size > 0
-                    for ff = 1:ranges_size
-                        TTX.SetGlobalV('T1', RANGES(1, ff));
-                        TTX.SetGlobalV('T2', RANGES(2, ff));
-                        d = TTX.ReadWavesV(name)';
-                        if numel(d) > 1
-                            data.streams.(varname).filtered{ff} = d;
-                        end
+            TTX.SetGlobalV('Channel', CHANNEL);
+            if ranges_size > 0
+                for ff = 1:ranges_size
+                    TTX.SetGlobalV('T1', RANGES(1, ff));
+                    TTX.SetGlobalV('T2', RANGES(2, ff));
+                    d = TTX.ReadWavesV(name)';
+                    if numel(d) > 1
+                        data.streams.(varname).filtered{ff} = d;
                     end
-                    % reset when done
-                    TTX.SetGlobalV('T1', T1);
-                    TTX.SetGlobalV('T2', T2);
-                    TTX.SetGlobalV('Channel', 0);
-                else
-                    data.streams.(varname).data(ic,:) = TTX.ReadWavesV(name)';
-                    nancheck = numel(data.streams.(varname).data(ic,:)) == 1;
-                    if nancheck
-                        chunk_size = 2;  % try chunk size 1/2 length
-                        if T2 > 0
-                            approx_length = ceil((T2-T1) * TTX.EvSampFreq); % samples
-                        else
-                            approx_length = ceil(total * TTX.EvSampFreq); % samples
-                        end
-                        data.streams.(varname).data = zeros(num_channels,approx_length);
-                    end
-                    while nancheck
-                        step_size = approx_length / TTX.EvSampFreq /chunk_size;
-                        warning('ReadWavesV returned NaN for %s, attempting step size %.2f', name, step_size);
-                        if step_size < 0.1, error('step size < .1 second, adjust WavesMemLimit'), end
-                        ind = 1;
-                        for c = 0:chunk_size-1
-                            new_T1 = T1 + c*step_size;
-                            new_T2 = T1 + (c+1)*step_size;
-                            TTX.SetGlobalV('T1', new_T1);
-                            TTX.SetGlobalV('T2', new_T2);
-                            temp_data = TTX.ReadWavesV(name)';
-                            nancheck = numel(temp_data) == 1;
-                            if nancheck
-                                break;
-                            end
-                            if tmpChannel ~= 0
-                                data.streams.(varname).data(ic,ind:ind+size(temp_data,2)-1) = temp_data;
-                            else
-                                data.streams.(varname).data(:,ind:ind+size(temp_data,2)-1) = temp_data;
-                            end
-                            ind = ind + size(temp_data,2);
-                        end
-                        chunk_size = chunk_size * 2;
-                    end
-                    % reset when done
-                    TTX.SetGlobalV('T1', T1);
-                    TTX.SetGlobalV('T2', T2);
-                    TTX.SetGlobalV('Channel', 0);
                 end
+                % reset when done
+                TTX.SetGlobalV('T1', T1);
+                TTX.SetGlobalV('T2', T2);
+                TTX.SetGlobalV('Channel', 0);
+            else
+                data.streams.(varname).data = TTX.ReadWavesV(name)';
+                nancheck = numel(data.streams.(varname).data) == 1;
+                if nancheck
+                    chunk_size = 2;  % try chunk size 1/2 length
+                    if T2 > 0
+                        approx_length = ceil((T2-T1) * TTX.EvSampFreq); % samples
+                    else
+                        approx_length = ceil(total * TTX.EvSampFreq); % samples
+                    end
+
+                    try
+                        data.streams.(varname).data = zeros(num_channels,approx_length);
+                    catch ME
+                        if (strcmp(ME.identifier,'MATLAB:nomem'))
+                            error(sprintf(['Out of computer memory (RAM) to create stream store array.\n\n' ...
+                                'Try using the ''T1'' and ''T2'' parameters to read only between thosetimestamps.\n' ...
+                                '\tdata = TDT2mat(tank, block, ''T1'', 0, ''T2'', 100);\n\n' ...
+                                'Or use the ''CHANNEL'' and/or ''STORE'' parameters to read a particular stream store and/or channel.\n' ...
+                                '\tdata = TDT2mat(tank, block, ''STORE'', ''Wave'');\n' ...
+                                '\tdata = TDT2mat(tank, block, ''STORE'', ''Wave'', ''CHANNEL'', 1);\n']));
+                        end
+                        rethrow(ME)
+                    end
+                end
+                while nancheck
+                    step_size = approx_length / TTX.EvSampFreq /chunk_size;
+                    warning('ReadWavesV returned NaN for %s, attempting step size %.2f', name, step_size);
+                    if step_size < 0.1, error('step size < .1 second, adjust WavesMemLimit'), end
+                    ind = 1;
+                    for c = 0:chunk_size-1
+                        new_T1 = T1 + c*step_size;
+                        new_T2 = T1 + (c+1)*step_size;
+                        TTX.SetGlobalV('T1', new_T1);
+                        TTX.SetGlobalV('T2', new_T2);
+                        temp_data = TTX.ReadWavesV(name)';
+                        nancheck = numel(temp_data) == 1;
+                        if nancheck
+                            break;
+                        end
+                        if CHANNEL ~= 0
+                            data.streams.(varname).data(CHANNEL,ind:ind+size(temp_data,2)-1) = temp_data;
+                        else
+                            data.streams.(varname).data(:,ind:ind+size(temp_data,2)-1) = temp_data;
+                        end
+                        ind = ind + size(temp_data,2);
+                    end
+                    chunk_size = chunk_size * 2;
+                end
+                % reset when done
+                TTX.SetGlobalV('T1', T1);
+                TTX.SetGlobalV('T2', T2);
+                TTX.SetGlobalV('Channel', 0);
             end
             data.streams.(varname).fs = TTX.EvSampFreq;
             data.streams.(varname).name = name;
+            if CHANNEL ~= 0
+                data.streams.(varname).channel = CHANNEL;
+            end
         case 'Snip'
-            if ~any(TYPE==3), continue; end
+            if ~any(TYPE==3)
+                if VERBOSE, disp('skipping'), end
+                continue
+            end
             if VERBOSE, fprintf('Samp Rate:\t%f\n',TTX.EvSampFreq), end
             if VERBOSE, fprintf('Data Size:\t%d\n',TTX.EvDataSize), end
             
@@ -442,6 +549,9 @@ for i = 1:length(lStores)
                             data.snips.(varname).chan{ff} = TTX.ParseEvInfoV(0, N, 4)';
                             data.snips.(varname).sortcode{ff} = TTX.ParseEvInfoV(0, N, 5)';
                             data.snips.(varname).ts{ff} = TTX.ParseEvInfoV(0, N, 6)';
+                            if ~isfield(data.snips.(varname), 'fs')
+                                data.snips.(varname).fs = TTX.ParseEvInfoV(0, 1, 9);
+                            end
                         end
                     end
                 end
@@ -460,10 +570,11 @@ for i = 1:length(lStores)
                     if N == MAXEVENTS && CHANNEL == 0
                         if VERBOSE, fprintf('Max Total Events (%d) Reached. Looping through channels\n', MAXEVENTS), end
                         firstchan = 1;
+                        
                         skipct = 0;
                         for chan = 1:MAXCHANNELS
                             NCHAN = TTX.ReadEventsV(MAXEVENTS, name, chan, 0, T1, T2, ReadEventsOptions);
-                            if firstchan
+                            if chan == 1
                                 if VERBOSE, fprintf('Reading channel %d', chan), end
                             else
                                 if VERBOSE, fprintf(' %d', chan), end
@@ -489,6 +600,9 @@ for i = 1:length(lStores)
                                                     data.snips.(varname).chan = TTX.ParseEvInfoV(0, NTIME, 4)';
                                                     data.snips.(varname).sortcode = TTX.ParseEvInfoV(0, NTIME, 5)';
                                                     data.snips.(varname).ts = TTX.ParseEvInfoV(0, NTIME, 6)';
+                                                    if ~isfield(data.snips.(varname), 'fs')
+                                                        data.snips.(varname).fs = TTX.ParseEvInfoV(0, 1, 9);
+                                                    end
                                                     firstchan = 0;
                                                 else
                                                     if ~NODATA
@@ -511,6 +625,9 @@ for i = 1:length(lStores)
                                         data.snips.(varname).chan = TTX.ParseEvInfoV(0, NCHAN, 4)';
                                         data.snips.(varname).sortcode = TTX.ParseEvInfoV(0, NCHAN, 5)';
                                         data.snips.(varname).ts = TTX.ParseEvInfoV(0, NCHAN, 6)';
+                                        if ~isfield(data.snips.(varname), 'fs')
+                                            data.snips.(varname).fs = TTX.ParseEvInfoV(0, 1, 9);
+                                        end
                                         firstchan = 0;
                                     else
                                         if ~NODATA
@@ -554,6 +671,9 @@ for i = 1:length(lStores)
                         data.snips.(varname).chan = TTX.ParseEvInfoV(0, N, 4)';
                         data.snips.(varname).sortcode = TTX.ParseEvInfoV(0, N, 5)';
                         data.snips.(varname).ts = TTX.ParseEvInfoV(0, N, 6)';
+                        if ~isfield(data.snips.(varname), 'fs')
+                            data.snips.(varname).fs = TTX.ParseEvInfoV(0, 1, 9);
+                        end
                     end
                 end
             end
@@ -561,10 +681,6 @@ for i = 1:length(lStores)
                 data.snips.(varname).name = name;
                 data.snips.(varname).sortname = SORTNAME;
             end
-%         case {'Unknown'},
-%             keyboard
-%         otherwise
-%             keyboard
     end
 end
 
@@ -590,6 +706,8 @@ if ~strcmp(BITWISE , '')
         big_array(1,:) = data.(bitwisetype).(BITWISE).ts;
     end
     
+    data.(bitwisetype).(BITWISE).bitwise = struct();
+    
     % loop through all states
     prev_state = zeros(32,1);
     for i = 1:sz
@@ -597,10 +715,10 @@ if ~strcmp(BITWISE , '')
         bbb = dec2bin(xxx(1), 32);
         curr_state = str2num(bbb');          %#ok<ST2NM>
         big_array(2:nbits+1,i) = curr_state;
-            
+        
         % look for changes from previous state
         changes = find(xor(prev_state, curr_state));
-            
+        
         % add timestamp to onset or offset depending on type of state change
         for j = 1:numel(changes)
             ind = changes(j);
@@ -611,7 +729,7 @@ if ~strcmp(BITWISE , '')
                     data.(bitwisetype).(BITWISE).bitwise.(ffield).onset = [data.(bitwisetype).(BITWISE).bitwise.(ffield).onset big_array(1,i)];
                 else
                     data.(bitwisetype).(BITWISE).bitwise.(ffield).onset = big_array(1,i);
-                   data.(bitwisetype).(BITWISE).bitwise.(ffield).offset = [];
+                    data.(bitwisetype).(BITWISE).bitwise.(ffield).offset = [];
                 end
             else
                 data.(bitwisetype).(BITWISE).bitwise.(ffield).offset = [data.(bitwisetype).(BITWISE).bitwise.(ffield).offset big_array(1,i)];
@@ -632,14 +750,13 @@ if ~strcmp(BITWISE , '')
 end
 
 % check for SEV files
-% TODO: RANGES for SEV files?
 if any(TYPE==4)
     
     blockpath = sprintf('%s%s\\%s\\', data.info.tankpath, tank, block);
     
     file_list = dir([blockpath '*.sev']);
     if length(file_list) < 3
-        if VERBOSE, disp(['info: no sev files found in ' blockpath]), end
+        %if VERBOSE, disp(['info: no sev files found in ' blockpath]), end
     else
         eventNames = SEV2mat(blockpath, 'JUSTNAMES', true, 'VERBOSE', false);
         for i = 1:length(eventNames)
@@ -667,7 +784,7 @@ if any(TYPE==4)
                     fprintf('SEVs found in %s.\nrunning SEV2mat to extract %s', ...
                         blockpath, eventNames{i})
                 end
-                sev_data = SEV2mat(blockpath, 'EVENTNAME', eventNames{i}, 'VERBOSE', VERBOSE);
+                sev_data = SEV2mat(blockpath, 'EVENTNAME', eventNames{i}, 'VERBOSE', VERBOSE, 'RANGES', RANGES);
                 
                 if isfield(data.streams, varname)
                     data.streams.(varname) = sev_data.eventNames{i};
