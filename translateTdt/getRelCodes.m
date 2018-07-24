@@ -14,6 +14,8 @@ function [tblCounts] = getRelCodes(refCode,tdtCodes, evCodec)
 % 
 % see also GETCODEDEFS, VERIFYEVENTCODES, TDTEXTRACTBEHAVIOR
 
+  % if first or last eventCode is the ref code
+  tdtCodes = [NaN;tdtCodes;NaN]; 
   iRefCodes = find(tdtCodes==refCode);
   codesBeforeRef = tdtCodes(iRefCodes - 1);
   codesAfterRef = tdtCodes(iRefCodes + 1);

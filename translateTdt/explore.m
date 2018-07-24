@@ -175,4 +175,30 @@ end
  tCodesInd = find(contains(charCodes,cellstr(num2str(tCodes,'%04d'))))
  
  
+%%% Kaleb stuff testing %%
 
+tdtFun = @TDTbin2mat;
+normFilepath = @(x) regexprep(x,'[/\\]',filesep);
+
+tdtRaw = tdtFun(fileName,'TYPE',{'epocs','scalars'},'VERBOSE',0);
+%> read up to t=14395.19s
+tEv = tdtRaw.epocs.STRB.data;
+tTm = tdtRaw.epocs.STRB.onset.*1000;
+tTm(tEv==0)=[];
+tEv(tEv==0)=[];
+
+%%%%%
+t1666 = find(tEv==1666); 
+t1667 = find(tEv==1667);
+t2999 = find(tEv==2999);
+clear endInfosCS2
+tic
+% endInfosCS2 = arrayfun(@(x) t2999(find(t2999 > t1667(x) & t2999 < t1666(x+1),1,'first')),(1:numel(t1666)-1)');
+endInfosCS2 = arrayfun(@(x) t2999(find(t2999 > t1667(x) & t2999 < t1666(x+1),1)),(1:numel(t1666)-1)');
+ try
+     endInfosCS2(end+1) = t2999(t2999 > t1667(end) & t2999 < numel(tEv));
+     %endInfosCS(end+1) = t2999(find(t2999 > t1667(end) & t2999 < numel(tEv)));
+ catch
+     endInfosCS2(end+1) = NaN;
+ end
+toc

@@ -49,7 +49,7 @@ function [tblEventCount, tblCountCodes] = verifyEventCodes(sessionDir, eventCode
 % ********************************
 
 
-    codes2Verify =[ 2681, 1501, 2680, 1666, 1667, 2998, 2999, 2776, 2777];
+    codes2Verify =[ 2681, 1501, 1502, 1509, 2680, 1666, 1667, 2998, 2999, 2776, 2777];
     
     tdtFun = @TDTbin2mat;
     if ispc
@@ -66,19 +66,20 @@ function [tblEventCount, tblCountCodes] = verifyEventCodes(sessionDir, eventCode
     %% Read events form TDT tank/block path %%
     % Get raw TDT events codes and event times
     sessionDir = normFilepath(sessionDir);
-    tdtRaw = tdtFun(sessionDir,'TYPE',{'epocs','scalars'},'VERBOSE',0); 
+    tdtRawEpocs = tdtFun(sessionDir,'TYPE',{'epocs'},'VERBOSE',0); 
+    tdtRawsScalars = tdtFun(sessionDir,'TYPE',{'scalars'},'VERBOSE',0); 
     
+    tdtRaw = tdtRawEpocs;
     % Assume STRB data
     events = tdtRaw.epocs.STRB.data;
     events(events==0) = [];
-    events(events>=3000) = [];
-    events = [events;NaN];
- 
+    events(events>=3000) = []; 
     
     tblEventCount = struct();
-
+    nonZeroEvCodes = 0;
     for ii = 1:numel(codes2Verify)
         code = codes2Verify(ii);
+        evCount = 0;
         if evCodec.code2Name.isKey(code) 
             evName = evCodec.code2Name(code);
             evCode = code;
@@ -87,31 +88,29 @@ function [tblEventCount, tblCountCodes] = verifyEventCodes(sessionDir, eventCode
             evName = 'UNKNOWN_CODE_IN_EVENT_STREAM';
             evCode = code;
             evCount = sum(events == code);                
-        else
-            evName = 'UNKNOWN_CODE_NOT_IN_EVENT_STREAM';
-            evCode = code;
-            evCount = 0;              
         end
-        tblEventCount(ii).evName = evName;
-        tblEventCount(ii).evCode = evCode;
-        tblEventCount(ii).evCount = evCount;
-        
-        
+        if evCount > 0
+            nonZeroEvCodes = nonZeroEvCodes + 1;            
+            tblEventCount(nonZeroEvCodes).evName = evName;
+            tblEventCount(nonZeroEvCodes).evCode = evCode;
+            tblEventCount(nonZeroEvCodes).evCount = evCount;
+        end
     end
     % table of codes
     tblEventCount = struct2table(tblEventCount);
+    sortrows(tblEventCount,'evCode');
   
-    
-    tblCountCodes.JuceStop_ = getRelCodes(2776,events,evCodec);
-    tblCountCodes.CmdEnd_ = getRelCodes(2680,events,evCodec);
-    tblCountCodes.CmdHeader_ = getRelCodes(1501,events,evCodec);
-    tblCountCodes.TrialStart_ = getRelCodes(1666,events,evCodec);
-    tblCountCodes.Eot_ = getRelCodes(1667,events,evCodec);
-    tblCountCodes.C2731 = getRelCodes(2731,events,evCodec);
-    tblCountCodes.C2732 = getRelCodes(2732,events,evCodec);
-    tblCountCodes.C2740 = getRelCodes(2740,events,evCodec);
-    tblCountCodes.C2741 = getRelCodes(2741,events,evCodec);
-       
+    for ii = 1: numel(codes2Verify)
+        c = codes2Verify(ii);
+        if find(events==c,1,'first')
+            try
+                fName = [evCodec.code2Name(c) num2str(c,'_%d')];
+            catch
+               fName = ['UNK_CODE_EVENTDEF_pro' num2str(c,'_%d')];
+            end
+            tblCountCodes.(fName) = getRelCodes(c,events,evCodec);
+        end   
+    end
     
     fprintf('\n********************************\n');
     fprintf('%s\n%s\n',sessionDir,eventCodecFile);

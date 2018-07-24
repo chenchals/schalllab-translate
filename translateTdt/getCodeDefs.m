@@ -9,6 +9,9 @@ function [code2Name, name2Code] = getCodeDefs(codesFile)
 %               call will issue a warning and proceed. This should be
 %               treated as an error in experiment setup files.
 %               Matching expressins are different for different files:
+% <html>
+% <table><th><td>test1</td></th><tr><td>blah</td></tr></table>
+% </html>
 % ________________________________________________________________________
 % |   Filename    |  Matching Expression                                 |
 % ------------------------------------------------------------------------
