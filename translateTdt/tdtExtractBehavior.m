@@ -1,4 +1,4 @@
-function [trialsTbl, evCodec, infosCodec, tdtInfos ] = tdtExtractBehavior(sessionDir, outputBaseDir, eventCodecFile, infosCodecFile)
+function [trialsTbl, trialsInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBehavior(sessionDir, outputBaseDir, eventCodecFile, infosCodecFile)
 %TDTEXTRACTBEHAVIOR Summary of this function goes here
 %   Detailed explanation goes here
 %
@@ -109,9 +109,9 @@ function [trialsTbl, evCodec, infosCodec, tdtInfos ] = tdtExtractBehavior(sessio
     trialsTbl.Properties.VariableNames(1:end-1) = colNames;
     
     %% Create table for all Infos and set column name as Info_Name
-    
-    
-    
+    trialsInfos = struct();
+    infoNames = infosCodec.code2Name.values';
+    startInfosOffset = 3000;
     
     warning('OFF','MATLAB:table:RowsAddedExistingVars');
     ignoreDuplicateEvents = [2777 2776];% manual juice...
@@ -154,12 +154,18 @@ tic
         iTblCols = arrayfun(@(x) min([find(colCodes==x,1),NaN]),evs);
         trialsTbl(t,iTblCols(~isnan(iTblCols))) = array2table(tms(~isnan(iTblCols))');
         % Process Infos for the task/trial
+        % for infoes always use code2name as info codes may be duplicated
+        % in INFOS.pro (see tone_duration, trial_length)
         if ismember(startInfosCode, evs) && ismember(endInfosCode, evs)
           infos = allC(find(allC==startInfosCode)+1:find(allC==endInfosCode)-1);
           fprintf('Number of infos codes including start and end infos = %d of total: %d InfoCodec Codes\n',...
               numel(infos),numel(infosCodec.code2Name.keys));
           
-         end
+           for kk = 1:numel(infos)
+               trialsInfos(t,1).(infoNames{kk}) = infos(kk) - startInfosOffset;              
+           end
+
+        end
 
         
     end

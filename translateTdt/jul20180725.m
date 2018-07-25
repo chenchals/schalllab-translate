@@ -7,18 +7,18 @@ saveDir = '/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes/processe
 %blocks
 blockPaths=strcat({j20180725.folder}',filesep,{j20180725.name}');
 
-eventDefFile = '/Volumes/schalllab/data/Joule/TEMPO/currentProcLib/EVENTDEF.pro';
-infosDefFile = '/Volumes/schalllab/data/Joule/TEMPO/currentProcLib/CMD/INFOS.pro';
+eventDefFile = '/Volumes/schalllab/data/Joule/TEMPO/currProcLib/EVENTDEF.pro';
+infosDefFile = '/Volumes/schalllab/data/Joule/TEMPO/currProcLib/CMD/INFOS.pro';
 
 for ii = 1:numel(blockPaths)
     verifyEventCodes(blockPaths{ii},eventDefFile);
 end
 
-out = struct();
+outTrials = struct();
+outInfos = struct();
 for ii = 1:numel(blockPaths)
     [~,sessionName] = fileparts(blockPaths{ii});
-    eventTable = tdtExtractBehavior(blockPaths{ii},'junk',eventDefFile,infosDefFile);
-    out.(regexprep(sessionName,'-','_')) = eventTable;
+    [eventTable, taskInfos] = tdtExtractBehavior(blockPaths{ii},'junk',eventDefFile,infosDefFile);
     % Save translated mat file if needed
     if saveOutput
         oDir = fullfile(saveDir,sessionName);
@@ -30,7 +30,11 @@ for ii = 1:numel(blockPaths)
         Task = table2struct(eventTable,'ToScalar',true);
         fprintf('Saving to file %s\n',fullfile(oDir,'Behav.mat'));
         save(fullfile(oDir,'Behav.mat'),'-struct','Task');
+        save(fullfile(oDir,'Behav.mat'),'-append','taskInfos');
     end
+    outTrials.(regexprep(sessionName,'-','_')) = eventTable;
+    outInfos.(regexprep(sessionName,'-','_')) = taskInfos;
+
 end
 
 
