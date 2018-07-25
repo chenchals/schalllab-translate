@@ -137,7 +137,7 @@ tic
         end
         if isempty(iInfos)
             warning('Task block %d has NO INFO codes\n',t);
-            trialsTbl.HasInfoCodes(t) = 0;
+            trialsTbl.HasInfosCodes(t) = 0;
             trialsTbl.GoodTrial(t) = 0;
         end
         if intersect(taskStartCodes, evs)
