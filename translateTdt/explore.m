@@ -202,3 +202,25 @@ endInfosCS2 = arrayfun(@(x) t2999(find(t2999 > t1667(x) & t2999 < t1666(x+1),1))
      endInfosCS2(end+1) = NaN;
  end
 toc
+
+%% Infos reading form INFOS is not correct...
+infosDefFile = 'data/Joule/TEMPO/currentProcLib/INFOS.pro';
+fid = fopen(infosDefFile,'r');
+% Clean codelines
+lines = {''};
+while ~feof(fid)
+    l = fgetl(fid);
+    l = regexprep(l,'[ \t]+',' ');
+    l = regexprep(l,'^ | $','');
+    lines = [lines;l];
+end
+fclose(fid);
+codeLines = {''};
+
+inCommentBloc = false;
+isCommented = zeros(numel(lines),1);
+for ii = 1:numel(lines)    
+    isCommented(ii) = startsWith(lines{ii},'//') ;
+    
+end
+

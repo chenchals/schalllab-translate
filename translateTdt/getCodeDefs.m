@@ -40,6 +40,9 @@ function [code2Name, name2Code] = getCodeDefs(codesFile)
     end
     rFid = fopen(codesFile,'r');
     count = 0;
+    
+    
+    
     while ~feof(rFid)
         toks = regexp(fgetl(rFid),matchExpr,'tokens');
         if ~isempty(toks)

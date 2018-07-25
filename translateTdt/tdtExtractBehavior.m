@@ -99,6 +99,7 @@ function [trialsTbl, evCodec, infosCodec, tdtInfos ] = tdtExtractBehavior(sessio
         tdtEventTimes(iTaskStart(i):iTaskEnd(i)).*1000),...% convert to ms
         (1:length(iTaskStart))','UniformOutput',false);
     nTasks = size(evCodes,1);
+    %% Create table for all Event Codes and set column name as Event_Name
     colNames = evCodec.name2Code.keys';
     colCodes = cell2mat(evCodec.name2Code.values'); 
     colNames = [colNames;'TaskBlock';'TaskType_';'GoodTrial';'HasInfosCodes';'HasTrialStartAndEot';'HasStartInfosAndEndInfos'];
@@ -106,6 +107,12 @@ function [trialsTbl, evCodec, infosCodec, tdtInfos ] = tdtExtractBehavior(sessio
     trialsTbl = array2table(nan(nTasks,numel(colNames)));
     trialsTbl.DuplicateEventCodes = cell(nTasks,1);
     trialsTbl.Properties.VariableNames(1:end-1) = colNames;
+    
+    %% Create table for all Infos and set column name as Info_Name
+    
+    
+    
+    
     warning('OFF','MATLAB:table:RowsAddedExistingVars');
     ignoreDuplicateEvents = [2777 2776];% manual juice...
 
@@ -116,11 +123,11 @@ tic
         ilt3000 = find(allC < 3000);
         evCodesTemp = allC(ilt3000);
         tmsTemp = allT(ilt3000);
+        iInfos =  find(allC >= 3000);
         % check unique Event codes
         [evs,iUniq] = unique(evCodesTemp,'stable');
         dups = evCodesTemp(setdiff(1:numel(evCodesTemp),iUniq));
         tms = tmsTemp(iUniq);
-        iInfos = allC(allC >= 3000);
         % default some vars to be present
         trialsTbl.TaskBlock(t) = t;
         trialsTbl.GoodTrial(t) = 1;
@@ -143,9 +150,18 @@ tic
         if intersect(taskStartCodes, evs)
             trialsTbl.TaskType_(t) = intersect(taskStartCodes, evs);
         end
-
+        % Events: Get indices to column names for codes
         iTblCols = arrayfun(@(x) min([find(colCodes==x,1),NaN]),evs);
-        trialsTbl(t,iTblCols(~isnan(iTblCols))) = num2cell(tms(~isnan(iTblCols))');
+        trialsTbl(t,iTblCols(~isnan(iTblCols))) = array2table(tms(~isnan(iTblCols))');
+        % Process Infos for the task/trial
+        if ismember(startInfosCode, evs) && ismember(endInfosCode, evs)
+          infos = allC(find(allC==startInfosCode)+1:find(allC==endInfosCode)-1);
+          fprintf('Number of infos codes including start and end infos = %d of total: %d InfoCodec Codes\n',...
+              numel(infos),numel(infosCodec.code2Name.keys));
+          
+         end
+
+        
     end
    toc 
     
@@ -169,7 +185,15 @@ tic
     
 end
 
+
+
+
+
+
+
 %% Sub-functions %%
+
+
 function [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath,varargin)
     % Using functions form TDTSDK for reading raw TDT files
     % 
