@@ -1,5 +1,5 @@
 %Dirs
-j20180725=dir('/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes/Joule-180725*');
+j20180725=dir('/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes/Joule-180725-15*');
 
 saveOutput = 1;
 saveDir = '/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes/processed';
@@ -14,6 +14,7 @@ for ii = 1:numel(blockPaths)
     verifyEventCodes(blockPaths{ii},eventDefFile);
 end
 
+out = struct();
 for ii = 1:numel(blockPaths)
     [~,sessionName] = fileparts(blockPaths{ii});
     eventTable = tdtExtractBehavior(blockPaths{ii},'junk',eventDefFile,infosDefFile);

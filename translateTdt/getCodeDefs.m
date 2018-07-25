@@ -40,9 +40,6 @@ function [code2Name, name2Code] = getCodeDefs(codesFile)
     end
     rFid = fopen(codesFile,'r');
     count = 0;
-    
-    
-    
     while ~feof(rFid)
         toks = regexp(fgetl(rFid),matchExpr,'tokens');
         if ~isempty(toks)
@@ -59,6 +56,7 @@ function [code2Name, name2Code] = getCodeDefs(codesFile)
         end
     end
     fclose(rFid);
-    code2Name = containers.Map(ev.code, ev.name);
-    name2Code = containers.Map(ev.name, ev.code);
+    % fix duplicate names: ?
+     code2Name = containers.Map(ev.code, ev.name);
+     name2Code = containers.Map(ev.name, ev.code);
 end
