@@ -162,7 +162,7 @@ tic
               numel(infos),numel(infosCodec.code2Name.keys));
           
            for kk = 1:numel(infos)
-               trialsInfos(t,1).(infoNames{kk}) = infos(kk) - startInfosOffset;              
+               trialsInfos.(infoNames{kk})(t,1) = infos(kk) - startInfosOffset;              
            end
 
         end
