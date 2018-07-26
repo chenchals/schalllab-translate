@@ -96,7 +96,7 @@ function [trialsTbl, trialsInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBe
     % Split event codes and times into task chunks
     [evCodes, evTimes]=arrayfun(@(i) deal(...
         tdtEvents(iTaskStart(i):iTaskEnd(i)),...
-        tdtEventTimes(iTaskStart(i):iTaskEnd(i)).*1000),...% convert to ms
+        tdtEventTimes(iTaskStart(i):iTaskEnd(i))),...% convert to ms
         (1:length(iTaskStart))','UniformOutput',false);
     nTasks = size(evCodes,1);
     %% Create table for all Event Codes and set column name as Event_Name
