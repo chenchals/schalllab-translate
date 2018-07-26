@@ -1,11 +1,11 @@
 %Dirs
-j20180725=dir('/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes/Joule-180725-15*');
+jDatedSessions=dir('/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes/Joule-180726-13*');
 
 saveOutput = 1;
 saveDir = '/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes/processed';
 
 %blocks
-blockPaths=strcat({j20180725.folder}',filesep,{j20180725.name}');
+blockPaths=strcat({jDatedSessions.folder}',filesep,{jDatedSessions.name}');
 
 eventDefFile = '/Volumes/schalllab/data/Joule/TEMPO/currProcLib/EVENTDEF.pro';
 infosDefFile = '/Volumes/schalllab/data/Joule/TEMPO/currProcLib/CMD/INFOS.pro';
