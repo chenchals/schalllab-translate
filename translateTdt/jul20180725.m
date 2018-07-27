@@ -2,12 +2,12 @@
 % Base dir for data
 baseDir = '/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes';
 saveDir = fullfile(baseDir,'processed');
-eventDefFile = '/Volumes/schalllab/data/Joule/TEMPO/currProcLib/EVENTDEF.pro';
-infosDefFile = '/Volumes/schalllab/data/Joule/TEMPO/currProcLib/CMD/INFOS.pro';
+eventDefFile = '/Volumes/schalllab/data/Joule/TEMPO/ProcLib_7/EVENTDEF.pro';
+infosDefFile = '/Volumes/schalllab/data/Joule/TEMPO/ProcLib_7/CMD/INFOS.pro';
 
 
 %Dirs
-jDatedSessions=dir(fullfile(baseDir,'Joule-180726-1538*'));
+jDatedSessions=dir(fullfile(baseDir,'Joule-180727-1333*'));
 
 saveOutput = 1;
 
@@ -24,15 +24,16 @@ outInfos = struct();
 for ii = 1:numel(blockPaths)
     [~,sessionName] = fileparts(blockPaths{ii});
     [eventTable, taskInfos] = tdtExtractBehavior(blockPaths{ii},'junk',eventDefFile,infosDefFile);
+    % prune all NaN
+     eventTable = eventTable(:,any(~ismissing(eventTable)));
+     Task = table2struct(eventTable,'ToScalar',true);
+
     % Save translated mat file if needed
     if saveOutput
         oDir = fullfile(saveDir,sessionName);
         if ~exist(oDir,'dir')
             mkdir(oDir);
         end
-        % prune all NaN
-        eventTable = eventTable(:,any(~ismissing(eventTable)));
-        Task = table2struct(eventTable,'ToScalar',true);
         fprintf('Saving to file %s\n',fullfile(oDir,'Behav.mat'));
         save(fullfile(oDir,'Behav.mat'),'Task');
         save(fullfile(oDir,'Behav.mat'),'-append','taskInfos');

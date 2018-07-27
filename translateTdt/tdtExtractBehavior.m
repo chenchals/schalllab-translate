@@ -160,9 +160,20 @@ tic
           infos = allC(find(allC==startInfosCode)+1:find(allC==endInfosCode)-1);
           fprintf('Number of infos codes including start and end infos = %d of total: %d InfoCodec Codes\n',...
               numel(infos),numel(infosCodec.code2Name.keys));
-          
+          % InfoCode annot be less than startInfosOffset
+          trialsInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = 0;
+          if find(infos < startInfosOffset) % Negative value for info codes??
+              trialsInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = sum(infos < startInfosOffset);
+              warning('****Removing InfoCodes that are SMALLER startInfosOffset of %d, before parsing InfoCodes into fields***\n',startInfosOffset);
+              infos = infos(infos>=startInfosOffset);
+          end
+          % Parse infos into fields          
            for kk = 1:numel(infos)
-               trialsInfos.(infoNames{kk})(t,1) = infos(kk) - startInfosOffset;              
+               try
+                  trialsInfos.(infoNames{kk})(t,1) = infos(kk) - startInfosOffset;
+               catch me
+                   printf('No. of Infos %d of rtotal %d\n',numel(infos),numel(infosCodec.code2Name.keys));
+               end
            end
 
         end

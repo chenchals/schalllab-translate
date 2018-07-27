@@ -1,3 +1,27 @@
+%% Photodiode data... %%%%
+
+    sess='data/Joule/tdtData/troubleshootEventCodes/Joule-180726-153819';
+    
+    rawStream = TDTbin2mat(sess,'TYPE',{'streams'},'VERBOSE',0);
+    
+    
+%     pdRaw = TDTbin2mat(fullfile(rawDir,sessName),'TYPE',{'streams'},'STORE',{'PD__'},'VERBOSE',0);
+%     pdStream = pdRaw.streams.PD__.data;
+%     % for some reason, pdTime, if turned into milliseconds, gives 0 dt
+%     % values which really mess with the saccade detector... I guess all of
+%     % this will need to be done post-detection
+%     if pdRaw.streams.PD__.fs > 2000
+%         load('slowSamplingRate.mat');
+%         pdTime = (0:(length(pdStream)-1)).*(1/sampRate);
+%     else
+%         pdTime = (0:(length(pdStream)-1)).*(1/pdRaw.streams.PD__.fs);
+%     end
+% 
+
+
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 taskCodes = [1500:1510]';
 trialStartCode = 1666;
 eotCode = 1667;
@@ -223,4 +247,7 @@ for ii = 1:numel(lines)
     isCommented(ii) = startsWith(lines{ii},'//') ;
     
 end
+
+
+
 
