@@ -7,9 +7,9 @@ infosDefFile = '/Volumes/schalllab/data/Joule/TEMPO/ProcLib_7/CMD/INFOS.pro';
 
 
 %Dirs
-jDatedSessions=dir(fullfile(baseDir,'Joule-180727-1333*'));
+jDatedSessions=dir(fullfile(baseDir,'Joule-180727-13331*'));
 
-saveOutput = 1;
+saveOutput = 0;
 
 %blocks
 blockPaths=strcat({jDatedSessions.folder}',filesep,{jDatedSessions.name}');

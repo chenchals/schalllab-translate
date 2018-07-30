@@ -69,8 +69,11 @@ function [trialsTbl, trialsInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBe
     % written to TDT. We do not send negative codes. 
     % Remove all eventCodes that are '0' or less and corresponding event
     % times from the raw data
+    removeLtEq0 = 1;
+    if removeLtEq0
     tdtEventTimes(tdtEvents <= 0) = [];
     tdtEvents(tdtEvents <= 0) = [];
+    end
     % why should we do this? We are not sending negatives
     % if any(tdtEvents > 2^15)
     %   tdtEvents = tdtEvents-2^15;
@@ -106,8 +109,11 @@ function [trialsTbl, trialsInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBe
     %trialsTbl = cell2table(cell(0,numel(colNames)));
     trialsTbl = array2table(nan(nTasks,numel(colNames)));
     trialsTbl.DuplicateEventCodes = cell(nTasks,1);
-    trialsTbl.Properties.VariableNames(1:end-1) = colNames;
-    
+    trialsTbl.DuplicateEventCodesCounts = cell(nTasks,1);
+    trialsTbl.UniqueEventCodes = cell(nTasks,1);
+    trialsTbl.UniqueEventCodesCounts = cell(nTasks,1);
+    trialsTbl.Properties.VariableNames(1:end-4) = colNames;
+        
     %% Create table for all Infos and set column name as Info_Name
     trialsInfos = struct();
     infoNames = infosCodec.code2Name.values';
@@ -135,9 +141,19 @@ tic
         trialsTbl.HasTrialStartAndEot(t) = ismember(trialStartCode, evs) && ismember(eotCode, evs);
         trialsTbl.HasStartInfosAndEndInfos(t) = ismember(startInfosCode, evs) && ismember(endInfosCode, evs);
         
+        % Housekeeping
+        [evGt0Counts,evsGt0] = hist(evs(evs>0),unique(evs(evs>0)));
+        trialsTbl.UniqueEventCodes(t) = {evsGt0'}; 
+        trialsTbl.UniqueEventCodesCounts(t) = {evGt0Counts'};       
+        
         if numel(evs) ~= numel(ilt3000)
-            warning('Task block %d has duplicate event codes\n',t);
-            trialsTbl.DuplicateEventCodes(t) = {unique(dups)'}; 
+            % since histc does not count zeros
+            [dupsCount,uniqDups]= hist(dups+1,unique(dups+1));
+            uniqDups = uniqDups - 1;
+            warning('Task block %d has duplicate event codes {%s}, counts{%s}\n',...
+                t,num2str(uniqDups,'[%d] '),num2str(dupsCount,'[%d] '));
+            trialsTbl.DuplicateEventCodes(t) = {uniqDups'}; 
+            trialsTbl.DuplicateEventCodesCounts(t) = {dupsCount'}; 
             if setdiff(unique(dups),ignoreDuplicateEvents)
                trialsTbl.GoodTrial(t) = 0;
             end
@@ -164,7 +180,8 @@ tic
           trialsInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = 0;
           if find(infos < startInfosOffset) % Negative value for info codes??
               trialsInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = sum(infos < startInfosOffset);
-              warning('****Removing InfoCodes that are SMALLER startInfosOffset of %d, before parsing InfoCodes into fields***\n',startInfosOffset);
+              warning('****Removing %d InfoCodes that are SMALLER startInfosOffset of %d, before parsing InfoCodes into fields***\n',...
+                  sum(infos < startInfosOffset),startInfosOffset);
               infos = infos(infos>=startInfosOffset);
           end
           % Parse infos into fields          
