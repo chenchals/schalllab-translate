@@ -249,5 +249,157 @@ for ii = 1:numel(lines)
 end
 
 
+%% Comments for TDTbin2mat
+%TDTBIN2MAT  TDT tank data extraction.
+%   data = TDTbin2mat(BLOCK_PATH), where BLOCK_PATH is a string, retrieves
+%   all data from specified block directory in struct format.  This reads
+%   the binary tank data and requires no Windows-based software.
+%
+%   data.epocs      contains all epoc store data (onsets, offsets, values)
+%   data.snips      contains all snippet store data (timestamps, channels,
+%                   and raw data)
+%   data.streams    contains all continuous data (sampling rate and raw
+%                   data)
+%   data.scalars    contains all scalar data (samples and timestamps)
+%   data.info       contains additional information about the block
+%
+%   'parameter', value pairs
+%        'T1'         scalar, retrieve data starting at T1 (default = 0 for
+%                         beginning of recording)
+%        'T2'         scalar, retrieve data ending at T2 (default = 0 for end
+%                         of recording)
+%        'SORTNAME'   string, specify sort ID to use when extracting snippets
+%        'TYPE'       array of scalars or cell array of strings, specifies
+%                         what type of data stores to retrieve from the tank
+%                     1: all (default)
+%                     2: epocs
+%                     3: snips
+%                     4: streams
+%                     5: scalars
+%                     TYPE can also be cell array of any combination of
+%                         'epocs', 'streams', 'scalars', 'snips', 'all'
+%                     examples:
+%                         data = TDTbin2mat('MyTank','Block-1','TYPE',[1 2]);
+%                             > returns only epocs and snips
+%                         data = TDTbin2mat('MyTank','Block-1','TYPE',{'epocs','snips'});
+%                             > returns only epocs and snips
+%      'RANGES'     array of valid time range column vectors
+%      'NODATA'     boolean, only return timestamps, channels, and sort 
+%                       codes for snippets, no waveform data (default = false)
+%      'STORE'      string, specify a single store to extract
+%      'CHANNEL'    integer, choose a single channel, to extract from
+%                       stream or snippet events. Default is 0, to extract
+%                       all channels.
+%      'BITWISE'    string, specify an epoc store or scalar store that 
+%                       contains individual bits packed into a 32-bit 
+%                       integer. Onsets/offsets from individual bits will
+%                       be extracted.
+%      'HEADERS'    var, set to 1 to return only the headers for this
+%                       block, so that you can make repeated calls to read
+%                       data without having to parse the TSQ file every
+%                       time. Or, pass in the headers using this parameter.
+%                   example:
+%                       heads = TDTbin2mat(BLOCK_PATH, 'HEADERS', 1);
+%                       data = TDTbin2mat(BLOCK_PATH, 'HEADERS', heads, 'TYPE', {'snips'});
+%                       data = TDTbin2mat(BLOCK_PATH, 'HEADERS', heads, 'TYPE', {'streams'});
+%      'COMBINE'    cell, specify one or more data stores that were saved 
+%                       by the Strobed Data Storage gizmo in Synapse (or an
+%                       Async_Stream_Store macro in OpenEx). By default,
+%                       the data is stored in small chunks while the strobe
+%                       is high. This setting allows you to combine these
+%                       small chunks back into the full waveforms that were
+%                       recorded while the strobe was enabled.
+%                   example:
+%                       data = TDTbin2mat(BLOCK_PATH, 'COMBINE', {'StS1'});
+%
+
+% Base dir for data
+baseDir = '/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes';
+saveDir = fullfile(baseDir,'processed');
+eventDefFile = '/Volumes/schalllab/data/Joule/TEMPO/ProcLib_7/EVENTDEF.pro';
+infosDefFile = '/Volumes/schalllab/data/Joule/TEMPO/ProcLib_7/CMD/INFOS.pro';
+
+jLong = load('/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes/processed/Joule-180727-133314/Behav.mat');
+Task = jLong.Task;
+
+%Dirs
+jDatedSessions=dir(fullfile(baseDir,'Joule-180727-13331*'));
+
+%blocks
+blockPaths=strcat({jDatedSessions.folder}',filesep,{jDatedSessions.name}');
+
+BLOCK_PATH = blockPaths{1};
+
+heads = TDTbin2mat(BLOCK_PATH, 'HEADERS', 1);
+
+tdtRaw = TDTbin2mat(BLOCK_PATH,'TYPE',{'epocs','scalars'},'VERBOSE',0);
+ 
+pdLRaw = TDTbin2mat(BLOCK_PATH,'TYPE',{'streams'},'STORE','PhoL','VERBOSE',0);
+pdRRaw = TDTbin2mat(BLOCK_PATH,'TYPE',{'streams'},'STORE','PhoR','VERBOSE',0);
+
+% Sampling freq
+pdFs = pdLRaw.streams.PhoL.fs;
+pdStartTimeL = pdLRaw.streams.PhoL.startTime;
+pdStartTimeR = pdRRaw.streams.PhoR.startTime;
+
+% make into column
+pdL = pdLRaw.streams.PhoL.data';
+pdR = pdRRaw.streams.PhoR.data';
+
+% PDBin
+pdTbinMs = 1000.0/pdFs;
+pdTs = ((0:numel(pdL)-1)'.*pdTbinMs) + pdStartTimeL; 
+
+% to find closest index into photodiode timestamps
+%edges = [-Inf; mean([pdTs(2:end) pdTs(1:end-1)],1); +Inf];
+edges = [-Inf; pdTs; +Inf];
+closestIdx = @(x) discretize(x, edges);
+% edges = [-Inf, mean([pdTs(2:end); pdTs(1:end-1)]), +Inf];
+% I = discretize(aTest, edges);
+
+
+% Find closest index into PD timestamps for FixSPotOn_
+[closeFixOnIdx, closeFixOnMeanTs] = closestIdx(jLong.Task.FixSpotOn_);
+% Tabulate
+fixTab=table();
+fixTab.fixSpotOn=Task.FixSpotOn_;
+fixTab.fixSpotOnClosestIdx=closeFixOnIdx;
+fixTab.fixSpotOnClosestMeans=edges(closeFixOnIdx);
+fixTab.fixSpotOnClosestLeft=pdL(closeFixOnIdx);
+fixTab.fixSpotOnClosestRight=pdR(closeFixOnIdx);
+
+%% figureout the PD signal
+pdL5Avg = movmean(pdL,[4 0]);
+
+above_0_2L=find(pdL>0.15);
+idxThr = above_0_2L;
+pdLP.above_0_2.idxThr = idxThr;
+% Half window for the signal
+hw = 40;
+% Find index for rise time : time to rise from 10% range to 90% range
+riseTime = @(x) min(find(x>=range(x)*0.90)); %#ok<MXFND>
+pdLP.above_0_2.riseTime = arrayfun(@(x) riseTime(pdL5Avg(x-40:x+40)), idxThr);
+% shift center index to rise time
+idxOnRiseTime = idxThr + pdLP.above_0_2.riseTime - hw;
+pdLP.above_0_2.idxOnRiseTime = idxOnRiseTime;
+
+pdLP.above_0_2.x = cell2mat(arrayfun(@(x) [(-hw:hw)';NaN], idxThr,'UniformOutput', false));
+pdLP.above_0_2.y = cell2mat(arrayfun(@(x) [pdL5Avg(x-hw:x+hw);NaN], idxThr,'UniformOutput', false));
+pdLP.above_0_2.yOnRiseTime = cell2mat(arrayfun(@(x) [pdL5Avg(x-hw:x+hw);NaN], idxOnRiseTime,'UniformOutput', false));
+
+figure
+plot(pdLP.above_0_2.x,pdLP.above_0_2.yOnRiseTime)
+figure
+plot(pdLP.above_0_2.x,pdLP.above_0_2.y)
+
+figure
+plot(pdLP.above_0_2.x.*pdTbinMs,pdLP.above_0_2.yOnRiseTime)
+grid on
+xlabel({'Photodiode Signal centered on rise-time (reach 90% of range for each cycle)'; 'Relative Time (ms)'})
+ylabel('Phootodiode Signal Volts? or mVolts?')
+
+
+%% Check PD function
+[pdSignal] = getPhotoDiodeEvents(pdL,pdFs);
 
 
