@@ -400,6 +400,7 @@ ylabel('Phootodiode Signal Volts? or mVolts?')
 
 
 %% Check PD function
-[pdSignal] = getPhotoDiodeEvents(pdL,pdFs);
+[pdSignalL] = getPhotoDiodeEvents(pdL,pdFs);
 
+[pdSignalR] = getPhotoDiodeEvents(pdR,pdFs);
 

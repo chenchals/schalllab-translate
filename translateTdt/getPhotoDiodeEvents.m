@@ -1,35 +1,52 @@
-function [pdLP] = getPhotoDiodeEvents(pdL,pdFs)
+function [pdSignal] = getPhotoDiodeEvents(pdVolts,pdFs, thresholdPercentile,signalWidthEven)
 %GETPHOTODIODEEVENTS Summary of this function goes here
 %   Detailed explanation goes here
+    
 
+    pdSignal.thresholdPercentile = thresholdPercentile;
+    pdSignal.threshold = prctile(pdVolts,thresholdPercentile);
     % PDBin
     pdTbinMs = 1000.0/pdFs;
+    
+    % make it a column vector
+    pdVolts = pdVolts(:);
 
     %% figureout the PD signal
-    pdL5Avg = movmean(pdL,[4 0]);
+    pdVolts3PtAvg = movmean(pdVolts,[2 0]);
 
-    above_0_2L=find(pdL>0.15);
-    idxThr = above_0_2L;
-    pdLP.above_0_2.idxThr = idxThr;
+    aboveThr=find(pdVolts>pdSignal.threshold);
+    idxThr = aboveThr;
+    pdSignal.idxThr = idxThr;
     % Half window for the signal
-    hw = 40;
+    hw = round(signalWidthEven);
     % Find index for rise time : time to rise from 10% range to 90% range
-    riseTime = @(x) min(find(x>=range(x)*0.90)); %#ok<MXFND>
-    pdLP.above_0_2.riseTime = arrayfun(@(x) riseTime(pdL5Avg(x-40:x+40)), idxThr);
+    riseEndTime = @(x) min(find(x>=min(x)+range(x)*0.90)); %#ok<MXFND>
+    riseBeginTime = @(x) min(find(x>=min(x)+range(x)*0.10)); %#ok<MXFND>
+    pdSignal.riseEndTime = arrayfun(@(x) riseEndTime(pdVolts3PtAvg(x-hw:x+hw)), idxThr);
+    pdSignal.riseBeginTime = arrayfun(@(x) riseBeginTime(pdVolts3PtAvg(x-hw:x+hw)), idxThr);
     % shift center index to rise time
-    idxOnRiseTime = idxThr + pdLP.above_0_2.riseTime - hw;
-    pdLP.above_0_2.idxOnRiseTime = idxOnRiseTime;
+    idxOnRiseEndTime = idxThr + pdSignal.riseEndTime - hw;
+    pdSignal.idxOnRiseTime = idxOnRiseEndTime;
 
-    pdLP.above_0_2.x = cell2mat(arrayfun(@(x) [(-hw:hw)';NaN], idxThr,'UniformOutput', false));
-    pdLP.above_0_2.y = cell2mat(arrayfun(@(x) [pdL5Avg(x-hw:x+hw);NaN], idxThr,'UniformOutput', false));
-    pdLP.above_0_2.yOnRiseTime = cell2mat(arrayfun(@(x) [pdL5Avg(x-hw:x+hw);NaN], idxOnRiseTime,'UniformOutput', false));
+    pdSignal.ts = cell2mat(arrayfun(@(x) (-hw:hw).*pdTbinMs, idxOnRiseEndTime,'UniformOutput', false));
+    pdSignal.pdVolts = cell2mat(arrayfun(@(x) pdVolts(x-hw:x+hw)', idxOnRiseEndTime,'UniformOutput', false));
+    pdSignal.x = cell2mat(arrayfun(@(x) [(-hw:hw)';NaN], idxOnRiseEndTime,'UniformOutput', false));
+    pdSignal.pdVoltsOnRiseEndTime = cell2mat(arrayfun(@(x) [pdVolts3PtAvg(x-hw:x+hw);NaN], idxOnRiseEndTime,'UniformOutput', false));
+    pdVolts_raw = cell2mat(arrayfun(@(x) [pdVolts(x-hw:x+hw);NaN], idxOnRiseEndTime,'UniformOutput', false));
 
     figure
-    plot(pdLP.above_0_2.x.*pdTbinMs,pdLP.above_0_2.yOnRiseTime)
+    plot(pdSignal.x.*pdTbinMs,pdSignal.pdVoltsOnRiseEndTime)
+    hold on
+    plot(pdSignal.x.*pdTbinMs,pdVolts_raw,'r')
+    hold off
+    
     grid on
     xlabel({'Photodiode Signal centered on rise-time (reach 90% of range for each cycle)'; 'Relative Time (ms)'})
     ylabel('Phootodiode Signal Volts? or mVolts?')
-
+    
+    text(min(xlim())*0.95,max(ylim())*0.95,sprintf('#PD Events = %d',numel(pdSignal.idxOnRiseTime)));
+    text(min(xlim())*0.95,max(ylim())*0.90,sprintf('#PD Thresh Percentile = %0.4f',pdSignal.thresholdPercentile));
+    text(min(xlim())*0.95,max(ylim())*0.85,sprintf('#PD Thresh = %0.4f',pdSignal.threshold));
 
 
 end
