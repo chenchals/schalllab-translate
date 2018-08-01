@@ -404,3 +404,20 @@ ylabel('Phootodiode Signal Volts? or mVolts?')
 
 [pdSignalR] = getPhotoDiodeEvents(pdR,pdFs);
 
+sessDir = '/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes/Joule-180731-110124';
+pdL = TDTbin2mat(sessDir,'TYPE',{'streams'},'STORE','PhoL','VERBOSE',0);
+pdR = TDTbin2mat(sessDir,'TYPE',{'streams'},'STORE','PhoR','VERBOSE',0);
+
+pdFs = pdL.streams.PhoL.fs;
+
+[pdLSignal] = getPhotoDiodeEvents(pdL.streams.PhoL.data,pdFs,99.9,50);
+[pdRSignal] = getPhotoDiodeEvents(pdR.streams.PhoR.data,pdFs,99.9,50);
+
+pdLUniqIdx = unique(pdLSignal.idxOnRiseEndTime);
+pdRUniqIdx = unique(pdRSignal.idxOnRiseEndTime);
+
+pdRLUniq = array2table(nan(max([numel(pdLUniqIdx),numel(pdRUniqIdx)]),2));
+pdRLUniq(1:numel(pdRUniqIdx),1)=array2table(pdRUniqIdx);
+pdRLUniq(1:numel(pdLUniqIdx),2)=array2table(pdLUniqIdx);
+pdRLUniq.Properties.VariableNames={'PD_R','PD_L'};
+

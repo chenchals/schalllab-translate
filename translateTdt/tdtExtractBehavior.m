@@ -69,10 +69,10 @@ function [trialsTbl, trialsInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBe
     % written to TDT. We do not send negative codes. 
     % Remove all eventCodes that are '0' or less and corresponding event
     % times from the raw data
-    removeLtEq0 = 1;
+    removeLtEq0 = true;
     if removeLtEq0
-    tdtEventTimes(tdtEvents <= 0) = [];
-    tdtEvents(tdtEvents <= 0) = [];
+        tdtEventTimes(tdtEvents <= 0) = [];
+        tdtEvents(tdtEvents <= 0) = [];
     end
     % why should we do this? We are not sending negatives
     % if any(tdtEvents > 2^15)
@@ -92,7 +92,7 @@ function [trialsTbl, trialsInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBe
     nEvents = numel(tdtEvents);
     iTaskStart =  find(ismember(tdtEvents,taskStartCodes));
     if useTaskEndCode    
-        iTaskEnd = find(ismember(tdtEvents,decodeEvent('CmanEnd_'))); %#ok<UNRCH>
+        iTaskEnd = find(ismember(tdtEvents,decodeEvent('TaskEnd_'))); %#ok<UNRCH>
     else
         iTaskEnd = [iTaskStart(2:end)-1;nEvents];
     end
@@ -132,7 +132,6 @@ tic
         iInfos =  find(allC >= 3000);
         % check unique Event codes
         [evs,iUniq] = unique(evCodesTemp,'stable');
-        dups = evCodesTemp(setdiff(1:numel(evCodesTemp),iUniq));
         tms = tmsTemp(iUniq);
         % default some vars to be present
         trialsTbl.TaskBlock(t) = t;
@@ -147,14 +146,16 @@ tic
         trialsTbl.UniqueEventCodesCounts(t) = {evGt0Counts'};       
         
         if numel(evs) ~= numel(ilt3000)
-            % since histc does not count zeros
-            [dupsCount,uniqDups]= hist(dups+1,unique(dups+1));
-            uniqDups = uniqDups - 1;
+            % In case we want to count zeros, using hist (as histc 
+            % does not count zeros) by incrementing all codes by 1
+            [dupsCount,uniqDups]= hist(evCodesTemp+1,unique(evs+1));
+            uniqDups = uniqDups(dupsCount > 1) - 1;
+            dupsCount = dupsCount(dupsCount > 1);
             warning('Task block %d has duplicate event codes {%s}, counts{%s}\n',...
                 t,num2str(uniqDups,'[%d] '),num2str(dupsCount,'[%d] '));
             trialsTbl.DuplicateEventCodes(t) = {uniqDups'}; 
             trialsTbl.DuplicateEventCodesCounts(t) = {dupsCount'}; 
-            if setdiff(unique(dups),ignoreDuplicateEvents)
+            if setdiff(unique(uniqDups),ignoreDuplicateEvents)
                trialsTbl.GoodTrial(t) = 0;
             end
         end

@@ -2,12 +2,12 @@
 % Base dir for data
 baseDir = '/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes';
 saveDir = fullfile(baseDir,'processed');
-eventDefFile = '/Volumes/schalllab/data/Joule/TEMPO/ProcLib_7/EVENTDEF.pro';
-infosDefFile = '/Volumes/schalllab/data/Joule/TEMPO/ProcLib_7/CMD/INFOS.pro';
+eventDefFile = '/Volumes/schalllab/data/Joule/TEMPO/currProcLib_10/EVENTDEF.pro';
+infosDefFile = '/Volumes/schalllab/data/Joule/TEMPO/currProcLib_10/CMD/INFOS.pro';
 
 
 %Dirs
-jDatedSessions=dir(fullfile(baseDir,'Joule-180727-13331*'));
+jDatedSessions=dir(fullfile(baseDir,'Joule-180731-11012*'));
 
 saveOutput = 0;
 
