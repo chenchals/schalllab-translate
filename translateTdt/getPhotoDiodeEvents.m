@@ -41,7 +41,7 @@ function [pdSignal] = getPhotoDiodeEvents(pdVolts, pdFs, thresholdPercentile, si
 %   Example2: High sampling frequency 2.4414E+4
 %       [pdSignal] = getPhotoDiodeEvents(tdtRaw.streams.PhoL.data,tdtRaw.streams.PhoL.fs,99.9,40);
 %
-% See also PRCTILE, MOVMEAN, 
+% See also PRCTILE, MOVMEAN
     
     timeToRise = [0.10 0.90]; % 0 - 1
     overplotRaw = false;
