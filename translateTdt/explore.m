@@ -421,3 +421,7 @@ pdRLUniq(1:numel(pdRUniqIdx),1)=array2table(pdRUniqIdx);
 pdRLUniq(1:numel(pdLUniqIdx),2)=array2table(pdLUniqIdx);
 pdRLUniq.Properties.VariableNames={'PD_R','PD_L'};
 
+tic
+[photodiodeEvents, pdFirstSignal, pdLastSignal] = processPhotodiode(pdR.streams.PhoR.data, pdL.streams.PhoL.data, pdFs);
+toc
+

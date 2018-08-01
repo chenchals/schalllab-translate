@@ -1,5 +1,5 @@
-function [pdSignal] = getPhotoDiodeEvents(pdVolts, pdFs, thresholdPercentile, signalWidth)
-%GETPHOTODIODEEVENTS Photo diode signal processing
+function [pdSignal] = getPhotodiodeEvents(pdVolts, samplingFreq, thresholdPercentile, signalWidthInTicks)
+%GETPHOTODIODEEVENTS Photodiode signal processing
 %   Computes threshold value for PD signal, extracts pd-on vectors around
 %   the threshold values, computes signal-rise-end-time for each
 %   3-point-moving-average of pd-on vector, centers pd-on (and 3-pt avg)
@@ -11,12 +11,12 @@ function [pdSignal] = getPhotoDiodeEvents(pdVolts, pdFs, thresholdPercentile, si
 %   Inputs:
 %     pdVolts : Raw TDT data for photodiode stream. Usually
 %         (tdtRaw.streams.PD__.data or tdtRaw.streams.PhoL.data,...)
-%     pdFs : Sampling frequency for the Photodiode channel. Usually 
+%     samplingFreq : Sampling frequency for the Photodiode channel. Usually 
 %         (tdtRaw.streams.PD__.fs or tdtRaw.streams.PhoL.fs,...)
 %     thresholdPercentile : Percentile to use for thresholding the
 %         Photodiode raw signal. Use: 99.9.  Lower thresholds will yeald
 %         too many PD event chunks
-%     signalWidth : Width of photodiode signal to extract centered on the
+%     signalWidthInTicks : Width of photodiode signal to extract centered on the
 %         threshold for each pd-on vector. For low frequency sampling uise
 %         6, for high frequency sampling use 40
 %    
@@ -48,13 +48,17 @@ function [pdSignal] = getPhotoDiodeEvents(pdVolts, pdFs, thresholdPercentile, si
     % This value is used to 'jump' to next pd-on vector. This value must be
     % small for lo sampling rate (2?) and around 5 for 24414 Hz sampling
     % rate.
-    runLength = 5; 
+    if samplingFreq > 20000
+        runLength = 5;
+    else
+        runLength = 2;
+    end
     overplotRaw = false;
     
     pdSignal.thresholdPercentile = thresholdPercentile;
     pdSignal.threshold = prctile(pdVolts,thresholdPercentile);
     % PDBin
-    pdTbinMs = 1000.0/pdFs;
+    pdTbinMs = 1000.0/samplingFreq;
     
     % make it a column vector
     pdVolts = pdVolts(:);
@@ -72,7 +76,7 @@ function [pdSignal] = getPhotoDiodeEvents(pdVolts, pdFs, thresholdPercentile, si
     aboveThrIdx=aboveThrIdxAll(diff(aboveThrIdxAll)>runLength);
        
     % Half window for the signal
-    hw = round(signalWidth);
+    hw = round(signalWidthInTicks);
     % Find index for rise time : time to rise from 10% range to 90% range
     riseEndTime = @(x) min(find(x>=min(x)+range(x)*timeToRise(2))); %#ok<MXFND>
     riseBeginTime = @(x) min(find(x>=min(x)+range(x)*timeToRise(1))); %#ok<MXFND>
@@ -103,7 +107,6 @@ function [pdSignal] = getPhotoDiodeEvents(pdVolts, pdFs, thresholdPercentile, si
     text(min(xlim())*0.95,max(ylim())*0.95,sprintf('#PD Events = %d',numel(pdSignal.idxOnRiseEndTime)));
     text(min(xlim())*0.95,max(ylim())*0.90,sprintf('#PD Thresh Percentile = %0.4f',pdSignal.thresholdPercentile));
     text(min(xlim())*0.95,max(ylim())*0.85,sprintf('#PD Thresh = %0.4f',pdSignal.threshold));
-
 
 end
 
