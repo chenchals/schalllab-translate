@@ -1,4 +1,4 @@
-function [photodiodeEvents, pdFirstSignal, pdLastSignal] = processPhotodiode(pdFirst, pdLast, samplingFreq)
+function [photodiodeEvents, pdFirstSignal, pdLastSignal] = processPhotodiode(pdFirst_Last, samplingFreq)
 %PROCESSPHOTODIODE Summary of this function goes here
 %   Detailed explanation goes here
 %
@@ -12,22 +12,48 @@ function [photodiodeEvents, pdFirstSignal, pdLastSignal] = processPhotodiode(pdF
     end
     tickWidthMs = 1000.0/samplingFreq;
     
-    fprintf('Processing first photodiode...\n');
-    [pdFirstSignal] = getPhotodiodeEvents(pdFirst,samplingFreq,thresholdPercentile,signalWidthInTicks);
-    pdFirstUniqIdx = unique(pdFirstSignal.idxOnRiseEndTime);
-    pdFirstUniqMs = pdFirstUniqIdx.*tickWidthMs;
-        
-    fprintf('Processing last photodiode...\n');
-    [pdLastSignal] = getPhotodiodeEvents(pdLast,samplingFreq,thresholdPercentile,signalWidthInTicks);
-    pdLastUniqIdx = unique(pdLastSignal.idxOnRiseEndTime);
+    if numel(pdFirst_Last)==1
+        pdFirst = pdFirst_Last{1};
+        pdLast = [];
+    else % use only 1st and last
+       pdFirst = pdFirst_Last{1};
+       pdLast = pdFirst_Last{end};        
+    end
+    
+    if ~isempty(pdFirst)
+        if ~isempty(pdLast)
+            fprintf('Processing first photodiode...\n');
+        else
+            fprintf('Processing *single* photodiode...\n');
+        end
+        [pdFirstSignal] = getPhotodiodeEvents(pdFirst,samplingFreq,thresholdPercentile,signalWidthInTicks);
+        pdFirstUniqIdx = unique(pdFirstSignal.idxOnRiseEndTime);
+        nRows = numel(pdFirstUniqIdx);
+    end
+    
+    if ~isempty(pdLast)
+        fprintf('Processing last photodiode...\n');
+        [pdLastSignal] = getPhotodiodeEvents(pdLast,samplingFreq,thresholdPercentile,signalWidthInTicks);
+        pdLastUniqIdx = unique(pdLastSignal.idxOnRiseEndTime);
+        nRows = max(numel(pdLastUniqIdx),nRows);
+    end
 
-    nRows = max([numel(pdLastUniqIdx),numel(pdFirstUniqIdx)]);
+    if isempty(pdLast) && ~isempty(pdFirst)
+       photodiodeEvents = array2table(nan(nRows,1));
+       photodiodeEvents(1:numel(pdFirstUniqIdx),1)=array2table(pdFirstUniqIdx);
+       photodiodeEvents.Properties.VariableNames={'PD_First_Ticks'};
+       photodiodeEvents.PD_First_Ms = photodiodeEvents.PD_First_Ticks.*tickWidthMs;
+       photodiodeEvents.PD_Ms = photodiodeEvents.PD_First_Ticks.*tickWidthMs;
+       pdLastSignal = struct();
+       return;
+    end
+    
     photodiodeEvents = array2table(nan(nRows,2));
     photodiodeEvents(1:numel(pdFirstUniqIdx),1)=array2table(pdFirstUniqIdx);
     photodiodeEvents(1:numel(pdLastUniqIdx),2)=array2table(pdLastUniqIdx);
-    photodiodeEvents.Properties.VariableNames={'PD_First_In_Ticks','PD_Last_In_Ticks'};
-    photodiodeEvents.PD_First_In_Ms = photodiodeEvents.PD_First_In_Ticks.*tickWidthMs;
-    photodiodeEvents.PD_Last_In_Ms = photodiodeEvents.PD_Last_In_Ticks.*tickWidthMs;
+    photodiodeEvents.Properties.VariableNames={'PD_First_Ticks','PD_Last_Ticks'};
+    photodiodeEvents.PD_First_Ms = photodiodeEvents.PD_First_Ticks.*tickWidthMs;
+    photodiodeEvents.PD_Last_Ms = photodiodeEvents.PD_Last_Ticks.*tickWidthMs;
     
     % Pair the PD_First event tick with corresponding *next* PD_Last event tick for
     % all PD_First event ticks
@@ -37,15 +63,15 @@ function [photodiodeEvents, pdFirstSignal, pdLastSignal] = processPhotodiode(pdF
     pdLastUniqIdx(end+1) = NaN;
     pairedLast(isnan(pairedLast)) = numel(pdLastUniqIdx);
     
-    photodiodeEvents.PD_Last_In_Ticks_Paired = [pdLastUniqIdx(pairedLast);nan(nRows-numel(pairedLast),1)];
-    photodiodeEvents.PD_Last_In_Ms_Paired = photodiodeEvents.PD_Last_In_Ticks_Paired.*tickWidthMs;
-    photodiodeEvents.PD_Last_Minus_First_In_Ticks_Paired = ...
-        photodiodeEvents.PD_Last_In_Ticks_Paired - photodiodeEvents.PD_First_In_Ticks;
-    photodiodeEvents.PD_Last_Minus_First_In_Ms_Paired = ...
-        photodiodeEvents.PD_Last_Minus_First_In_Ticks_Paired.*tickWidthMs;
+    photodiodeEvents.PD_Last_Ticks_Paired = [pdLastUniqIdx(pairedLast);nan(nRows-numel(pairedLast),1)];
+    photodiodeEvents.PD_Last_Ms_Paired = photodiodeEvents.PD_Last_Ticks_Paired.*tickWidthMs;
+    photodiodeEvents.PD_Last_Minus_First_Ticks_Paired = ...
+        photodiodeEvents.PD_Last_Ticks_Paired - photodiodeEvents.PD_First_Ticks;
+    photodiodeEvents.PD_Last_Minus_First_Ms_Paired = ...
+        photodiodeEvents.PD_Last_Minus_First_Ticks_Paired.*tickWidthMs;
     
     photodiodeEvents.PD_Ms = ...
-        (photodiodeEvents.PD_Last_In_Ticks_Paired + photodiodeEvents.PD_First_In_Ticks).*(tickWidthMs/2);
+        (photodiodeEvents.PD_Last_Ticks_Paired + photodiodeEvents.PD_First_Ticks).*(tickWidthMs/2);
     
 end
 

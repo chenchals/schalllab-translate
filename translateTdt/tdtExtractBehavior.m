@@ -152,7 +152,7 @@ tic
             uniqDups = uniqDups(dupsCount > 1) - 1;
             dupsCount = dupsCount(dupsCount > 1);
             warning('Task block %d has duplicate event codes {%s}, counts{%s}\n',...
-                t,num2str(uniqDups,'[%d] '),num2str(dupsCount,'[%d] '));
+                t,num2str(uniqDups,'[%d], '),num2str(dupsCount,'[%d] '));
             trialsTbl.DuplicateEventCodes(t) = {uniqDups'}; 
             trialsTbl.DuplicateEventCodesCounts(t) = {dupsCount'}; 
             if setdiff(unique(uniqDups),ignoreDuplicateEvents)
@@ -190,7 +190,7 @@ tic
                try
                   trialsInfos.(infoNames{kk})(t,1) = infos(kk) - startInfosOffset;
                catch me
-                   printf('No. of Infos %d of rtotal %d\n',numel(infos),numel(infosCodec.code2Name.keys));
+                   fprintf('No. of Infos %d of rtotal %d\n',numel(infos),numel(infosCodec.code2Name.keys));
                end
            end
 

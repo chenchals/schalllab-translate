@@ -404,24 +404,96 @@ ylabel('Phootodiode Signal Volts? or mVolts?')
 
 [pdSignalR] = getPhotoDiodeEvents(pdR,pdFs);
 
-sessDir = '/Volumes/schalllab/data/Joule/tdtData/troubleshootEventCodes/Joule-180731-110124';
+
+sess = 'tdtData/troubleshootEventCodes/Joule-180801-154239';
+
+sess = 'tdtData/troubleshootEventCodes/Joule-180731-110124';%Joule-180801-122935';
+sess = 'tdtData/Countermanding/Joule-180801-122935';
+sessDir = fullfile('/Volumes/schalllab/data/Joule',sess);
+
+sessDir = 'data/Joule/tdtData/troubleshootEventCodes/Joule-180804-105102';
+
 pdL = TDTbin2mat(sessDir,'TYPE',{'streams'},'STORE','PhoL','VERBOSE',0);
 pdR = TDTbin2mat(sessDir,'TYPE',{'streams'},'STORE','PhoR','VERBOSE',0);
 
 pdFs = pdL.streams.PhoL.fs;
 
-[pdLSignal] = getPhotoDiodeEvents(pdL.streams.PhoL.data,pdFs,99.9,50);
-[pdRSignal] = getPhotoDiodeEvents(pdR.streams.PhoR.data,pdFs,99.9,50);
-
-pdLUniqIdx = unique(pdLSignal.idxOnRiseEndTime);
-pdRUniqIdx = unique(pdRSignal.idxOnRiseEndTime);
-
-pdRLUniq = array2table(nan(max([numel(pdLUniqIdx),numel(pdRUniqIdx)]),2));
-pdRLUniq(1:numel(pdRUniqIdx),1)=array2table(pdRUniqIdx);
-pdRLUniq(1:numel(pdLUniqIdx),2)=array2table(pdLUniqIdx);
-pdRLUniq.Properties.VariableNames={'PD_R','PD_L'};
-
 tic
-[photodiodeEvents, pdFirstSignal, pdLastSignal] = processPhotodiode(pdR.streams.PhoR.data, pdL.streams.PhoL.data, pdFs);
+[photodiodeEvents1804, pdFirstSignal1804, pdLastSignal1804] = processPhotodiode({pdL.streams.PhoL.data, pdR.streams.PhoR.data}, pdFs);
 toc
+
+
+
+
+%% Check for Kaleb's data
+kl19Sess='data/Kaleb/antiSessions/Darwin-180720-093619';
+klPdRaw = TDTbin2mat(kl19Sess,'TYPE',{'streams'},'STORE','PD__','VERBOSE', 0);
+pdFs = klPdRaw.streams.PD__.fs;
+tic
+[klPhotodiodeEvents, klPdFirstSignal] = processPhotodiode({klPdRaw.streams.PD__.data}, pdFs);
+toc
+
+%% plot photodiode orphan signals in gray...
+pdFirstVolts = pdFirstSignalLarge.pdVolts;
+pdLastVolts = pdLastSignalLarge.pdVolts;
+
+nTimeBins = size(pdFirstVolts,2);
+signalTimeMs = (-floor(nTimeBins/2):floor(nTimeBins/2))';
+
+nFirst = size(pdFirstVolts,1);
+nLast = size(pdLastVolts,1);
+
+orphanVolts = [];
+orphansInFirst = false;
+
+if nFirst > nLast
+    orphansInFirst = true;
+    orphanVolts = pdFirstVolts(nLast+1:end,:);    
+elseif nLast > nFirst
+    orphansInFirst = false;
+    orphanVolts = pdLastVolts(nFirst+1:end,:);
+else %both are same size
+end
+
+nOrphans = size(orphanVolts,1);
+orphansY = [orphanVolts';nan(1,nOrphans)];
+orphansX = repmat([signalTimeMs;NaN],1,nOrphans);
+
+plot(orphansX(:),orphansY(:),'g')
+
+
+pdLsmooth = movmean(pdL.streams.PhoL.data,[2 0]);
+
+beh = load('dataProcessed/data/Joule/tdtData/troubleshootEventCodes/Joule-180802-121714/Behav.mat');
+pd1Start = photodiodeEventsLarge.PD_First_Ms;
+fixSpotOn = beh.Task.FixSpotOn_;
+
+% to find closest index into photodiode timestamps
+% edges = [-Inf; pd1Start; +Inf];
+% closestIdx = @(x) discretize(x, edges);
+% Find closest index into PD timestamps for FixSPotOn_
+% [closeFixOnIdx, closeFixOnMeanTs] = closestIdx(fixSpotOn);
+closestIdx = nan(numel(fixSpotOn,1));
+
+for ii = 1:numel(fixSpotOn)
+    d = abs(pd1Start-fixSpotOn(ii));
+    closestIdx(ii,1) = find(d==min(d),1);
+end
+
+nTimeBins = size(pdFirstVolts,2);
+xTimeInTicks = (-floor(nTimeBins/2):floor(nTimeBins/2))';
+xTimeMs = xTimeInTicks*1000/pdFs;
+for ii = 1:numel(closestIdx)
+    t = pd1Start(closestIdx(ii));
+    x =  t + xTimeMs;
+    y = pdFirstVolts(closestIdx(ii),:);
+    f = fixSpotOn(ii);
+    plot(x,y);
+    line([t t],ylim)
+    line([f f],ylim,'color','r')
+    text(x(10),double(y(50)),sprintf('Photodiode first (ms) = %.3f\n fixSpotOn event (ms) = %.3f',t,f))
+    
+    drawnow
+    pause
+end
 

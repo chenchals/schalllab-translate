@@ -57,6 +57,8 @@ function [pdSignal] = getPhotodiodeEvents(pdVolts, samplingFreq, thresholdPercen
     
     pdSignal.thresholdPercentile = thresholdPercentile;
     pdSignal.threshold = prctile(pdVolts,thresholdPercentile);
+    
+    %pdSignal.threshold = 0.1;
     % PDBin
     pdTbinMs = 1000.0/samplingFreq;
     
