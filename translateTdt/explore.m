@@ -410,8 +410,12 @@ sess = 'tdtData/troubleshootEventCodes/Joule-180801-154239';
 sess = 'tdtData/troubleshootEventCodes/Joule-180731-110124';%Joule-180801-122935';
 sess = 'tdtData/Countermanding/Joule-180801-122935';
 sessDir = fullfile('/Volumes/schalllab/data/Joule',sess);
+%Joule-180806-114038
+sessDir = 'data/Joule/tdtData/troubleshootEventCodes/Joule-180806-115158';
+sessDir = 'data/Joule/tdtData/troubleshootEventCodes/Joule-180806-114038';
+sessDir = 'data/Joule/tdtData/troubleshootEventCodes/Joule-180806-122858';
+sessDir = 'data/Joule/tdtData/troubleshootEventCodes/Joule-180806-134425';
 
-sessDir = 'data/Joule/tdtData/troubleshootEventCodes/Joule-180804-105102';
 
 pdL = TDTbin2mat(sessDir,'TYPE',{'streams'},'STORE','PhoL','VERBOSE',0);
 pdR = TDTbin2mat(sessDir,'TYPE',{'streams'},'STORE','PhoR','VERBOSE',0);
@@ -419,23 +423,28 @@ pdR = TDTbin2mat(sessDir,'TYPE',{'streams'},'STORE','PhoR','VERBOSE',0);
 pdFs = pdL.streams.PhoL.fs;
 
 tic
-[photodiodeEvents1804, pdFirstSignal1804, pdLastSignal1804] = processPhotodiode({pdL.streams.PhoL.data, pdR.streams.PhoR.data}, pdFs);
+[photodiodeEvents, pdFirstSignal, pdLastSignal] = processPhotodiode({pdL.streams.PhoL.data, pdR.streams.PhoR.data}, pdFs);
 toc
 
 
 
-
-%% Check for Kaleb's data
-kl19Sess='data/Kaleb/antiSessions/Darwin-180720-093619';
-klPdRaw = TDTbin2mat(kl19Sess,'TYPE',{'streams'},'STORE','PD__','VERBOSE', 0);
-pdFs = klPdRaw.streams.PD__.fs;
-tic
-[klPhotodiodeEvents, klPdFirstSignal] = processPhotodiode({klPdRaw.streams.PD__.data}, pdFs);
-toc
+% 
+% %% Check for Kaleb's data
+% kl19Sess='data/Kaleb/antiSessions/Darwin-180720-093619';
+% klPdRaw = TDTbin2mat(kl19Sess,'TYPE',{'streams'},'STORE','PD__','VERBOSE', 0);
+% pdFs = klPdRaw.streams.PD__.fs;
+% tic
+% [klPhotodiodeEvents, klPdFirstSignal] = processPhotodiode({klPdRaw.streams.PD__.data}, pdFs);
+% toc
 
 %% plot photodiode orphan signals in gray...
-pdFirstVolts = pdFirstSignalLarge.pdVolts;
-pdLastVolts = pdLastSignalLarge.pdVolts;
+
+
+
+
+
+pdFirstVolts = pdFirstSignal.pdVolts;
+pdLastVolts = pdLastSignal.pdVolts;
 
 nTimeBins = size(pdFirstVolts,2);
 signalTimeMs = (-floor(nTimeBins/2):floor(nTimeBins/2))';
@@ -459,41 +468,48 @@ nOrphans = size(orphanVolts,1);
 orphansY = [orphanVolts';nan(1,nOrphans)];
 orphansX = repmat([signalTimeMs;NaN],1,nOrphans);
 
+figure
 plot(orphansX(:),orphansY(:),'g')
 
 
 pdLsmooth = movmean(pdL.streams.PhoL.data,[2 0]);
+pdRsmooth = movmean(pdR.streams.PhoR.data,[2 0]);
 
-beh = load('dataProcessed/data/Joule/tdtData/troubleshootEventCodes/Joule-180802-121714/Behav.mat');
-pd1Start = photodiodeEventsLarge.PD_First_Ms;
-fixSpotOn = beh.Task.FixSpotOn_;
+beh = load('dataProcessed/data/Joule/tdtData/troubleshootEventCodes/Joule-180806-122858/Behav.mat');
+pdFirstMs = photodiodeEvents.PD_First_Ms;
+pdLastMs = photodiodeEvents.PD_Last_Ms_Paired;
+
+eventName = 'PDtrigger_';
+%eventName = 'FixSpotOn_';
+eventTime = beh.Task.(eventName);
 
 % to find closest index into photodiode timestamps
 % edges = [-Inf; pd1Start; +Inf];
 % closestIdx = @(x) discretize(x, edges);
 % Find closest index into PD timestamps for FixSPotOn_
 % [closeFixOnIdx, closeFixOnMeanTs] = closestIdx(fixSpotOn);
-closestIdx = nan(numel(fixSpotOn,1));
+closestIdx = nan(numel(eventTime,1));
 
-for ii = 1:numel(fixSpotOn)
-    d = abs(pd1Start-fixSpotOn(ii));
+for ii = 1:numel(eventTime)
+    d = abs(pdLastMs-eventTime(ii));
     closestIdx(ii,1) = find(d==min(d),1);
 end
-
+figure
 nTimeBins = size(pdFirstVolts,2);
 xTimeInTicks = (-floor(nTimeBins/2):floor(nTimeBins/2))';
 xTimeMs = xTimeInTicks*1000/pdFs;
+tMinusF = nan(numel(closestIdx),1);
 for ii = 1:numel(closestIdx)
-    t = pd1Start(closestIdx(ii));
+    t = pdLastMs(closestIdx(ii));
     x =  t + xTimeMs;
-    y = pdFirstVolts(closestIdx(ii),:);
-    f = fixSpotOn(ii);
+    y = pdLastVolts(closestIdx(ii),:);
+    f = eventTime(ii);
+    tMinusF(ii,1) = t - f;
     plot(x,y);
     line([t t],ylim)
     line([f f],ylim,'color','r')
-    text(x(10),double(y(50)),sprintf('Photodiode first (ms) = %.3f\n fixSpotOn event (ms) = %.3f',t,f))
+    text(x(10),double(y(50)),sprintf('Photodiode first (ms) = %.3f\n [%s] event (ms) = %.3f',t,eventName,f))
     
     drawnow
-    pause
 end
 

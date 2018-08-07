@@ -377,7 +377,7 @@ for ev = 1:numel(eventNames)
                 ind = ind + 1;
             end
             data.(varname).data{ii} = data.(varname).data{ii}(:,1:chanIndex-1);
-        end
+   end
     end
     if numRanges == 1
         data.(varname).data = [data.(varname).data{ii}];

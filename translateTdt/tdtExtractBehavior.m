@@ -60,9 +60,12 @@ function [trialsTbl, trialsInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBe
   %%  Process Infos specific codes  %%
   %   Infos specific names are indexed by their order of occurrance in the
   %   INFOS.pro file (see INFOS.pro file for details)
+  infosCodec = struct();
+  if ~isempty(infosCodecFile)
     [infosCodec.code2Name, infosCodec.name2Code] = ...
         getCodeDefs(regexprep(infosCodecFile,'[/\\]',filesep));
-    
+  end    
+    hasInfosCodec =  isfield(infosCodec, 'code2name');
     %%  Read TDT events and event times   %%
     [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath);
     % TDT events have '0' for code due to the way the TEMPO ring buffer is
@@ -110,14 +113,17 @@ function [trialsTbl, trialsInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBe
     trialsTbl = array2table(nan(nTasks,numel(colNames)));
     trialsTbl.DuplicateEventCodes = cell(nTasks,1);
     trialsTbl.DuplicateEventCodesCounts = cell(nTasks,1);
+    trialsTbl.DuplicateEventCodesTimes = cell(nTasks,1);
     trialsTbl.UniqueEventCodes = cell(nTasks,1);
     trialsTbl.UniqueEventCodesCounts = cell(nTasks,1);
-    trialsTbl.Properties.VariableNames(1:end-4) = colNames;
+    trialsTbl.Properties.VariableNames(1:end-5) = colNames;
         
     %% Create table for all Infos and set column name as Info_Name
     trialsInfos = struct();
+    if hasInfosCodec
     infoNames = infosCodec.code2Name.values';
     startInfosOffset = 3000;
+    end
     
     warning('OFF','MATLAB:table:RowsAddedExistingVars');
     ignoreDuplicateEvents = [2777 2776];% manual juice...
@@ -129,17 +135,19 @@ tic
         ilt3000 = find(allC < 3000);
         evCodesTemp = allC(ilt3000);
         tmsTemp = allT(ilt3000);
-        iInfos =  find(allC >= 3000);
+        if hasInfosCodec
+            iInfos =  find(allC >= 3000);
+        end
         % check unique Event codes
         [evs,iUniq] = unique(evCodesTemp,'stable');
         tms = tmsTemp(iUniq);
         % default some vars to be present
         trialsTbl.TaskBlock(t) = t;
-        trialsTbl.GoodTrial(t) = 1;
+
         trialsTbl.HasInfosCodes(t) = 1;
         trialsTbl.HasTrialStartAndEot(t) = ismember(trialStartCode, evs) && ismember(eotCode, evs);
         trialsTbl.HasStartInfosAndEndInfos(t) = ismember(startInfosCode, evs) && ismember(endInfosCode, evs);
-        
+        trialsTbl.GoodTrial(t) = trialsTbl.HasTrialStartAndEot(t) && trialsTbl.HasStartInfosAndEndInfos(t);
         % Housekeeping
         [evGt0Counts,evsGt0] = hist(evs(evs>0),unique(evs(evs>0)));
         trialsTbl.UniqueEventCodes(t) = {evsGt0'}; 
@@ -151,18 +159,23 @@ tic
             [dupsCount,uniqDups]= hist(evCodesTemp+1,unique(evs+1));
             uniqDups = uniqDups(dupsCount > 1) - 1;
             dupsCount = dupsCount(dupsCount > 1);
+            uniqDups = uniqDups(:)';
             warning('Task block %d has duplicate event codes {%s}, counts{%s}\n',...
                 t,num2str(uniqDups,'[%d], '),num2str(dupsCount,'[%d] '));
             trialsTbl.DuplicateEventCodes(t) = {uniqDups'}; 
             trialsTbl.DuplicateEventCodesCounts(t) = {dupsCount'}; 
+            trialsTbl.DuplicateEventCodesTimes(t) = {arrayfun(@(x) tmsTemp(evCodesTemp==x),uniqDups(:),'UniformOutput',false)}; 
+            
             if setdiff(unique(uniqDups),ignoreDuplicateEvents)
                trialsTbl.GoodTrial(t) = 0;
             end
         end
-        if isempty(iInfos)
-            warning('Task block %d has NO INFO codes\n',t);
-            trialsTbl.HasInfosCodes(t) = 0;
-            trialsTbl.GoodTrial(t) = 0;
+        if hasInfosCodec
+            if isempty(iInfos)
+                warning('Task block %d has NO INFO codes\n',t);
+                trialsTbl.HasInfosCodes(t) = 0;
+                trialsTbl.GoodTrial(t) = 0;
+            end
         end
         if intersect(taskStartCodes, evs)
             trialsTbl.TaskType_(t) = intersect(taskStartCodes, evs);
@@ -171,29 +184,31 @@ tic
         iTblCols = arrayfun(@(x) min([find(colCodes==x,1),NaN]),evs);
         trialsTbl(t,iTblCols(~isnan(iTblCols))) = array2table(tms(~isnan(iTblCols))');
         % Process Infos for the task/trial
-        % for infoes always use code2name as info codes may be duplicated
-        % in INFOS.pro (see tone_duration, trial_length)
-        if ismember(startInfosCode, evs) && ismember(endInfosCode, evs)
-          infos = allC(find(allC==startInfosCode)+1:find(allC==endInfosCode)-1);
-          fprintf('Number of infos codes including start and end infos = %d of total: %d InfoCodec Codes\n',...
-              numel(infos),numel(infosCodec.code2Name.keys));
-          % InfoCode annot be less than startInfosOffset
-          trialsInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = 0;
-          if find(infos < startInfosOffset) % Negative value for info codes??
-              trialsInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = sum(infos < startInfosOffset);
-              warning('****Removing %d InfoCodes that are SMALLER startInfosOffset of %d, before parsing InfoCodes into fields***\n',...
-                  sum(infos < startInfosOffset),startInfosOffset);
-              infos = infos(infos>=startInfosOffset);
-          end
-          % Parse infos into fields          
-           for kk = 1:numel(infos)
-               try
-                  trialsInfos.(infoNames{kk})(t,1) = infos(kk) - startInfosOffset;
-               catch me
-                   fprintf('No. of Infos %d of rtotal %d\n',numel(infos),numel(infosCodec.code2Name.keys));
-               end
-           end
-
+        if hasInfosCodec
+            % for infoes always use code2name as info codes may be duplicated
+            % in INFOS.pro (see tone_duration, trial_length)
+            if ismember(startInfosCode, evs) && ismember(endInfosCode, evs)
+                infos = allC(find(allC==startInfosCode)+1:find(allC==endInfosCode)-1);
+                fprintf('Number of infos codes including start and end infos = %d of total: %d InfoCodec Codes\n',...
+                    numel(infos),numel(infosCodec.code2Name.keys));
+                % InfoCode annot be less than startInfosOffset
+                trialsInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = 0;
+                if find(infos < startInfosOffset) % Negative value for info codes??
+                    trialsInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = sum(infos < startInfosOffset);
+                    warning('****Removing %d InfoCodes that are SMALLER startInfosOffset of %d, before parsing InfoCodes into fields***\n',...
+                        sum(infos < startInfosOffset),startInfosOffset);
+                    infos = infos(infos>=startInfosOffset);
+                end
+                % Parse infos into fields
+                for kk = 1:numel(infos)
+                    try
+                        trialsInfos.(infoNames{kk})(t,1) = infos(kk) - startInfosOffset;
+                    catch me
+                        fprintf('No. of Infos %d of rtotal %d\n',numel(infos),numel(infosCodec.code2Name.keys));
+                    end
+                end
+                
+            end
         end
 
         
@@ -253,6 +268,9 @@ function [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath,varargin)
             error('Exiting...See above messages');
         end
     end    
+    % Always return rows
+    tdtEvents = tdtEvents(:);
+    tdtEventTimes = tdtEventTimes(:);
     fprintf('Successfully read TDT event data\n');
         % Info about the files etc
     %  info is struct with fields:

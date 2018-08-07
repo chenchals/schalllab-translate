@@ -4,12 +4,12 @@
 baseDir = 'data/Joule/tdtData/troubleshootEventCodes';
 %saveDir = fullfile(baseDir,'processed');
 saveDir = 'dataProcessed/data/Joule/tdtData/troubleshootEventCodes';
-eventDefFile = 'data/Joule/TEMPO/currProcLib_13/EVENTDEF.pro';
-infosDefFile = 'data/Joule/TEMPO/currProcLib_13/CMD/INFOS.pro';
+eventDefFile = 'data/Joule/TEMPO/currProcLib_15/EVENTDEF.pro';
+infosDefFile = 'data/Joule/TEMPO/currProcLib_15/CMD/INFOS.pro';
 
 
 %Dirs
-jDatedSessions=dir(fullfile(baseDir,'Joule-180804-10510*'));
+jDatedSessions=dir(fullfile(baseDir,'Joule-180806-1344*'));
 
 saveOutput = 1;
 

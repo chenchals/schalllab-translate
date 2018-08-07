@@ -49,15 +49,17 @@ function [pdSignal] = getPhotodiodeEvents(pdVolts, samplingFreq, thresholdPercen
     % small for lo sampling rate (2?) and around 5 for 24414 Hz sampling
     % rate.
     if samplingFreq > 20000
-        runLength = 5;
+        runLength = 10;
     else
         runLength = 2;
     end
+    runLength = round(0.5*signalWidthInTicks);
+    
     overplotRaw = false;
     
     pdSignal.thresholdPercentile = thresholdPercentile;
     pdSignal.threshold = prctile(pdVolts,thresholdPercentile);
-    
+        
     %pdSignal.threshold = 0.1;
     % PDBin
     pdTbinMs = 1000.0/samplingFreq;
