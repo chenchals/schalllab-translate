@@ -8,9 +8,9 @@ joule.infosDefFile = 'data/Joule/TEMPO/currProcLib_15/CMD/INFOS.pro';
 joule.pdStreamNames = {'PhoL';'PhoR'};
 
 %% Darwin setup
-darwin.sess = 'Darwin-180806-123257';
-darwin.sessDir = fullfile('data/Darwin/proAntiTraining',darwin.sess);
-darwin.behavFile = fullfile('dataProcessed/data/Darwin/proAntiTraining',darwin.sess,'Behav.mat');
+darwin.sess = 'Test-180807-083417';
+darwin.sessDir = fullfile('data/Kaleb/testSessions',darwin.sess);
+darwin.behavFile = fullfile('dataProcessed/data/Kaleb/testSessions',darwin.sess,'Behav.mat');
 
 darwin.eventDefFile = 'KalebCodes/EVENTDEF.pro';
 darwin.infosDefFile = '';
@@ -26,7 +26,7 @@ leonardo.infosDefFile = '';
 leonardo.pdStreamNames = {'PD2_';'PD__'};
 
 %% Check for Behavior file....
-monk = joule;
+monk = darwin;
 
 sessDir = monk.sessDir;
 behavFile = monk.behavFile;
@@ -81,7 +81,12 @@ orphansY = [orphanVolts';nan(1,nOrphans)];
 orphansX = repmat([signalTimeMs;NaN],1,nOrphans);
 
 figure
-plot(orphansX(:),orphansY(:),'g')
+if nOrphans > 0
+   plot(orphansX(:),orphansY(:),'g')
+else
+    plot(1:10, 1:10);
+    text(2, 5, 'No Orphans');
+end
 
 
 pdLsmooth = movmean(pdFirstStream.streams.(pdFirstName).data,[2 0]);
