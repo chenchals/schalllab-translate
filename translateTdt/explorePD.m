@@ -1,14 +1,14 @@
 %% Joule setup
-joule.sess = 'Joule-180806-134425';
+joule.sess = 'Joule-180807-162752';
 joule.sessDir = fullfile('data/Joule/tdtData/troubleshootEventCodes',joule.sess);
 joule.behavFile = fullfile('dataProcessed/data/Joule/tdtData/troubleshootEventCodes',joule.sess,'Behav.mat');
 
-joule.eventDefFile = 'data/Joule/TEMPO/currProcLib_15/EVENTDEF.pro';
-joule.infosDefFile = 'data/Joule/TEMPO/currProcLib_15/CMD/INFOS.pro';
+joule.eventDefFile = 'data/Joule/TEMPO/currProcLib_23/EVENTDEF.pro';
+joule.infosDefFile = 'data/Joule/TEMPO/currProcLib_23/CMD/INFOS.pro';
 joule.pdStreamNames = {'PhoL';'PhoR'};
 
 %% Darwin setup
-darwin.sess = 'Test-180807-083417';
+darwin.sess = 'Test-180807-143310';
 darwin.sessDir = fullfile('data/Kaleb/testSessions',darwin.sess);
 darwin.behavFile = fullfile('dataProcessed/data/Kaleb/testSessions',darwin.sess,'Behav.mat');
 
@@ -26,7 +26,7 @@ leonardo.infosDefFile = '';
 leonardo.pdStreamNames = {'PD2_';'PD__'};
 
 %% Check for Behavior file....
-monk = darwin;
+monk = joule;
 
 sessDir = monk.sessDir;
 behavFile = monk.behavFile;

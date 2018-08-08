@@ -65,7 +65,7 @@ function [trialsTbl, trialsInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBe
     [infosCodec.code2Name, infosCodec.name2Code] = ...
         getCodeDefs(regexprep(infosCodecFile,'[/\\]',filesep));
   end    
-    hasInfosCodec =  isfield(infosCodec, 'code2name');
+    hasInfosCodec =  isfield(infosCodec, 'code2Name');
     %%  Read TDT events and event times   %%
     [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath);
     % TDT events have '0' for code due to the way the TEMPO ring buffer is

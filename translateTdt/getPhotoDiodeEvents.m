@@ -54,6 +54,7 @@ function [pdSignal] = getPhotodiodeEvents(pdVolts, samplingFreq, thresholdPercen
         runLength = 2;
     end
     runLength = round(0.5*signalWidthInTicks);
+    runLength =1;
     
     overplotRaw = false;
     
