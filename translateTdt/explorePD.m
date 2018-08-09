@@ -1,5 +1,5 @@
 %% Joule setup
-joule.sess = 'Joule-180807-162752';
+joule.sess = 'Joule-180808-160555';
 joule.sessDir = fullfile('data/Joule/tdtData/troubleshootEventCodes',joule.sess);
 joule.behavFile = fullfile('dataProcessed/data/Joule/tdtData/troubleshootEventCodes',joule.sess,'Behav.mat');
 
@@ -8,9 +8,9 @@ joule.infosDefFile = 'data/Joule/TEMPO/currProcLib_23/CMD/INFOS.pro';
 joule.pdStreamNames = {'PhoL';'PhoR'};
 
 %% Darwin setup
-darwin.sess = 'Test-180807-143310';
-darwin.sessDir = fullfile('data/Kaleb/testSessions',darwin.sess);
-darwin.behavFile = fullfile('dataProcessed/data/Kaleb/testSessions',darwin.sess,'Behav.mat');
+darwin.sess = 'Darwin-180808-105638';
+darwin.sessDir = fullfile('data/Kaleb/antiSessions',darwin.sess);
+darwin.behavFile = fullfile('dataProcessed/data/Kaleb/antiSessions',darwin.sess,'Behav.mat');
 
 darwin.eventDefFile = 'KalebCodes/EVENTDEF.pro';
 darwin.infosDefFile = '';
