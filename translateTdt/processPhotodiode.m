@@ -1,17 +1,12 @@
 function [photodiodeEvents, pdFirstSignal, pdLastSignal] = processPhotodiode(pdFirst_Last, samplingFreq)
-%PROCESSPHOTODIODE Summary of this function goes here
-%   Detailed explanation goes here
+%PROCESSPHOTODIODE Processes both the First and the Last PD analog signals
+%from TDT streams.
 %
 % See also GETPHOTODIODEEVENTS
 
     thresholdPercentile = 99.9;
-    if samplingFreq > 20000
-        signalWidthInTicks = 50;% ~ 2-2.5 ms
-    else % 1.2kHz
-        signalWidthInTicks = 6;% ~ 5 ms? for 1.2kHz
-    end
     tickWidthMs = 1000.0/samplingFreq;
-    
+        
     if numel(pdFirst_Last)==1
         pdFirst = pdFirst_Last{1};
         pdLast = [];
@@ -26,14 +21,14 @@ function [photodiodeEvents, pdFirstSignal, pdLastSignal] = processPhotodiode(pdF
         else
             fprintf('Processing *single* photodiode...\n');
         end
-        [pdFirstSignal] = getPhotodiodeEvents(pdFirst,samplingFreq,thresholdPercentile,signalWidthInTicks);
+        [pdFirstSignal] = getPhotodiodeEvents(pdFirst,samplingFreq,thresholdPercentile);
         pdFirstUniqIdx = unique(pdFirstSignal.idxOnRiseEndTime);
         nRows = numel(pdFirstUniqIdx);
     end
     
     if ~isempty(pdLast)
         fprintf('Processing last photodiode...\n');
-        [pdLastSignal] = getPhotodiodeEvents(pdLast,samplingFreq,thresholdPercentile,signalWidthInTicks);
+        [pdLastSignal] = getPhotodiodeEvents(pdLast,samplingFreq,thresholdPercentile);
         pdLastUniqIdx = unique(pdLastSignal.idxOnRiseEndTime);
         nRows = max(numel(pdLastUniqIdx),nRows);
     end

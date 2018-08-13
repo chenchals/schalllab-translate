@@ -1,12 +1,10 @@
-function [trialsTbl, trialsInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBehavior(sessionDir, outputBaseDir, eventCodecFile, infosCodecFile)
+function [trialEventsTbl, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBehavior(sessionDir, eventCodecFile, infosCodecFile)
 %TDTEXTRACTBEHAVIOR Summary of this function goes here
 %   Detailed explanation goes here
 %
 %   oFiles : Processed filenames (fullpath)
 %
 %   sessionDir: Location where TDT data files are saved
-%   outputDir : Location of procesed base directory, a sub-dir with
-%               sessionName will be created here for processed session
 %   eventCodecFile : File that contains the event code definitions.  This
 %                    can be one of the following files:
 %                    (1) EVENTDEF.pro file used to acquire data (preferred) OR
@@ -21,37 +19,31 @@ function [trialsTbl, trialsInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBe
 %    'data/Joule/tdtData/troubleshootEventCodes/Joule-180720-120340'; %//<5
 %    sessDir2 = ...
 %    'data/Joule/tdtData/troubleshootEventCodes/Joule-180720-120804'; %//<2
-%    outDir = 'dataProcessed/Joule/Countermanding';
 %    evDefFile = 'data/Joule/TEMPO/currentProcLib/EVENTDEF.pro'; %...TEMPO_EV_SEAS_rig029.m
 %    infosDefFile = 'data/Joule/TEMPO/currentProcLib/CMD/INFOS.pro';
 %
-%    [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl] = ...
-%            tdtExtractBehavior(sessDir, outDir, evDefFile, infosDefFile);
+%    [trialEventsTbl, trialInfos, evCodec, infosCodec, tdtInfos] = ...
+%            tdtExtractBehavior(sessDir, evDefFile, infosDefFile);
 %
-%    [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, trialTimes, evCodec, infosCodec] = ...
-%            tdtExtractBehavior(sessDir, outDir, evDefFile, infosDefFile);
+%    [trialEventsTbl, trialInfos, evCodec, infosCodec, tdtInfos ] = ...
+%            tdtExtractBehavior(sessDir, evDefFile, infosDefFile);
 %
-%    [oFiles, trialEventTimesTbl, trialUnknownEventTimesTbl, trialCodes, trialTimes, tdtEvents,tdtEventTimes, tdtInfos, evCodec, infosCodec] = ...
-%            tdtExtractBehavior(sessDir, outDir, evDefFile, infosDefFile);
-%
-%    [oFiles] = tdtExtractBehavior(sessDir, outDir, evDefFile, infosDefFile);
-
-    % Initialize output files
-    %oFiles = {};
+%    [trialEventsTbl, trialInfos, evCodec, infosCodec, tdtInfos ] = ...
+%            tdtExtractBehavior(sessDir, evDefFile, infosDefFile);
 
     useTaskEndCode = false;
-    
+    % Offset for Info Code values
+    infosOffestValue = 3000;
+        
+    % Since multiple rewards may be given use a separate table output
+    %juiceStartCode = decodeEvent('JuiceStart_');
+    %juiceEndCode = decodeEvent('JuiceEnd_');
+    % use in separate table..
+    % ignoreDuplicateEvents = [juiceStartCode juiceEndCode];% manual juice...
+    ignoreDuplicateEvents = [2777 2776];% manual juice...
     
     % Normalize input path and extract sessionName
     blockPath = regexprep(sessionDir,'[/\\]',filesep);
-    % sessionName
-    sessionName = split(blockPath,filesep);
-    sessionName = sessionName{end};
-    % Normalize output path and create dir for processed output
-    outputDir = fullfile(regexprep(outputBaseDir,'[/\\]',filesep),sessionName);
-    if ~exist(outputDir,'dir')
-        mkdir(outputDir);
-    end
       
     %%  Process Rig specific event codes and event names   %
     [evCodec.code2Name, evCodec.name2Code] = ...
@@ -109,51 +101,45 @@ function [trialsTbl, trialsInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBe
     colNames = evCodec.name2Code.keys';
     colCodes = cell2mat(evCodec.name2Code.values'); 
     colNames = [colNames;'TaskBlock';'TaskType_';'GoodTrial';'HasInfosCodes';'HasTrialStartAndEot';'HasStartInfosAndEndInfos'];
-    %trialsTbl = cell2table(cell(0,numel(colNames)));
-    trialsTbl = array2table(nan(nTasks,numel(colNames)));
-    trialsTbl.DuplicateEventCodes = cell(nTasks,1);
-    trialsTbl.DuplicateEventCodesCounts = cell(nTasks,1);
-    trialsTbl.DuplicateEventCodesTimes = cell(nTasks,1);
-    trialsTbl.UniqueEventCodes = cell(nTasks,1);
-    trialsTbl.UniqueEventCodesCounts = cell(nTasks,1);
-    trialsTbl.Properties.VariableNames(1:end-5) = colNames;
+    % Initialize trialEventsTbl to [number of task_rows x event_names]
+    trialEventsTbl = array2table(nan(nTasks,numel(colNames)));
+    trialEventsTbl.DuplicateEventCodes = cell(nTasks,1);
+    trialEventsTbl.DuplicateEventCodesCounts = cell(nTasks,1);
+    trialEventsTbl.DuplicateEventCodesTimes = cell(nTasks,1);
+    trialEventsTbl.UniqueEventCodes = cell(nTasks,1);
+    trialEventsTbl.UniqueEventCodesCounts = cell(nTasks,1);
+    trialEventsTbl.Properties.VariableNames(1:end-5) = colNames;
         
     %% Create table for all Infos and set column name as Info_Name
-    trialsInfos = struct();
+    trialInfos = struct();
     if hasInfosCodec
     infoNames = infosCodec.code2Name.values';
-    startInfosOffset = 3000;
+    startInfosOffset = infosOffestValue;
     end
     
     warning('OFF','MATLAB:table:RowsAddedExistingVars');
-    ignoreDuplicateEvents = [2777 2776];% manual juice...
-
 tic
     for t = 1:nTasks
         allC = evCodes{t};
         allT = evTimes{t};
-        ilt3000 = find(allC < 3000);
-        evCodesTemp = allC(ilt3000);
-        tmsTemp = allT(ilt3000);
-        if hasInfosCodec
-            iInfos =  find(allC >= 3000);
-        end
+        evCodesTemp = allC(allC < infosOffestValue);
+        tmsTemp = allT(allC < infosOffestValue);
         % check unique Event codes
         [evs,iUniq] = unique(evCodesTemp,'stable');
         tms = tmsTemp(iUniq);
         % default some vars to be present
-        trialsTbl.TaskBlock(t) = t;
+        trialEventsTbl.TaskBlock(t) = t;
 
-        trialsTbl.HasInfosCodes(t) = 1;
-        trialsTbl.HasTrialStartAndEot(t) = ismember(trialStartCode, evs) && ismember(eotCode, evs);
-        trialsTbl.HasStartInfosAndEndInfos(t) = ismember(startInfosCode, evs) && ismember(endInfosCode, evs);
-        trialsTbl.GoodTrial(t) = trialsTbl.HasTrialStartAndEot(t) && trialsTbl.HasStartInfosAndEndInfos(t);
+        trialEventsTbl.HasInfosCodes(t) = 1;
+        trialEventsTbl.HasTrialStartAndEot(t) = ismember(trialStartCode, evs) && ismember(eotCode, evs);
+        trialEventsTbl.HasStartInfosAndEndInfos(t) = ismember(startInfosCode, evs) && ismember(endInfosCode, evs);
+        trialEventsTbl.GoodTrial(t) = trialEventsTbl.HasTrialStartAndEot(t) && trialEventsTbl.HasStartInfosAndEndInfos(t);
         % Housekeeping
         [evGt0Counts,evsGt0] = hist(evs(evs>0),unique(evs(evs>0)));
-        trialsTbl.UniqueEventCodes(t) = {evsGt0'}; 
-        trialsTbl.UniqueEventCodesCounts(t) = {evGt0Counts'};       
+        trialEventsTbl.UniqueEventCodes(t) = {evsGt0'}; 
+        trialEventsTbl.UniqueEventCodesCounts(t) = {evGt0Counts'};       
         
-        if numel(evs) ~= numel(ilt3000)
+        if numel(evs) ~= sum(allC < infosOffestValue)
             % In case we want to count zeros, using hist (as histc 
             % does not count zeros) by incrementing all codes by 1
             [dupsCount,uniqDups]= hist(evCodesTemp+1,unique(evs+1));
@@ -162,27 +148,28 @@ tic
             uniqDups = uniqDups(:)';
             warning('Task block %d has duplicate event codes {%s}, counts{%s}\n',...
                 t,num2str(uniqDups,'[%d], '),num2str(dupsCount,'[%d] '));
-            trialsTbl.DuplicateEventCodes(t) = {uniqDups'}; 
-            trialsTbl.DuplicateEventCodesCounts(t) = {dupsCount'}; 
-            trialsTbl.DuplicateEventCodesTimes(t) = {arrayfun(@(x) tmsTemp(evCodesTemp==x),uniqDups(:),'UniformOutput',false)}; 
+            trialEventsTbl.DuplicateEventCodes(t) = {uniqDups'}; 
+            trialEventsTbl.DuplicateEventCodesCounts(t) = {dupsCount'}; 
+            trialEventsTbl.DuplicateEventCodesTimes(t) = {arrayfun(@(x) tmsTemp(evCodesTemp==x),uniqDups(:),'UniformOutput',false)}; 
+            
             
             if setdiff(unique(uniqDups),ignoreDuplicateEvents)
-               trialsTbl.GoodTrial(t) = 0;
+               trialEventsTbl.GoodTrial(t) = 0;
             end
         end
         if hasInfosCodec
-            if isempty(iInfos)
+            if ~sum(allC >= 3000)
                 warning('Task block %d has NO INFO codes\n',t);
-                trialsTbl.HasInfosCodes(t) = 0;
-                trialsTbl.GoodTrial(t) = 0;
+                trialEventsTbl.HasInfosCodes(t) = 0;
+                trialEventsTbl.GoodTrial(t) = 0;
             end
         end
         if intersect(taskStartCodes, evs)
-            trialsTbl.TaskType_(t) = intersect(taskStartCodes, evs);
+            trialEventsTbl.TaskType_(t) = intersect(taskStartCodes, evs);
         end
         % Events: Get indices to column names for codes
         iTblCols = arrayfun(@(x) min([find(colCodes==x,1),NaN]),evs);
-        trialsTbl(t,iTblCols(~isnan(iTblCols))) = array2table(tms(~isnan(iTblCols))');
+        trialEventsTbl(t,iTblCols(~isnan(iTblCols))) = array2table(tms(~isnan(iTblCols))');
         % Process Infos for the task/trial
         if hasInfosCodec
             % for infoes always use code2name as info codes may be duplicated
@@ -192,9 +179,9 @@ tic
                 fprintf('Number of infos codes including start and end infos = %d of total: %d InfoCodec Codes\n',...
                     numel(infos),numel(infosCodec.code2Name.keys));
                 % InfoCode annot be less than startInfosOffset
-                trialsInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = 0;
+                trialInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = 0;
                 if find(infos < startInfosOffset) % Negative value for info codes??
-                    trialsInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = sum(infos < startInfosOffset);
+                    trialInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = sum(infos < startInfosOffset);
                     warning('****Removing %d InfoCodes that are SMALLER startInfosOffset of %d, before parsing InfoCodes into fields***\n',...
                         sum(infos < startInfosOffset),startInfosOffset);
                     infos = infos(infos>=startInfosOffset);
@@ -202,8 +189,9 @@ tic
                 % Parse infos into fields
                 for kk = 1:numel(infos)
                     try
-                        trialsInfos.(infoNames{kk})(t,1) = infos(kk) - startInfosOffset;
+                        trialInfos.(infoNames{kk})(t,1) = infos(kk) - startInfosOffset;
                     catch me
+                        warning(me.message);
                         fprintf('No. of Infos %d of rtotal %d\n',numel(infos),numel(infosCodec.code2Name.keys));
                     end
                 end
@@ -214,14 +202,9 @@ tic
         
     end
    toc 
-    
-    % Prune columns where values for all rows is NaN
-    % Get only columns with at least one non NaN value in the colum
-    % 
-     %trialEventTimesTbl = trialEventTimesTbl(:,any(~ismissing(trialEventTimesTbl)));
-%     trialEventTimesTbl(:,all(ismissing(trialEventTimesTbl)))=[];
-%     T2 = trialEventTimesTbl;
-%     T2(:,all(ismissing(T2)))=[];
+       % prune all NaN
+     trialEventsTbl = trialEventsTbl(:,any(~ismissing(trialEventsTbl)));
+     trialEventsTbl = table2struct(trialEventsTbl,'ToScalar',true);
     
     %%  TODO: Read TDT Eye data including times   %%
     
@@ -234,11 +217,6 @@ tic
     %% TODO: Timeit and optimize??.. %%
     
 end
-
-
-
-
-
 
 
 %% Sub-functions %%

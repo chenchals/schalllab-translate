@@ -1,5 +1,5 @@
-%% Joule setup
-joule.sess = 'Joule-180808-160555';
+% %% Joule setup
+joule.sess = 'Joule-180809-153933';
 joule.sessDir = fullfile('data/Joule/tdtData/troubleshootEventCodes',joule.sess);
 joule.behavFile = fullfile('dataProcessed/data/Joule/tdtData/troubleshootEventCodes',joule.sess,'Behav.mat');
 
@@ -7,23 +7,23 @@ joule.eventDefFile = 'data/Joule/TEMPO/currProcLib_23/EVENTDEF.pro';
 joule.infosDefFile = 'data/Joule/TEMPO/currProcLib_23/CMD/INFOS.pro';
 joule.pdStreamNames = {'PhoL';'PhoR'};
 
-%% Darwin setup
-darwin.sess = 'Darwin-180808-105638';
-darwin.sessDir = fullfile('data/Kaleb/antiSessions',darwin.sess);
-darwin.behavFile = fullfile('dataProcessed/data/Kaleb/antiSessions',darwin.sess,'Behav.mat');
-
-darwin.eventDefFile = 'KalebCodes/EVENTDEF.pro';
-darwin.infosDefFile = '';
-darwin.pdStreamNames = {'PD2_';'PD__'};
-
-%% Leonardo setup
-leonardo.sess = 'Leonardo-180806-130017';
-leonardo.sessDir = fullfile('data/Leonardo/ColorDetectionTraining',leonardo.sess);
-leonardo.behavFile = fullfile('dataProcessed/data/Leonardo/ColorDetectionTraining',leonardo.sess,'Behav.mat');
-
-leonardo.eventDefFile = 'KalebCodes/EVENTDEF.pro';
-leonardo.infosDefFile = '';
-leonardo.pdStreamNames = {'PD2_';'PD__'};
+% %% Darwin setup
+% darwin.sess = 'Darwin-180808-105638';
+% darwin.sessDir = fullfile('data/Kaleb/antiSessions',darwin.sess);
+% darwin.behavFile = fullfile('dataProcessed/data/Kaleb/antiSessions',darwin.sess,'Behav.mat');
+% 
+% darwin.eventDefFile = 'KalebCodes/EVENTDEF.pro';
+% darwin.infosDefFile = '';
+% darwin.pdStreamNames = {'PD2_';'PD__'};
+% 
+% %% Leonardo setup
+% leonardo.sess = 'Leonardo-180810-163127';
+% leonardo.sessDir = fullfile('data/Leonardo/ColorDetectionTraining',leonardo.sess);
+% leonardo.behavFile = fullfile('dataProcessed/data/Leonardo/ColorDetectionTraining',leonardo.sess,'Behav.mat');
+% 
+% leonardo.eventDefFile = 'KalebCodes/EVENTDEF.pro';
+% leonardo.infosDefFile = '';
+% leonardo.pdStreamNames = {'PhoL';'PhoR'};
 
 %% Check for Behavior file....
 monk = joule;
@@ -55,6 +55,13 @@ pdFs = pdFirstStream.streams.(pdFirstName).fs;
 tic
 [photodiodeEvents, pdFirstSignal, pdLastSignal] = processPhotodiode({pdFirstStream.streams.(pdFirstName).data, pdLastStream.streams.(pdLastName).data}, pdFs);
 toc
+% add title to 2 figs
+fh = gcf;
+figure(fh.Number-1);
+title(monk.sess);
+figure(fh.Number);
+title(monk.sess);
+
 pdFirstVolts = pdFirstSignal.pdVolts;
 pdLastVolts = pdLastSignal.pdVolts;
 
@@ -96,8 +103,8 @@ beh = load(behavFile);
 pdFirstMs = photodiodeEvents.PD_First_Ms;
 pdLastMs = photodiodeEvents.PD_Last_Ms_Paired;
 
-%eventName = 'PDtrigger_';
-eventName = 'FixSpotOn_';
+eventName = 'PDtrigger_';
+%eventName = 'FixSpotOn_';
 eventTime = beh.Task.(eventName);
 
 % to find closest index into photodiode timestamps
@@ -111,36 +118,35 @@ for ii = 1:numel(eventTime)
     d = abs(pdLastMs-eventTime(ii));
     closestIdx(ii,1) = min([find(d==min(d),1);NaN]);
 end
-figure
-nTimeBins = size(pdFirstVolts,2);
-xTimeInTicks = (-floor(nTimeBins/2):floor(nTimeBins/2))';
-xTimeMs = xTimeInTicks*1000/pdFs;
+closestIdx = closestIdx(~isnan(closestIdx));
+xTimeMs = pdFirstSignal.xTimeInMs(1:find(isnan(pdFirstSignal.xTimeInMs),1)-1);
 evRelT = nan(numel(closestIdx),1);
-for ii = 1:numel(closestIdx)
-    idx = closestIdx(ii);
-    if isnan(idx)
-        continue;
-    end
-    pdT = pdLastMs(idx);
-    % rel Time
-    xRel = xTimeMs;
-    % abs time for event
-    evT = eventTime(ii);
-    % time rel to t
-    evRelT(ii,1) = evT - pdT;
-    y = pdLastVolts(idx,:);
-    plot(xRel,y);
-    
-    line([0 0],ylim)
-    line([evRelT(ii,1) evRelT(ii,1)],ylim,'color','r')
-%     text(xRel(10),double(y(10)),...
-%         sprintf('Photodiode time (ms) = %.3f\n [%s] event (ms) = %.3f',pdT,eventName,evT))    
-    %drawnow
-    hold on
-end
+% Vectorized plotting
+% Plot PD signal
+xTempPd = repmat([xTimeMs;NaN],numel(closestIdx),1);
+yTempPd = cell2mat(arrayfun(@(x) [pdLastVolts(x,:) NaN]',closestIdx,'UniformOutput',false));
+figure
+plot(xTempPd,yTempPd);
+hold on
+line([0 0],ylim);
+% Relative Event Time
+evRelTime = eventTime-pdLastMs(closestIdx);
+xTempEvRelTime = cell2mat(arrayfun(@(x) [evRelTime(x);evRelTime(x);NaN],(1:numel(closestIdx))','UniformOutput',false));
+yTempEvRelTime = repmat([ylim';NaN],numel(closestIdx),1);
+plot(xTempEvRelTime,yTempEvRelTime,'color','r');
+% Event line
+xl = xlim;
+yl = ylim;
+line([xl(1)+0.05*range(xl) xl(1)+0.10*range(xl)], [yl(2)-0.1*range(yl), yl(2)-0.1*range(yl)], 'color','r');
+% Event text
+text(xl(1)+0.12*range(xl), yl(2)-0.1*range(yl),sprintf('Event : %s',eventName), 'Interpreter','none');
+
 xlabel('PD signal Relative time (millisec)');
 ylabel('PD signal');
 
-
-
-
+% add title to 2 figs
+fh = gcf;
+figure(fh.Number-1);
+title(monk.sess);
+figure(fh.Number);
+title(monk.sess);
