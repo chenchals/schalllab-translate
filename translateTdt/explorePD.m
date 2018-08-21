@@ -1,10 +1,10 @@
 % %% Joule setup
-joule.sess = 'Joule-180809-153933';
+joule.sess = 'Joule-180817-125007';
 joule.sessDir = fullfile('data/Joule/tdtData/troubleshootEventCodes',joule.sess);
 joule.behavFile = fullfile('dataProcessed/data/Joule/tdtData/troubleshootEventCodes',joule.sess,'Behav.mat');
 
-joule.eventDefFile = 'data/Joule/TEMPO/currProcLib_23/EVENTDEF.pro';
-joule.infosDefFile = 'data/Joule/TEMPO/currProcLib_23/CMD/INFOS.pro';
+joule.eventDefFile = 'data/Joule/TEMPO/ProcLib/EVENTDEF.pro';
+joule.infosDefFile = 'data/Joule/TEMPO/ProcLib/CMD/INFOS.pro';
 joule.pdStreamNames = {'PhoL';'PhoR'};
 
 % %% Darwin setup
@@ -103,8 +103,8 @@ beh = load(behavFile);
 pdFirstMs = photodiodeEvents.PD_First_Ms;
 pdLastMs = photodiodeEvents.PD_Last_Ms_Paired;
 
-eventName = 'PDtrigger_';
-%eventName = 'FixSpotOn_';
+eventName = 'PDTrigger_';
+eventName = 'FixSpotOn_';
 eventTime = beh.Task.(eventName);
 
 % to find closest index into photodiode timestamps

@@ -4,7 +4,7 @@ function [Task, TaskInfos] = runExtraction(sessionDir,saveFile,eventDefFile,info
 
     saveOutput = 1;
     
-    [Task, TaskInfos] = tdtExtractBehavior(sessionDir,eventDefFile,infosDefFile);
+    [Task, TaskInfos, EventCodec, InfosCodec, SessionInfos] = tdtExtractBehavior(sessionDir,eventDefFile,infosDefFile);
 
     % Save translated mat file if needed
     if saveOutput
@@ -13,6 +13,6 @@ function [Task, TaskInfos] = runExtraction(sessionDir,saveFile,eventDefFile,info
             mkdir(oDir);
         end
         fprintf('Saving to file %s\n',fullfile(saveFile));
-        save(saveFile,'Task','TaskInfos');
+        save(saveFile,'Task','TaskInfos','EventCodec', 'InfosCodec', 'SessionInfos');
     end
 end

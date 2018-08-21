@@ -29,7 +29,7 @@ function [code2Name, name2Code] = getCodeDefs(codesFile)
     isInfosDefFile = false;
     if contains(codesFile,'INFOS.pro')
         isInfosDefFile = true;
-        matchExpr = '^\s*Event_fifo.*InfosZero\s*\+\s*\(*(\w*)\s*.*;';        
+        matchExpr = '^\s*Event_fifo.*InfosZero\s*\+\s*[abs\(|\(]*(\w*)\s*.*';       
     elseif contains(codesFile,'EVENTDEF.pro') % EVENDTDEF.pro file
         matchExpr = '^declare hide constant\s+([A-Z]\w*)\s*=\s*(\d{1,4});';
     elseif ~isempty(regexp(codesFile,'rig.*\.m$','match'))

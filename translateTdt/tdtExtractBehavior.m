@@ -109,7 +109,11 @@ function [trialEventsTbl, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtra
     trialEventsTbl.UniqueEventCodes = cell(nTasks,1);
     trialEventsTbl.UniqueEventCodesCounts = cell(nTasks,1);
     trialEventsTbl.Properties.VariableNames(1:end-5) = colNames;
-        
+    
+    %% Create a trial PDTrigger matrix to process PDtrigger_s if collected
+    maxPDTriggers = 10;
+    trialPDTriggerMat = nan(nTasks,maxPDTriggers);
+       
     %% Create table for all Infos and set column name as Info_Name
     trialInfos = struct();
     if hasInfosCodec
@@ -124,6 +128,18 @@ tic
         allT = evTimes{t};
         evCodesTemp = allC(allC < infosOffestValue);
         tmsTemp = allT(allC < infosOffestValue);
+        % Process PDTrigger_ event code is present. Since there will be
+        % multiple of tehse, need to do it before finding uniq codes
+        pdTrigIdx = find(evCodesTemp==evCodec.name2Code('PDTrigger_'));
+        if ~isempty(pdTrigIdx)
+            trialPDTriggerMat(t,1:numel(pdTrigIdx)) = tmsTemp(pdTrigIdx);
+            if numel(pdTrigIdx) > 1
+                % remove all PDTrigger_ codes except the first
+                evCodesTemp(pdTrigIdx(2:end)) = [];
+                % remove all times for PDTrigger_ except the first
+                tmsTemp(pdTrigIdx(2:end)) = [];
+            end
+        end
         % check unique Event codes
         [evs,iUniq] = unique(evCodesTemp,'stable');
         tms = tmsTemp(iUniq);
@@ -139,7 +155,7 @@ tic
         trialEventsTbl.UniqueEventCodes(t) = {evsGt0'}; 
         trialEventsTbl.UniqueEventCodesCounts(t) = {evGt0Counts'};       
         
-        if numel(evs) ~= sum(allC < infosOffestValue)
+        if numel(evs) ~= sum(evCodesTemp < infosOffestValue)
             % In case we want to count zeros, using hist (as histc 
             % does not count zeros) by incrementing all codes by 1
             [dupsCount,uniqDups]= hist(evCodesTemp+1,unique(evs+1));
@@ -192,7 +208,7 @@ tic
                         trialInfos.(infoNames{kk})(t,1) = infos(kk) - startInfosOffset;
                     catch me
                         warning(me.message);
-                        fprintf('No. of Infos %d of rtotal %d\n',numel(infos),numel(infosCodec.code2Name.keys));
+                        fprintf('No. of Infos %d of total %d\n',numel(infos),numel(infosCodec.code2Name.keys));
                     end
                 end
                 
@@ -202,10 +218,14 @@ tic
         
     end
    toc 
-       % prune all NaN
-     trialEventsTbl = trialEventsTbl(:,any(~ismissing(trialEventsTbl)));
-     trialEventsTbl = table2struct(trialEventsTbl,'ToScalar',true);
-    
+   % Prune trialPDTriggerMat
+   trialPDTriggerMat(:,all(ismissing(trialPDTriggerMat))) = [];
+   % prune all NaN
+   trialEventsTbl = trialEventsTbl(:,any(~ismissing(trialEventsTbl)));
+   % Add pdTrigger to table
+   trialEventsTbl.PDTriggersAll = trialPDTriggerMat;
+   trialEventsTbl = table2struct(trialEventsTbl,'ToScalar',true);
+   
     %%  TODO: Read TDT Eye data including times   %%
     
     %% TODO: Process TDT eye data into trials %%
