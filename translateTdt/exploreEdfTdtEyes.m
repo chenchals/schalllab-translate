@@ -1,11 +1,16 @@
 % load edf data
-sessDir = 'data/Leonardo/Eyelink-EDF/Leonardo-180904-105502';
+%sessDir = 'data/Leonardo/Eyelink-EDF/Leonardo-180904-105502';
+sessDir = 'data/Leonardo/Eyelink-EDF/Leonardo-180907-114555';
 
-edf=load(fullfile(sessDir,'LE180904.mat'));
+edf=load(fullfile(sessDir,'LE180907.mat'));
+edfData = 'dataEDF'; % it was also just data
+if isfield(edf, 'data')
+    edfData ='data';
+end
 
-edfX = edf.data.FSAMPLE.gx(1,:);
-edfY = edf.data.FSAMPLE.gy(1,:);
-edfTime = edf.data.FSAMPLE.time;
+edfX = edf.(edfData).FSAMPLE.gx(1,:);
+edfY = edf.(edfData).FSAMPLE.gy(1,:);
+edfTime = edf.(edfData).FSAMPLE.time;
 edfFs = 1000; 
 
 
@@ -35,7 +40,7 @@ t.dataFraction = useDataFrac;
 t.alignStartIndex = startIndices;
 
 % Plot some data after aligning... not yet hashed out.....
-edfRawX = edf.data.FSAMPLE.rx(1,:);
+edfRawX = edf.(edfData).FSAMPLE.rx(1,:);
 
 nEdfRaw = (edfRawX - min(edfRawX))./range(edfRawX);
 nTdtX = (tdtX - min(tdtX))./range(tdtX);
