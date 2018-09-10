@@ -229,6 +229,11 @@ tic
    trialEventsTbl = table2struct(trialEventsTbl,'ToScalar',true);
    
     %%  TODO: Read TDT Eye data including times   %%
+    % Read Eye_X stream, and Eye_Y Stream from TDT
+    % assume STORE names are 'EyeX', 'EyeY'
+    [tdtEyeX, tdtEyeY, tdtEyeFs] = getTdtEyeData(blockPath);
+    tdtTime = (0:numel(tdtEyeX)-1).*(1000/tdtEyeFs);
+
     
     %% TODO: Process TDT eye data into trials %%
 
@@ -244,7 +249,7 @@ end
 %% Sub-functions %%
 
 
-function [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath,varargin)
+function [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath)
     % Using functions form TDTSDK for reading raw TDT files
     % 
     tdtFun = @TDTbin2mat;
@@ -286,7 +291,24 @@ function [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath,varargin)
     tdtInfos = tdtRaw.info;
     % claim space
     clear tdtRaw
+end
+
+function [tdtEyeX, tdtEyeY, tdtEyeFs] = getTdtEyeData(blockPath)
+    % Read Eye_X stream, and Eye_Y Stream from TDT
+    % assume STORE names are 'EyeX', 'EyeY'
+    % assume the sampling frequency same for both X and Y
+    tdtFun = @TDTbin2mat;
+    % Get raw TDT EyeX data
+    tdtEye = tdtFun(blockPath,'TYPE',{'streams'},'STORE','EyeX','VERBOSE',0);
+    tdtEyeX = tdtEye.streams.EyeX.data;
+    % Get raw TDT EyeX data
+    tdtEye = tdtFun(blockPath,'TYPE',{'streams'},'STORE','EyeY','VERBOSE',0);
+    tdtEyeY = tdtEye.streams.EyeY.data;
+    % Get sampling frequency
+    tdtEyeFs = round(tdtEye.streams.EyeY.fs);
 
 end
+
+
 
 
