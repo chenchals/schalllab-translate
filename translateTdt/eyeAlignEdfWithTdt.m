@@ -1,4 +1,4 @@
-function [alignedEdfVec, alignStartIndex] = eyeAlignEdfWithTdt(edfEyeVec, tdtEyeVec, edfSamplingFreqHz, tdtSamplingFreqHz, alignWindowSecs)
+function [alignedEdfVec, alignStartIndex] = eyeAlignEdfWithTdt(edfEyeVec, tdtEyeVec, edfSamplingFreqHz, tdtSamplingFreqHz, varargin)
 %EYEALIGNEDFWITHTDT Align EDF eye data with TDT eye data
 %
 %   edfEyeVec : Vector of Eye (X or Y) data from EDF file collected on Eyelink
@@ -19,24 +19,47 @@ function [alignedEdfVec, alignStartIndex] = eyeAlignEdfWithTdt(edfEyeVec, tdtEye
 % Example:
 %   [alignedEdfX, startIndices] = eyeAlignEdfWithTdt(edfX, tdtX, 1000, 1017, 100);
 %
-% See also RESAMPLE, MEAN
-
+% See also RESAMPLE, MEAN, EDFANALOG2PIXELS
+%
+    doClassic = 0;
+    if numel(varargin) == 1
+        doClassic = 1;
+        alignWindowSecs = varargin{1};
+    end
+    
     edfFs = round(edfSamplingFreqHz);
     tdtFs = round(tdtSamplingFreqHz);
-    edfBinWidth = 1/edfFs;
-
     tdtEyeVecResampled = single(resample(double(tdtEyeVec),edfFs,tdtFs));
-    tdtNBins = numel(tdtEyeVecResampled); % use 10 of the data
-    % In edf bin time 1ms if colledted at 1000Hz
-    slidingWinBins = alignWindowSecs/edfBinWidth; 
-    
-    normEdfX = (edfEyeVec - min(edfEyeVec))./range(edfEyeVec);
-    normTdtX = (tdtEyeVecResampled - min(tdtEyeVecResampled))./range(tdtEyeVecResampled);
-    meanSquaredDiff = nan(slidingWinBins,1);
-    parfor ii = 1:slidingWinBins  
-        meanSquaredDiff(ii,1) =  mean((normTdtX(1:tdtNBins) - normEdfX(ii:tdtNBins+ii-1)).^2); %#ok<PFBNS>
+    if doClassic
+        alignStartIndex = alignVectors(edfEyeVec,tdtEyeVecResampled,alignWindowSecs * edfFs);
+    else
+        [xc,lags] = xcorr(edfEyeVec,tdtEyeVecResampled);
+        alignStartIndex = lags(xc==max(xc));
     end
-    alignStartIndex = find(meanSquaredDiff==max(meanSquaredDiff));
     alignedEdfVec = edfEyeVec(alignStartIndex:end);
 end
+
+function [lag] = alignVectors(edfVec, tdtVec, slidingWinBins)
+    % for conversion to gaze in pixels
+    voltRange = [-5 5];
+    signalRange = [-0.2 1.2];
+    pixelRange = [0 1024]; % X-only
+    % In edf bin time 1ms if colledted at 1000Hz
+    tdtNBins = numel(tdtVec);
+    
+    nGazeEdf = (edfVec - min(edfVec))./range(edfVec);
+    nGazeTdt = tdtAnalog2Pixels(tdtVec,voltRange,signalRange,pixelRange);
+    nGazeTdt = (nGazeTdt - min(nGazeTdt))./range(nGazeTdt);
+    meanSquaredDiff = nan(slidingWinBins,1);
+    parfor ii = 1:slidingWinBins
+        if ii+tdtNBins-1 <= numel(nGazeEdf)
+            edfForAlign = nGazeEdf(ii:ii+tdtNBins-1);
+            meanSquaredDiff(ii,1) =  nanmean(((nGazeTdt - edfForAlign).^2));
+        end
+    end
+    lag = find(meanSquaredDiff==nanmin(meanSquaredDiff),1,'last');
+
+end
+
+
 
