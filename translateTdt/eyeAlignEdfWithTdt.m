@@ -1,5 +1,8 @@
 function [alignedEdfVec, alignStartIndex] = eyeAlignEdfWithTdt(edfEyeVec, tdtEyeVec, edfSamplingFreqHz, tdtSamplingFreqHz, varargin)
 %EYEALIGNEDFWITHTDT Align EDF eye data with TDT eye data
+%Note:
+% Replace values in EDF eye data that is missed/defaulted
+% Seems to be 1E8 is the value.  Also MISSING_DATA = -32768
 %
 %   edfEyeVec : Vector of Eye (X or Y) data from EDF file collected on Eyelink
 %   tdtEyeVec : Vector of Eye (X or Y) data from TDT file collected on TDT
@@ -20,13 +23,22 @@ function [alignedEdfVec, alignStartIndex] = eyeAlignEdfWithTdt(edfEyeVec, tdtEye
 %   [alignedEdfX, startIndices] = eyeAlignEdfWithTdt(edfX, tdtX, 1000, 1017, 100);
 %
 % See also RESAMPLE, MEAN, EDFANALOG2PIXELS
-%
+% See also EDF2MAT in edf-converter
+% https://github.com/uzh/edf-converter.git for MISSING_DATA_VALUE and
+% EMPTY_VALUE definitions
+%   
+    % From Edf2Mat.m in edf-converter
+    MISSING_DATA_VALUE  = -32768;
+    EMPTY_VALUE         = 1e08;
+
+    edfEyeVec(edfEyeVec==MISSING_DATA_VALUE)=nan;
+    edfEyeVec(edfEyeVec==EMPTY_VALUE)=nan;
+
     doClassic = 0;
     if numel(varargin) == 1
         doClassic = 1;
         alignWindowSecs = varargin{1};
     end
-    
     edfFs = round(edfSamplingFreqHz);
     tdtFs = round(tdtSamplingFreqHz);
     tdtEyeVecResampled = single(resample(double(tdtEyeVec),edfFs,tdtFs));
@@ -45,8 +57,10 @@ function [lag] = alignVectors(edfVec, tdtVec, slidingWinBins)
     signalRange = [-0.2 1.2];
     pixelRange = [0 1024]; % X-only
     % In edf bin time 1ms if colledted at 1000Hz
-    tdtNBins = numel(tdtVec);
-    
+    %Restrict tdt eye data to double the slidingWinBins
+    tdtNBins = 2*slidingWinBins;
+    tdtVec = tdtVec(1:tdtNBins);
+    edfVec = edfVec(1:2*tdtNBins);
     nGazeEdf = (edfVec - min(edfVec))./range(edfVec);
     nGazeTdt = tdtAnalog2Pixels(tdtVec,voltRange,signalRange,pixelRange);
     nGazeTdt = (nGazeTdt - min(nGazeTdt))./range(nGazeTdt);
