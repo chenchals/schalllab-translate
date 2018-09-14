@@ -3,11 +3,11 @@
 % sessDir = 'data/Leonardo/Eyelink-EDF/Leonardo-180910-112920';
 % edf=load(fullfile(sessDir,'LE180910.mat'));
 % 
-sessDir = 'data/Leonardo/Eyelink-EDF/Leonardo-180910-120113';
-edf=load(fullfile(sessDir,'LE180910.mat'));
+% sessDir = 'data/Leonardo/Eyelink-EDF/Leonardo-180910-120113';
+% edf=load(fullfile(sessDir,'LE180910.mat'));
 % large session
-% sessDir = 'data/Leonardo/Eyelink-EDF/Leonardo-180910-122025';
-% edf=load(fullfile(sessDir,'dataEDF.mat'));
+sessDir = 'data/Leonardo/Eyelink-EDF/Leonardo-180910-122025';
+edf=load(fullfile(sessDir,'Leonardo-180910-122025_EDF.mat'));
 % 
 edfData = 'dataEDF'; % it was also just data
 if isfield(edf, 'data')
@@ -29,18 +29,20 @@ tdtX = tdtXStruct.streams.EyeX.data;
 tdtY = tdtYStruct.streams.EyeY.data;
 tdtTime = (0:numel(tdtX)-1).*(1000/tdtFs);
 % % Different sliding windows in seconds
-slidingWinList = [60:10:120]';
+slidingWinList = [30:10:50]';
+startIndices = [6414;8498;8498];
 % do classic way that is slide one vector over other....
 for ii = 1:numel(slidingWinList)
     tic
     fprintf('Doing %d secs sliding window\n',slidingWinList(ii));
-    [~, startIndices(ii,1)] = tdtAlignEyeWithEdf(edfX,tdtX,edfFs,tdtFs,slidingWinList(ii));
+    startIndices(ii,1) = tdtAlignEyeWithEdf(edfX,tdtX,edfFs,tdtFs,slidingWinList(ii));
     toc
 end
 
 t = table();
 t.slidingWinList = slidingWinList;
 t.alignStartIndex = startIndices;
+t
 
 % See also EDF2MAT in edf-converter
 % https://github.com/uzh/edf-converter.git for MISSING_DATA_VALUE and

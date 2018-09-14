@@ -95,38 +95,40 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
     
     % complete trace
     
-    slidWins = [10 20 40 60 80 100 150 200];
-    tic
-    for ii = 1:numel(slidWins)
-       startIndForFirst(ii) = tdtAlignEyeWithEdf(tempEdfX,tdtEyeX,edfFs,tdtFs,slidWins(ii))
-    end
-    toc
+%     slidWins = [10 20 40 60 80 100 150 200];
+%     tic
+%     for ii = 1:numel(slidWins)
+%        startIndForFirst(ii) = tdtAlignEyeWithEdf(tempEdfX,tdtEyeX,edfFs,tdtFs,slidWins(ii))
+%     end
+%     toc
     
     edfAlignedAt = 8498;
     
-    
-    for ii = 2:nTrials-1
-         fprintf('.');
-        slidingWindow = 10;
-        if ii <= 2
-            slidingWindow = maxTdtStartDelay;
-        end
-        tdtX = trialEyes.tdtEyeX{ii};
-        trialLength = floor(numel(tdtX)*1000/trialEyes.tdtEyeFsHz);
-        edfStartIndices(ii) = tdtAlignEyeWithEdf(tempEdfX,tdtX,edfFs,tdtFs,slidingWindow);
-        nextEdfIndex = edfStartIndices(ii) + trialLength;
-        tempEdfX = tempEdfX(nextEdfIndex:end);
-        if mod(ii,100)==0
-            fprintf('%d\n',ii);
-        end
-    end
-
-    trialEyes.edfStartIndices = edfStartIndices;
-    edfDataIndex = [NaN;cumsum(edfStartIndices(2:end-1));NaN];
-    trialEyes.edfDataIndex = edfDataIndex;
-
-    trialEyes.edfEyeX = arrayfun(@(x) edfX(edfDataIndex(x):edfDataIndex(x+1)), (2:nTrials-2)','UniformOutput', false);
-    trialEyes.edfEyeY = arrayfun(@(x) edfY(edfDataIndex(x):edfDataIndex(x+1)), (2:nTrials-2)','UniformOutput', false);    
+%     
+%     for ii = 2:nTrials-1
+%          fprintf('.');
+%         slidingWindow = 10;
+%         if ii <= 2
+%             slidingWindow = maxTdtStartDelay;
+%         end
+%         tdtX = trialEyes.tdtEyeX{ii};
+%         trialLength = floor(numel(tdtX)*1000/trialEyes.tdtEyeFsHz);
+%         edfStartIndices(ii) = tdtAlignEyeWithEdf(tempEdfX,tdtX,edfFs,tdtFs,slidingWindow);
+%         nextEdfIndex = edfStartIndices(ii) + trialLength;
+%         tempEdfX = tempEdfX(nextEdfIndex:end);
+%         if mod(ii,100)==0
+%             fprintf('%d\n',ii);
+%         end
+%     end
+% 
+%     trialEyes.edfStartIndices = edfStartIndices;
+%     edfDataIndex = [NaN;cumsum(edfStartIndices(2:end-1));NaN];
+%     trialEyes.edfDataIndex = edfDataIndex;
+    edfOffset = edfAlignedAt;
+    taskTime = diff(trialStartTimes);
+    cumTaskTime = floor([edfOffset;cumsum(taskTime(2:end))+edfOffset]);
+    trialEyes.edfEyeX = arrayfun(@(x) edfX(cumTaskTime(x):cumTaskTime(x+1)), (1:nTrials-2)','UniformOutput', false);
+    trialEyes.edfEyeY = arrayfun(@(x) edfX(cumTaskTime(x):cumTaskTime(x+1)), (1:nTrials-2)','UniformOutput', false);    
 
     % Set Eye data of 1st and last trials to NaN
     trialEyes.edfEyeX = [NaN;trialEyes.edfEyeX;NaN];
