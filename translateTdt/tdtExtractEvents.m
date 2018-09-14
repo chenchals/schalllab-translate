@@ -1,14 +1,11 @@
-function [trialEventsTbl, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractBehavior(sessionDir, eventCodecFile, infosCodecFile)
-%TDTEXTRACTBEHAVIOR Summary of this function goes here
-%   Detailed explanation goes here
-%
-%   oFiles : Processed filenames (fullpath)
+function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractEvents(sessionDir, eventCodecFile, infosCodecFile)
+%TDTEXTRACTEVENTS Extract Event data from TDT session
 %
 %   sessionDir: Location where TDT data files are saved
 %   eventCodecFile : File that contains the event code definitions.  This
 %                    can be one of the following files:
 %                    (1) EVENTDEF.pro file used to acquire data (preferred) OR
-%                    (2) TEMPO_XXXX_rigDDD.m file used for translation
+%                    (2) [not tested] TEMPO_XXXX_rigDDD.m file used for translation
 %   infosdCodecFile : The INFOS.pro file that has Names for InfoCodes
 %
 % Example:
@@ -22,14 +19,14 @@ function [trialEventsTbl, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtra
 %    evDefFile = 'data/Joule/TEMPO/currentProcLib/EVENTDEF.pro'; %...TEMPO_EV_SEAS_rig029.m
 %    infosDefFile = 'data/Joule/TEMPO/currentProcLib/CMD/INFOS.pro';
 %
-%    [trialEventsTbl, trialInfos, evCodec, infosCodec, tdtInfos] = ...
-%            tdtExtractBehavior(sessDir, evDefFile, infosDefFile);
+%    [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos] = ...
+%            tdtExtractEvents(sessDir, evDefFile, infosDefFile);
 %
-%    [trialEventsTbl, trialInfos, evCodec, infosCodec, tdtInfos ] = ...
-%            tdtExtractBehavior(sessDir, evDefFile, infosDefFile);
+%    [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = ...
+%            tdtExtractEvents(sessDir, evDefFile, infosDefFile);
 %
-%    [trialEventsTbl, trialInfos, evCodec, infosCodec, tdtInfos ] = ...
-%            tdtExtractBehavior(sessDir, evDefFile, infosDefFile);
+%    [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = ...
+%            tdtExtractEvents(sessDir, evDefFile, infosDefFile);
 
     useTaskEndCode = false;
     % Offset for Info Code values
@@ -226,13 +223,13 @@ tic
    trialEventsTbl = trialEventsTbl(:,any(~ismissing(trialEventsTbl)));
    % Add pdTrigger to table
    trialEventsTbl.PDTriggersAll = trialPDTriggerMat;
-   trialEventsTbl = table2struct(trialEventsTbl,'ToScalar',true);
+   trialEvents = table2struct(trialEventsTbl,'ToScalar',true);
    
     %%  TODO: Read TDT Eye data including times   %%
     % Read Eye_X stream, and Eye_Y Stream from TDT
     % assume STORE names are 'EyeX', 'EyeY'
-    [tdtEyeX, tdtEyeY, tdtEyeFs] = getTdtEyeData(blockPath);
-    tdtTime = (0:numel(tdtEyeX)-1).*(1000/tdtEyeFs);
+%     [tdtEyeX, tdtEyeY, tdtEyeFs] = getTdtEyeData(blockPath);
+%     tdtTime = (0:numel(tdtEyeX)-1).*(1000/tdtEyeFs);
 
     
     %% TODO: Process TDT eye data into trials %%
@@ -291,22 +288,6 @@ function [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath)
     tdtInfos = tdtRaw.info;
     % claim space
     clear tdtRaw
-end
-
-function [tdtEyeX, tdtEyeY, tdtEyeFs] = getTdtEyeData(blockPath)
-    % Read Eye_X stream, and Eye_Y Stream from TDT
-    % assume STORE names are 'EyeX', 'EyeY'
-    % assume the sampling frequency same for both X and Y
-    tdtFun = @TDTbin2mat;
-    % Get raw TDT EyeX data
-    tdtEye = tdtFun(blockPath,'TYPE',{'streams'},'STORE','EyeX','VERBOSE',0);
-    tdtEyeX = tdtEye.streams.EyeX.data;
-    % Get raw TDT EyeX data
-    tdtEye = tdtFun(blockPath,'TYPE',{'streams'},'STORE','EyeY','VERBOSE',0);
-    tdtEyeY = tdtEye.streams.EyeY.data;
-    % Get sampling frequency
-    tdtEyeFs = round(tdtEye.streams.EyeY.fs);
-
 end
 
 

@@ -34,17 +34,13 @@ slidingWinList = [60:10:120]';
 for ii = 1:numel(slidingWinList)
     tic
     fprintf('Doing %d secs sliding window\n',slidingWinList(ii));
-    [~, startIndices(ii,1)] = eyeAlignEdfWithTdt(edfX,tdtX,edfFs,tdtFs,slidingWinList(ii));
+    [~, startIndices(ii,1)] = tdtAlignEyeWithEdf(edfX,tdtX,edfFs,tdtFs,slidingWinList(ii));
     toc
 end
 
 t = table();
 t.slidingWinList = slidingWinList;
 t.alignStartIndex = startIndices;
-% 
-% % Do using xcorr function
-% [xcorrEdfVec,xcorrStartIndex] = eyeAlignEdfWithTdt(edfX, tdtX,edfFs,tdtFs);
-
 
 % See also EDF2MAT in edf-converter
 % https://github.com/uzh/edf-converter.git for MISSING_DATA_VALUE and
@@ -76,5 +72,31 @@ ylabel('screen pixels');
 xlabel('time (ms)');
 hold off
 legend('tdtData', num2str(startIndices(1),'startIndexfor 60 sec =%d'), num2str(startIndices(end),'startIndex for 120 sec=%d'))
+
+
+
+
+%%
+
+%Try align....
+    edf = load(trialEyes.edfMatFile);
+    edfX = edf.(edfData).FSAMPLE.gx(1,:);
+    tempEdfX = edfX;
+    fprintf('Aligning...\n');
+    for ii = 2:nTrials-1
+         fprintf('.');
+        slidingWindow = 10;
+        if ii <= 2
+            slidingWindow = maxTdtStartDelay;
+        end
+        edfStartIndices(ii) = tdtAlignEyeWithEdf(tempEdfX,trialEyes.tdtEyeX{ii},edfFs,tdtFs,slidingWindow);
+        tempEdfX = tempEdfX(edfStartIndices(ii):end);
+        if mod(ii,100)==0
+            fprintf('%d\n',ii);
+        end
+    end
+    edfDataIndex = edfStartIndices;
+    edfDataIndex(3:end) = edfDataIndex(3:end) + edfDataIndex(2);
+   
 
 
