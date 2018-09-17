@@ -24,18 +24,20 @@ edfFs = 1000;
 tdtXStruct = TDTbin2mat(sessDir,'TYPE',{'streams'},'STORE','EyeX','VERBOSE',0);
 tdtYStruct = TDTbin2mat(sessDir,'TYPE',{'streams'},'STORE','EyeY','VERBOSE',0);
 
-tdtFs = round(tdtXStruct.streams.EyeX.fs);
+tdtFs = tdtXStruct.streams.EyeX.fs;
 tdtX = tdtXStruct.streams.EyeX.data;
 tdtY = tdtYStruct.streams.EyeY.data;
-tdtTime = (0:numel(tdtX)-1).*(1000/tdtFs);
+tdtX10 = movmean(tdtX,10);
+
+tdtTime = floor((0:numel(tdtX)-1).*(1000/tdtFs));
 % % Different sliding windows in seconds
-slidingWinList = [30:10:50]';
-startIndices = [6414;8498;8498];
+slidingWinList = [20,50]';
+
 % do classic way that is slide one vector over other....
 for ii = 1:numel(slidingWinList)
     tic
     fprintf('Doing %d secs sliding window\n',slidingWinList(ii));
-    startIndices(ii,1) = tdtAlignEyeWithEdf(edfX,tdtX,edfFs,tdtFs,slidingWinList(ii));
+    startIndices(ii,1) = tdtAlignEyeWithEdf(edfX(1:,tdtX10(1:10000),edfFs,tdtFs,slidingWinList(ii));
     toc
 end
 
@@ -100,5 +102,32 @@ legend('tdtData', num2str(startIndices(1),'startIndexfor 60 sec =%d'), num2str(s
     edfDataIndex = edfStartIndices;
     edfDataIndex(3:end) = edfDataIndex(3:end) + edfDataIndex(2);
    
+
+    
+ %% Filter TDT signal?
+Fs = tdtFs; % sampling rate
+cf = 50; % 50 Hz cut off
+Hd = designfilt('lowpassfir','FilterOrder',100,'CutoffFrequency',cf, ...
+       'DesignMethod','window','Window',{@kaiser,3},'SampleRate',Fs);
+    
+   
+tdtXFilt = filter(Hd,tdtX);
+
+
+plot(tdtTime,tdtX)
+hold on
+plot(tdtTime,tdtXFilt)
+hold off
+xlim([4800 5200])
+hold on
+plot(tdtTime,movmean(tdtX,10))
+
+figure
+plot(tdtTime,tdtX)
+hold on
+plot(tdtTime,movmean(tdtX,10))
+xlim([4800 5200])
+plot(tdtTime,movmean(tdtX,8))
+
 
 

@@ -72,7 +72,7 @@ function [lag] = alignVectors(edfVec, tdtVec, slidingWinBins)
             meanSquaredDiff(ii,1) =  nanmean(((nGazeTdt - edfForAlign).^2));
         end
     end
-    lag = find(meanSquaredDiff==nanmin(meanSquaredDiff),1,'last');
+    lag = find(meanSquaredDiff==nanmin(meanSquaredDiff),1,'first');
 
 end
 
