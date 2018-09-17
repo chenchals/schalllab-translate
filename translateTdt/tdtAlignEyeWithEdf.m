@@ -1,4 +1,4 @@
-function [alignStartIndex, alignedEdfVec] = tdtAlignEyeWithEdf(edfEyeVec, tdtEyeVec, edfSamplingFreqHz, tdtSamplingFreqHz, varargin)
+function [alignStartIndex, alignedEdfVec] = tdtAlignEyeWithEdf(edfEyeVec, tdtEyeVec, edfSamplingFreqHz, tdtSamplingFreqHz, alignWindowSecs)
 %TDTALIGNEYEWITHEDF Align EDF eye data with TDT eye data
 %Note:
 % Replace values in EDF eye data that is missed/defaulted
@@ -34,11 +34,6 @@ function [alignStartIndex, alignedEdfVec] = tdtAlignEyeWithEdf(edfEyeVec, tdtEye
     edfEyeVec(edfEyeVec==MISSING_DATA_VALUE)=nan;
     edfEyeVec(edfEyeVec==EMPTY_VALUE)=nan;
 
-    doClassic = 1;
-    if numel(varargin) == 1
-        doClassic = 1;
-        alignWindowSecs = varargin{1};
-    end
     edfFs = round(edfSamplingFreqHz);
     tdtFs = round(tdtSamplingFreqHz);
     tdtEyeVecResampled = single(resample(double(tdtEyeVec),edfFs,tdtFs));
