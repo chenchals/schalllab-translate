@@ -12,7 +12,7 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
 %              (a) Save eye data on Eyelink 
 %              (b) Translate edf data to mat (see Edf2Mat
 %                      https://github.com/uzh/edf-converter) 
-%              (c) EDF mat full filepath sessionDir/[SESSION_NAME]_EDF.mat
+%              (c) EDF mat full filepath sessionDir/dataEDF.mat
 %          
 %   **********ASSUMPTIONS of EDF file collection*********
 %   Absolute time: ------------------------------------------------------->
@@ -39,25 +39,55 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
 
     % Normalize input path and extract sessionName
     blockPath = regexprep(sessionDir,'[/\\]',filesep);
-    binsForTdtMovingAverage = 1;
+    binsForTdtMovingAverage = 1; % no moving average
     maxTdtStartDelay = 100; % in seconds
 
+    %% Function to parse data vector to trials omit 1st and last trial
+    nTrials = numel(trialStartTimes);
+    splitEyeDataIntoTrialsFx = @(eyeVec,timeBins)...
+        [NaN;...
+        arrayfun(@(ii) eyeVec(timeBins(ii):timeBins(ii+1)-1),(2:nTrials-1)','UniformOutput',false);...
+        NaN];
     
+    %% Initialize output
     trialEyes = struct();
-    
-    %% Reading TDT Eye data
+
+    %% Read TDT Eye data
     fprintf('Reading TDT Eye Data...\n');
     [tdtX, tdtY, tdtFsHz, tdtStartTime] = getTdtEyeData(blockPath);
     tdtBinWidthMs = 1000/tdtFsHz;
-    %% If EDF translated data is present align trial data with edf data and parse edfData
+    
+    %% Parse TDT eye date into trials (before doing EDF), in case there is no EDF file
+    trialStartTable = table();
+    trialStartTable.trialStartMsFractional=trialStartTimes;
+    trialStartTable.trialStartMs=round(trialStartTimes);
+    trialStartTable.trialDurationMsFractional=[diff(trialStartTable.trialStartMsFractional);NaN];
+    trialStartTable.trialDurationMs=round(trialStartTable.trialDurationMsFractional);
+    trialStartTable.tdtTrialStartBinFractional=trialStartTable.trialStartMsFractional./tdtBinWidthMs;
+    trialStartTable.tdtTrialStartBin=round(trialStartTable.trialStartMsFractional./tdtBinWidthMs);
+        
+    trialEyes.tdtEyeX = splitEyeDataIntoTrialsFx(tdtX,trialStartTable.tdtTrialStartBin);
+    trialEyes.tdtEyeY = splitEyeDataIntoTrialsFx(tdtY,trialStartTable.tdtTrialStartBin);
+    
+    trialEyes.trialTimeTable = trialStartTable;
+    trialEyes.tdt.sessionDir = blockPath;
+    trialEyes.tdt.StartTime = tdtStartTime;
+    trialEyes.tdt.FsHz = tdtFsHz;
+    trialEyes.tdt.BinWidthMs = tdtBinWidthMs;
+    trialEyes.tdt.EyeDataBins = numel(tdtX);
+
+    trialEyes.DEFINITIONS = addDefinitions(trialEyes);
+    
+    %% If Eyelink translated data is present 
+    %  Align TDT Eye data with Eyelink eye data and parse into trials
     fprintf('Reading EDF Eye Data...\n');
-    edfMatFile = dir([sessionDir '/dataEDF.mat']);
-    if isempty(edfMatFile)
+    edfMatFile = fullfile(sessionDir, 'dataEDF.mat');
+    if ~exist(edfMatFile, 'file')
+        warning('EDF Eye Data File [%s] not found.', edfMatFile);
         return;
     end
     edfDataField = 'dataEDF';
-    trialEyes.edfMatFile = fullfile(edfMatFile.folder, edfMatFile.name);
-    edf = load(trialEyes.edfMatFile);
+    edf = load(edfMatFile);
     edfX = edf.(edfDataField).FSAMPLE.gx(1,:);
     edfY = edf.(edfDataField).FSAMPLE.gy(1,:);
     edfFsHz = 1000;
@@ -90,61 +120,47 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
     endIndices = findAlignmentIndices(partialEdf,partialTdt,binsForTdtMovingAverage,edfFsHz,tdtFsHz,slidingWindowSecs);    
     endIndices = numel(edfX)-endIndices;
     
-    %% Equation to straight line
+    %% Linear function to convert TDT - TrialStart_ time (ms) to index on Eyelink collectd EDF data
     edfStartBin = startIndices(1);
     edfEndBin = endIndices(1);
     % Number of EDF bins per ms
     totalTimeMs = (numel(tdtX)*tdtBinWidthMs);
-    slope = (edfEndBin-edfStartBin)/totalTimeMs;    
+    edfBinsPerTdtMs = (edfEndBin-edfStartBin)/totalTimeMs;    
+    %% Values for synchronizing Eylelink data with TDT
+    edfSyncValues = struct();
+    edfSyncValues.slidingWindowSecs = slidingWindowSecs(:);
+    edfSyncValues.edfTrialStartOffsets = startIndices;
+    edfSyncValues.edfTrialEndOffsets = endIndices;
+    edfSyncValues.edfStartOffset = edfStartBin;
+    edfSyncValues.edfEndOffset = edfEndBin;
+    edfSyncValues.nTdtBins = numel(tdtX);
+    edfSyncValues.tdtBinWidthMs = tdtBinWidthMs;
+    edfSyncValues.nEdfBins = numel(edfX);
+    edfSyncValues.edfBinWidthMs = edfBinWidthMs;
+    edfSyncValues.linear.edfBinsPerTdtMs = edfBinsPerTdtMs;
+    edfSyncValues.linear.edfStartOffset = edfStartBin;
+    edfSyncValues.linear.edfBinIndexFx =  @(timeMs) timeMs.*edfSyncValues.linear.edfBinsPerTdtMs + edfSyncValues.linear.edfStartOffset;
+    edfSyncValues.edfDataChunkSize = repmat(edfDataChunk,numel(slidingWindowSecs),1);
+    edfSyncValues.tdtDataChunkSize = repmat(tdtDataChunk,numel(slidingWindowSecs),1);
+    % add to output
+    trialEyes.edfSyncValues = edfSyncValues;
     
-    edfOffsetMetrics = struct();
-    edfOffsetMetrics.slidingWindowSecs = slidingWindowSecs(:);
-    edfOffsetMetrics.edfTrialStartOffsets = startIndices;
-    edfOffsetMetrics.edfTrialEndOffsets = endIndices;
-    edfOffsetMetrics.edfStartOffset = edfStartBin;
-    edfOffsetMetrics.edfEndOffset = edfEndBin;
-    edfOffsetMetrics.nTdtBins = numel(tdtX);
-    edfOffsetMetrics.linear.slope = slope; 
-    edfOffsetMetrics.linear.intercept = edfStartBin; 
-    edfOffsetMetrics.linear.edfDataIndexFx =  @(timeMs) timeMs.*slope + edfOffsetMetrics.linear.intercept;
-    edfOffsetMetrics.edfDataChunkSize = repmat(edfDataChunk,numel(slidingWindowSecs),1);
-    edfOffsetMetrics.tdtDataChunkSize = repmat(tdtDataChunk,numel(slidingWindowSecs),1);
-    
-    %% Parse edf Data and tdt Data into trials
-    
-    trialTimeTable = table();
-    trialTimeTable.trialTimeMs=round(trialStartTimes);
-    trialTimeTable.trialDurationMs=[diff(trialTimeTable.trialTimeMs);NaN];
-    trialTimeTable.tdtTrialTimeBins=trialTimeTable.trialTimeMs./tdtBinWidthMs;
-    trialTimeTable.tdtTrialTimeBins=round(trialTimeTable.trialTimeMs./tdtBinWidthMs);
-    trialTimeTable.edfTrialTimeBins=round(trialTimeTable.trialTimeMs+edfStartBin);    
-    trialTimeTable.edfTrialTimeBinsLinearEq=round(edfOffsetMetrics.linear.edfDataIndexFx(trialStartTimes));
+    %% Parse edf Data into trials 
+    trialEyes.trialTimeTable.edfTrialStartBinFractional=edfSyncValues.linear.edfBinIndexFx(trialStartTimes);
+    trialEyes.trialTimeTable.edfTrialStartBin=round(trialEyes.trialTimeTable.edfTrialStartBinFractional);
         
-    % Parse vector to trial omit 1st and last trial
-    nTrials = size(trialTimeTable,1);
-    parse2Trials = @(eyeVec,timeBins)...
-                  [NaN;...
-                   arrayfun(@(ii) eyeVec(timeBins(ii):timeBins(ii+1)-1),(2:nTrials-1)','UniformOutput',false);...
-                   NaN];
-    
-    trialEyes.tdtTrialsEyeX = parse2Trials(tdtX,trialTimeTable.tdtTrialTimeBins);
-    trialEyes.tdtTrialsEyeY = parse2Trials(tdtY,trialTimeTable.tdtTrialTimeBins);
-    trialEyes.edfTrialsEyeX2 = parse2Trials(edfX,trialTimeTable.edfTrialTimeBins); 
-    trialEyes.edfTrialsEyeY2 = parse2Trials(edfY,trialTimeTable.edfTrialTimeBins); 
-    trialEyes.edfTrialsEyeX = parse2Trials(edfX,trialTimeTable.edfTrialTimeBinsLinearEq); 
-    trialEyes.edfTrialsEyeY = parse2Trials(edfY,trialTimeTable.edfTrialTimeBinsLinearEq); 
+    trialEyes.edfEyeX = splitEyeDataIntoTrialsFx(edfX,trialEyes.trialTimeTable.edfTrialStartBin); 
+    trialEyes.edfEyeY = splitEyeDataIntoTrialsFx(edfY,trialEyes.trialTimeTable.edfTrialStartBin); 
     
     % Fill other output fields
-    trialEyes.trialTimeTable = trialTimeTable;
-    trialEyes.tdtFsHz = tdtFsHz;
-    trialEyes.tdtBinWidthMs = tdtBinWidthMs;
-    trialEyes.edfFsHz = edfFsHz;
-    trialEyes.edfBinWidthMs = edfBinWidthMs;
-    trialEyes.tdtStartTime = tdtStartTime;
-    trialEyes.edfOffsetMetrics = edfOffsetMetrics;
-    trialEyes.edfHeader = edf.(edfDataField).HEADER;
-    trialEyes.edfRecordings = edf.(edfDataField).RECORDINGS;
-    trialEyes.edfFevent = edf.(edfDataField).FEVENT;
+    trialEyes.edf.EdfMatFile = edfMatFile;
+    trialEyes.edf.FsHz = edfFsHz;
+    trialEyes.edf.BinWidthMs = edfBinWidthMs;
+    trialEyes.edf.Header = edf.(edfDataField).HEADER;
+    trialEyes.edf.Recordings = edf.(edfDataField).RECORDINGS;
+    trialEyes.edf.Fevent = edf.(edfDataField).FEVENT;
+    trialEyes.DEFINITIONS = addDefinitions(trialEyes); 
+   
         
 end
 
@@ -163,8 +179,7 @@ function [tdtEyeX, tdtEyeY, tdtEyeFs, tdtEyeZeroTime] = getTdtEyeData(blockPath)
     % Get sampling frequency
     tdtEyeFs = tdtEye.streams.EyeY.fs;
     % Usually very close to zero, but you never know
-    tdtEyeZeroTime = tdtEye.streams.EyeY.startTime;
-    
+    tdtEyeZeroTime = tdtEye.streams.EyeY.startTime; 
 end
 
 function vec = replaceValue(vec,val,subVal)
@@ -179,6 +194,10 @@ function indices = findAlignmentIndices(partialEdf, partialTdt, nBoxcarBins,edfH
         indices(ii,1) = tdtAlignEyeWithEdf(partialEdf,movmean(partialTdt,nBoxcarBins),edfHz,tdtHz,slidingWindowSecs(ii));
     end
     toc
-    
+end
+
+function [out] = addDefinitions(inStruct)
+   out = 'Not Yet';
+
 end
 
