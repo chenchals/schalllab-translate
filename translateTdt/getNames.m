@@ -16,7 +16,7 @@ function [output] = getNames(inArg, varargin)
         if ~isempty(pre)
             fns = strcat(pre,'.',fns);
          end
-        output = [output ; fns ]
+        output = [output ; fns ];
     elseif isstruct(inArg)
         fns = fieldnames(inArg);
         for ii = 1:numel(fns)
@@ -26,9 +26,9 @@ function [output] = getNames(inArg, varargin)
                 fn = strcat(pre,'.',fn);
             end
             if isstruct(temp) || istable(temp)
-                output = getNames(temp, output, fn)
+                output = getNames(temp, output, fn);
             else
-                output = [output ; fn] %#ok<AGROW>
+                output = [output ; fn]; %#ok<AGROW>
             end
         end
     end

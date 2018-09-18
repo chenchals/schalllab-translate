@@ -77,6 +77,7 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
     trialEyes.tdt.EyeDataBins = numel(tdtX);
 
     trialEyes.DEFINITIONS = addDefinitions(trialEyes);
+    trialEyes.WHAT_IS = getDefinitions();
     
     %% If Eyelink translated data is present 
     %  Align TDT Eye data with Eyelink eye data and parse into trials
@@ -197,7 +198,62 @@ function indices = findAlignmentIndices(partialEdf, partialTdt, nBoxcarBins,edfH
 end
 
 function [out] = addDefinitions(inStruct)
-   out = 'Not Yet';
+   defMap = getDefinitions();
+   truncateFns = {'edf\.Recordings';'edf\.Fevent'};
+   fns = getNames(inStruct);
+   for ii = 1:numel(truncateFns)
+      fns = unique(regexprep(fns, [truncateFns{ii} '.*'],truncateFns{ii}));
+   end
+   out = {};
+   for ii = 1:numel(fns)
+       fn = fns{ii};
+       if defMap.isKey(fn)
+          out = [out; defMap(fn)]; %#ok<AGROW>
+       end
+   end
+end
 
+function [defMap] = getDefinitions()
+    defs = {
+        'trialTimeTable.trialStartMsFractional: (ms) Task.TrailStart_ time, fractional, cannot be used as index'
+        'trialTimeTable.trialStartMs: (ms) Task.TrailStart_ time rounded'
+        'trialTimeTable.trialDurationMsFractional: (ms) Trial duration, fractional'
+        'trialTimeTable.trialDurationMs: (ms) Trial duration, rounded'
+        'trialTimeTable.tdtTrialStartBinFractional: (count) Computed index of TDT Eye data bins for trial start, fractional, cannot be used as index'
+        'trialTimeTable.tdtTrialStartBin: (count) Computed index of TDT Eye data bins for trial start, rounded, to be used as index'
+        'trialTimeTable.edfTrialStartBinFractional: (count) Computed index of Eyelink EDF data bins for trial start, fractional, cannot be used as index'
+        'trialTimeTable.edfTrialStartBin: (count) Computed index of Eyelink EDF data bins for trial start, rounded, to be used as index'
+        'tdtEyeY: TDT EyeY data by trials (in ADC units)'
+        'tdtEyeX: TDT EyeX data by trials (in ADC units)'
+        'tdt.sessionDir: Directory where data files recorded during this session are archived'
+        'tdt.StartTime: (s) The exact start time offset when TDT started recoring Eye data, close to 0 ms'
+        'tdt.FsHz: (Hz) TDT sampling frequency for ADC of Eyelink data'
+        'tdt.EyeDataBins: (count) Number of TDT EyeX or EyeY data points'
+        'tdt.BinWidthMs: (ms) Size of each TDT Eye data bin'
+        'edfSyncValues.tdtDataChunkSize: (count) Number of TDT Eye data points (from start or from end) used for aligning TDT Eye data with Eyelink EDF data'
+        'edfSyncValues.tdtBinWidthMs: (ms) Size of each TDT Eye data bin'
+        'edfSyncValues.slidingWindowSecs: (s) Vector, number of sec*1000 bins the Eyelink EDF data is shifted for alignment'
+        'edfSyncValues.nTdtBins: (count) Total number of TDT Eye data bins'
+        'edfSyncValues.nEdfBins: (count) Total number of Eyelink EDF Eye data bins'
+        'edfSyncValues.linear.edfStartOffset: (intercept) In number of bins - Intercept of linear equation to convert time in ms on TDT to bin-number of Eyelink EDF eye data'
+        'edfSyncValues.linear.edfBinsPerTdtMs: (slope) Slope of linear equation to convert time in ms on TDT to bin-number of Eyelink EDF eye data'
+        'edfSyncValues.linear.edfBinIndexFx: (function) Linear function y = mx + c, to convert time in ms on TDT to bin-number of Eyelink EDF eye data'
+        'edfSyncValues.edfTrialStartOffsets: (count) Vector, bin number on Eyelink EDF Eye data that aligns with the START-data-point of TDT Eye data. Values correspond to edfSyncValues.slidingWindowSecs values'
+        'edfSyncValues.edfTrialEndOffsets: (count) Vector, bin number on Eyelink EDF Eye data that aligns with the END-data-point of TDT Eye data. Values correspond to edfSyncValues.slidingWindowSecs values'
+        'edfSyncValues.edfStartOffset: (count) Eyelink EDF data alignment Start offset used for getting the edfSyncValues.linear.edfBinIndexFx function'
+        'edfSyncValues.edfEndOffset: (count) Eyelink EDF data alignment End offset used for getting the edfSyncValues.linear.edfBinIndexFx function'
+        'edfSyncValues.edfDataChunkSize: (count) Number of Eyelink EDF Eye data points (from start or from end) used for aligning TDT Eye data with Eyelink EDF data'
+        'edfSyncValues.edfBinWidthMs: (ms) Size of each Eyelink EDF Eye data bin'
+        'edfEyeY: Eyelink EDF EyeY data by trials (in pixels units) - (EDF data - gy split into trials)'
+        'edfEyeX: Eyelink EDF EyeX data by trials (in pixels units) - (EDF data - gx split into trials)'
+        'edf.Recordings: Eyelink RECORDINGS field (see dataEDF.mat file)'
+        'edf.Header: Eyelink HEADER field (see dataEDF.mat file)'
+        'edf.FsHz: (Hz) Eyelink frequency of ADC from Eyelink camera, data in dataEDF.mat filr translated from *.edf file native to Eyelink'
+        'edf.Fevent: Eyelink FEVENT field (see dataEDF.mat file)'
+        'edf.EdfMatFile: (char) The Eyelink EDF file that is translated to dataEDF.mat'
+        'edf.BinWidthMs: (ms) Size of each Eyelink EDF Eye data bin'
+        };
+    temp = split(defs,':');
+    defMap = containers.Map(temp(:,1),defs);
 end
 
