@@ -27,9 +27,8 @@ function [code2Name, name2Code] = getCodeDefs(codesFile)
 % See also GETRELCODES, VERIFYEVENTCODES, TDTEXTRACTBEHAVIOR
     
     if contains(codesFile,'INFOS')
-        isInfosDefFile = true;
+        [ev.code, ev.name] = parseInfosCodes(codesFile);   
     elseif contains(codesFile,'EVENTDEF') % EVENDTDEF.pro file
-        isInfosDefFile = false;
         [ev.code, ev.name] = parseEventCodes(codesFile);
     else
         error('Unknown codes file %s',codesFile);
@@ -39,8 +38,8 @@ function [code2Name, name2Code] = getCodeDefs(codesFile)
      name2Code = containers.Map(ev.name, ev.code);
 end
 
-function [codes, names] = parseEventCodes(eventDefFile)
-    content = fileread(eventDefFile);
+function [codes, names] = parseEventCodes(codeFile)
+    content = fileread(codeFile);
     tokens = regexp(content,'constant\s+([A-Z]\w*)\s*=\s*(\d{1,4});','tokens');
     tokens = [tokens{:}];
     tokens = reshape(tokens, [2, numel(tokens)/2])';
@@ -55,7 +54,25 @@ function [codes, names] = parseEventCodes(eventDefFile)
     end
 end
 
-function [ev ]= old(codesFile, isInfosDefFile)
+function [codes, names] = parseInfosCodes(codesFile)
+    content = fileread(codesFile);
+    content = regexprep(content,'InfosZero\s*\+\s*|abs\(|\(|\s*\+\s*\d*|\);','');
+    sendEvtRegEx = 'SEND_EVT(\w*)';
+    %setEvtRegEx = 'Set_event\]\s*=\s*(\w*[ +]*\w*)';
+    setEvtRegEx = 'Set_event\]\s*=\s*(\w*)';
+    % Check both patterns:
+    names = regexp(content,sendEvtRegEx,'tokens');
+    if isempty(names)
+        names = regexp(content,setEvtRegEx,'tokens');
+    end
+    names = [names{:}]';
+    startInfosIndex = find(strcmp(names,'StartInfos_'));
+    names = names(startInfosIndex:end);
+    codes = (1:numel(names))';
+end
+
+
+function [ev ]= old(codesFile, isInfosDefFile) %#ok<DEFNU>
     if isInfosDefFile
         matchExpr = '^\s*Event_fifo.*InfosZero\s*\+\s*[abs\(|\(]*(\w*)\s*.*';
     else
