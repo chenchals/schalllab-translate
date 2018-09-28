@@ -26,18 +26,42 @@ function [code2Name, name2Code] = getCodeDefs(codesFile)
 %
 % See also GETRELCODES, VERIFYEVENTCODES, TDTEXTRACTBEHAVIOR
     
-    isInfosDefFile = false;
-    if contains(codesFile,'INFOS.pro')
+    if contains(codesFile,'INFOS')
         isInfosDefFile = true;
-        matchExpr = '^\s*Event_fifo.*InfosZero\s*\+\s*[abs\(|\(]*(\w*)\s*.*';       
-    elseif contains(codesFile,'EVENTDEF.pro') % EVENDTDEF.pro file
-        matchExpr = '^declare hide constant\s+([A-Z]\w*)\s*=\s*(\d{1,4});';
-    elseif ~isempty(regexp(codesFile,'rig.*\.m$','match'))
-        % it is a '...._rigXXX.m' file
-        matchExpr = 'EV\.([A-Z]\w*)\s*=\s*(\d{1,4});';
+    elseif contains(codesFile,'EVENTDEF') % EVENDTDEF.pro file
+        isInfosDefFile = false;
+        [ev.code, ev.name] = parseEventCodes(codesFile);
     else
         error('Unknown codes file %s',codesFile);
+    end    
+    % fix duplicate names: ?
+     code2Name = containers.Map(ev.code, ev.name);
+     name2Code = containers.Map(ev.name, ev.code);
+end
+
+function [codes, names] = parseEventCodes(eventDefFile)
+    content = fileread(eventDefFile);
+    tokens = regexp(content,'constant\s+([A-Z]\w*)\s*=\s*(\d{1,4});','tokens');
+    tokens = [tokens{:}];
+    tokens = reshape(tokens, [2, numel(tokens)/2])';
+    names = tokens(:,1);
+    codes = cellfun(@str2num,tokens(:,2));
+    codesGt3000 = find(codes>3000);
+    if ~isempty(codesGt3000)
+        warning(sprintf('There are Event codes greater than 3000.\nIf these are commented out, please *REMOVE* commented out line(s)\n')); %#ok<SPWRN>
+        disp(table(names(codesGt3000),codes(codesGt3000),...
+             'VariableNames',{'EventName','EventCode'}));
+        warning(sprintf('EVENTCODES greater than 3000 are NOT Processed...\n')); %#ok<SPWRN>  
     end
+end
+
+function [ev ]= old(codesFile, isInfosDefFile)
+    if isInfosDefFile
+        matchExpr = '^\s*Event_fifo.*InfosZero\s*\+\s*[abs\(|\(]*(\w*)\s*.*';
+    else
+        matchExpr = '^declare hide constant\s+([A-Z]\w*)\s*=\s*(\d{1,4});';
+    end
+
     rFid = fopen(codesFile,'r');
     count = 0;
     while ~feof(rFid)
@@ -56,7 +80,5 @@ function [code2Name, name2Code] = getCodeDefs(codesFile)
         end
     end
     fclose(rFid);
-    % fix duplicate names: ?
-     code2Name = containers.Map(ev.code, ev.name);
-     name2Code = containers.Map(ev.name, ev.code);
+
 end
