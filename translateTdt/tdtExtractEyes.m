@@ -40,7 +40,7 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
     % Normalize input path and extract sessionName
     blockPath = regexprep(sessionDir,'[/\\]',filesep);
     binsForTdtMovingAverage = 1; % no moving average
-    maxTdtStartDelay = 100; % in seconds
+    maxTdtStartDelay = 500; % in seconds
 
     %% Function to parse data vector to trials omit 1st and last trial
     nTrials = numel(trialStartTimes);
@@ -122,8 +122,8 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
     endIndices = numel(edfX)-endIndices;
     
     %% Linear function to convert TDT - TrialStart_ time (ms) to index on Eyelink collectd EDF data
-    edfStartBin = startIndices(1);
-    edfEndBin = endIndices(1);
+    edfStartBin = startIndices(end);
+    edfEndBin = endIndices(end);
     % Number of EDF bins per ms
     totalTimeMs = (numel(tdtX)*tdtBinWidthMs);
     edfBinsPerTdtMs = (edfEndBin-edfStartBin)/totalTimeMs;    

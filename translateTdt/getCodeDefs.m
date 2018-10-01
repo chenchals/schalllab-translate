@@ -67,7 +67,8 @@ function [codes, names] = parseInfosCodes(codesFile)
     end
     names = [names{:}]';
     startInfosIndex = find(strcmp(names,'StartInfos_'));
-    names = names(startInfosIndex:end);
+    endInfosIndex = find(strcmp(names,'EndInfos_'));
+    names = names(startInfosIndex+1:endInfosIndex-1);
     codes = (1:numel(names))';
 end
 

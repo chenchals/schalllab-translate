@@ -161,3 +161,22 @@ plot(tdtTime,movmean(tdtX,8))
 
 
 
+
+
+
+
+
+
+voltRange = [-5 5];
+signalRange = [-0.2 1.2];
+pixelRangeX = [0 1024]; % Eye-X
+
+for t = 2:10:1000
+    plot((1:numel(trialEyes.tdtEyeX{t})).*trialEyes.tdt.BinWidthMs,tdtAnalog2Pixels(trialEyes.tdtEyeX{t},voltRange, signalRange, pixelRangeX),'g')
+    hold on
+    plot((1:numel(trialEyes.edfEyeX{t})).*trialEyes.edf.BinWidthMs,trialEyes.edfEyeX{t},'r')
+    hold off
+    pause
+end
+
+

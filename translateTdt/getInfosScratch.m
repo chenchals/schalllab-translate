@@ -21,7 +21,7 @@ content3 = fileread(eventDefFile);
 tokens3 = regexp(content3,'constant\s+([A-Z]\w*)\s*=\s*(\d{1,4});','tokens');
 tokens3 = [tokens3{:}];
 tokens3 = reshape(tokens3, [2, numel(tokens3)/2])';
-codeNames = tokens(:,1);
+codeNames = tokens3(:,1);
 codeVals = cellfun(@str2num,tokens3(:,2));
 
 
