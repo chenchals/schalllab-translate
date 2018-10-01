@@ -5,9 +5,9 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
 %
 %   sessionDir: Location of TDT data files [and EDF data file translated
 %               to .mat file see EDF-File* below] are saved 
-%   trialStartTimes: [nx1] double vector of trial Start times [NaN ok]
-%                    The Task.TrialStart_ vector, got by running
-%                    tdtExtractEvents
+%   trialStartTimes: [nx1] double vector of trial Start times in millisecs
+%                    [NaN ok]. Use Task.TrialStart_ vector, got by running
+%                    tdtExtractEvents or runExtraction
 %   EDF-File*: To use EDF data all of the followig had to be done: 
 %              (a) Save eye data on Eyelink 
 %              (b) Translate edf data to mat (see Edf2Mat
@@ -35,12 +35,17 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
 %    [SESSION_NAME]_EDF.mat
 %
 %    [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
-% See also TDTEXTRACTEVENTS, TDTALIGNEYEWITHEDF
+% See also RUNEXTRACTION, TDTEXTRACTEVENTS, TDTALIGNEYEWITHEDF
 
     % Normalize input path and extract sessionName
     blockPath = regexprep(sessionDir,'[/\\]',filesep);
     binsForTdtMovingAverage = 1; % no moving average
-    maxTdtStartDelay = 500; % in seconds
+    % The number of bins the EDF Eye vector is moved for computing alignment
+    % The value is given is Secs, which is converted later to ms,
+    % assuming the ksampling rate of EDF data is 1000Hz.
+    % In general this value should be about 10-15% of total session
+    % duration in secs. Compute this using trialStartTimes
+    maxWindowToSlideEdf = round(nanmax(trialStartTimes)*0.15/1000); % in seconds
 
     %% Function to parse data vector to trials omit 1st and last trial
     nTrials = numel(trialStartTimes);
@@ -104,9 +109,9 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
     edfY = replaceValue(edfY,EMPTY_VALUE,nan);
     
     %% Align start of tdt (Eye) recording with the start in EDF recording
-    slidingWindowSecs = round(linspace(0,maxTdtStartDelay,4));
+    slidingWindowSecs = round(linspace(0,maxWindowToSlideEdf,4));
     slidingWindowSecs = slidingWindowSecs(2:end);
-    edfDataChunk = 2*maxTdtStartDelay*1000; % Twice the max delay bins
+    edfDataChunk = 2*maxWindowToSlideEdf*1000; % Twice the max delay bins
     tdtDataChunk = 0.1*edfDataChunk; % 10% of no of edfBins
     fprintf('Finding start index for aligning EDF Eye Data to start of TDT Eye data...\n');
     partialEdf = edfX(1:edfDataChunk); 
