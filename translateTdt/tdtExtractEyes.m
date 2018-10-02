@@ -42,6 +42,7 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, varargin)
 %
 %    [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
 % See also RUNEXTRACTION, TDTEXTRACTEVENTS, TDTALIGNEYEWITHEDF
+%
     useEyeX = true;
     if numel(varargin)==1
         edfOptions = varargin{1};

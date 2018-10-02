@@ -1,9 +1,51 @@
 classdef TDTTranslator < matlab.mixin.SetGetExactNames
-    %TDTTranslator Summary of this class goes here
-    %   Detailed explanation goes here
-    
-    properties (Access = private)
-        
+    %TDTTRANSLATOR Translate TDT session data, including Elyelink EDF data 
+    %   Requires the following options to be set on the constructor or when
+    %   called with no arguments, will prompt user to provide the options.
+    % 
+    %   options: Is a struct that sets up data paths and processing options for eyedata.
+    %           .sessionDir     - [char] Location of TDT session directory
+    %           .baseSaveDir    - [char] Base location for saving translated TDT
+    %                             session. Do not include session name, since
+    %                             a sub-dir with session name is created 
+    %           .eventDefFile   - [char] Full filepath to EVENTDEF.pro file 
+    %                             used by TEMPO to acquire TDT session 
+    %           .infosDefFile   - [char] Full filepath to INFOS.pro file 
+    %                             used by TEMPO to acquirs TDT session
+    %           .hasEdfDataFile - [T|F] Does the sessionDir contain
+    %                             'dataEDF.mat'.  This is edf-datafile
+    %                             collected on EYELINK computer that is
+    %                             transferred to the TDT session directory
+    %                             and converted used third-party utility
+    %   if .hasEdfDataFile is TRUE, then you would need to include the
+    %   following nested stuct for translating edf eye data:
+    %            .edf            - EDF options for merging ELYELINK data
+    %            .edf.useEye     - [X|Y] Which component of Eye data for TDT
+    %                               and EDF do you want to use for aligning? 
+    %            .edf.voltRange  - [1x2 double] Volt range of TDT eye data.
+    %                              Example [-5 5]
+    %            .edf.signalRange - [1x2 double] Signal range of EDF eye data.
+    %                               Example [-0.2 1.2]
+    %            .edf.pixelRange - [1x2 double] Pixel range of EDF eye data.
+    %                               Example [0 1024] for X or [0 768] for Y
+    %
+    %TDTTRANSLATOR Properties - Private
+    %    optionFieldPrompts    - fieldnames and prompts for interactive
+    %                            input for events/infos
+    %    edfOptionFieldPrompts - fieldnames and prompts for interactive
+    %                            input for edf
+    %TDTTRANSLATOR Properties - Protected
+    %    options               - Options used for processing
+    %
+    %TDTTRANSLATOR Methods:
+    %
+    %    TDTTRANSLTOR   - Constructor takes no args or options struct as
+    %                     argument
+    %    SETOPTIONS     - Setup options interactively
+    %    TRANSLATE      - Methoid to be called for doing the translation
+    %
+
+    properties (Access = private)        
         optionFieldPrompts = {
             {'sessionDir', sprintf('Location of TDT session directory\n\t\t\t\t[string]')}
             {'baseSaveDir', sprintf('Base directory for saving translation results\n\t(will create dirctoty with session_name)\n\t\t\t\t[string]')}
@@ -29,11 +71,11 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
     
     methods
         function obj = TDTTranslator(varargin)
-            %TDTTRANSLATOR Construct an instance of this class
+         %TDTTRANSLATOR Construct an instance of this class for translation
+         %of TDT data
             if nargin==1
                 obj.options = varargin{1};
                 checkOptions(obj);
-                %error('*****Passing options - Not yet Implemented*****');
             else
                 setOptions(obj);           
             end
@@ -41,19 +83,36 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
         end
         
         function setOptions(obj)
+        %SETOPTIONS Interactive method that obtains user input for
+        %different options fields, including EDF options to be used for
+        %translation / aligning EYELINK-eye data to TDT-eye data
             if isempty(obj.options)
                 obj.options = struct();
             end
             obj.options = processFields(obj,obj.optionFieldPrompts);
-            %verifyFileOptions(obj,obj.options);
             if obj.options.hasEdfDataFile
-                obj.options.edf = processFields(obj,obj.edfOptionFieldPrompts);               
-                %verifyEdfOptions(obj,obj.options.edf);            
+                obj.options.edf = processFields(obj,obj.edfOptionFieldPrompts);                        
             end
         end
         
         function [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfo] = translate(obj)
-            %TRANSLATE Summary of this method goes here
+        %TRANSLATE Translate the TDT session data using processing options
+        % OUTPUTS:
+        %     Task       - A struct of all EVENT codes by trials
+        %     TaskInfos  - A struct of all INFOS by trials
+        %     TrialEyes  - A struct of Eye data from TDT [as well as EDF if
+        %                  present] by trials 
+        %     EventCodec - A containers.Map of all event-codes-by-names as
+        %                  well as event-names-by-code. These are
+        %                  event-name=code mapping in the EVENTDEF.pro file 
+        %     InfosCodec - A containers.Map of all infos-codes-by-names as
+        %                  well as infos-names-by-code. Code is the
+        %                  sequential number of info-names occuring in
+        %                  INFOS.pro file
+        %     SessionInfo- A struct of session information from TDT file]
+        % See also RUNEXTRACTION, TDTEXTRACTEVENTS, TDTEXTRACTEYES
+        %
+        
             checkOptions(obj);
             o = obj.options;
             [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfo] = runExtraction(o.sessionDir, o.baseSaveDir, o.eventDefFile, o.infosDefFile, o.edf);
