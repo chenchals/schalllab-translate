@@ -25,14 +25,15 @@ function [alignStartIndex, alignedEdfVec] = tdtAlignEyeWithEdf(edfEyeVec, tdtEye
 %                     between tdtEyeVec and edfEyeVec. 
 %
 % Example:
-%   [alignStartIndex, alignedEdfVec] = eyeAlignEdfWithTdt(edfX, tdtX, 1000, 1017, 100);
+%   [alignStartIndex, alignedEdfVec] = eyeAlignEdfWithTdt(edfX, tdtX, 1000, 1017, 100, edfOptions);
 %
-% See also RESAMPLE, MEAN, EDFANALOG2PIXELS
-% See EDF2MAT in edf-converter https://github.com/uzh/edf-converter for
-%   MISSING_DATA_VALUE 
-%   EMPTY_VALUE 
+% See also RESAMPLE, MEAN, TDTANALOG2PIXELS, EDF2MAT
+% Third-party utility EDF2MAT from edf-converter https://github.com/uzh/edf-converter for
+%   MISSING_DATA_VALUE = -32768;
+%   EMPTY_VALUE  = 1e08;
 %   
-    % From Edf2Mat.m in edf-converter
+
+
     MISSING_DATA_VALUE  = -32768;
     EMPTY_VALUE         = 1e08;
 
