@@ -3,9 +3,6 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
     %   Detailed explanation goes here
     
     properties (Access = private)
-        options
-        
-        
         
         optionFieldPrompts = {
             {'sessionDir', sprintf('Location of TDT session directory\n\t\t\t\t[string]')}
@@ -26,8 +23,8 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
             };
 
     end
-    properties (Access = public)
-        Property1
+    properties (Access = protected)
+        options;
     end
     
     methods
@@ -35,8 +32,8 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
             %TDTTRANSLATOR Construct an instance of this class
             if nargin==1
                 obj.options = varargin{1};
-                %checkOptions(obj);
-                error('*****Passing options - Not yet Implemented*****');
+                checkOptions(obj);
+                %error('*****Passing options - Not yet Implemented*****');
             else
                 setOptions(obj);           
             end
@@ -68,10 +65,21 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
                 warning('Processing options are not set');
                 warning('Setup options for processing ');
                 obj.setOptions();
-            end          
+            else
+                [opts, edfOpts] = getEmptyOptions(obj);
+                if isfield(obj.options,'edf')
+                    emptyOpts = opts;
+                    emptyOpts.edf = edfOpts;
+                else
+                    emptyOpts = opts;
+                end
+                if ~isempty(setdiff(getFieldnames(emptyOpts),getFieldnames(obj.options)))
+                    warning('Incorrect field names for options'); 
+                    error('TDTTranslator:OptionsFieldnamesMismatch \noptions must have the following fields:\n {%s}\n',char(join(getFieldnames(emptyOpts),', ')));
+                end
+            end
             verifyFileOptions(obj,obj.options);
-            verifyEdfOptions(obj,obj.options.edf);
-           
+            verifyEdfOptions(obj,obj.options.edf);         
         end
         
         function out = processFields(~,fieldnamePrompts)
@@ -81,31 +89,29 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
             end                       
         end
         
-        function verifyFileOptions(obj,optStruct)
+        function verifyFileOptions(~,optStruct)
             try
                 if ~exist(optStruct.sessionDir,'dir')
-                    throw(MException('TDTTranslator:DirectoryNotFound','options.sessionDir [%s] does not exist!',optStruct.sessionDir));
+                    throw(MException('TDTTranslator:DirectoryNotFound',sprintf('options.sessionDir [%s] does not exist!',optStruct.sessionDir)));
                 end
                 if ~exist(optStruct.baseSaveDir,'dir')
-                    throw(MException('TDTTranslator:DirectoryNotFound','options.baseSaveDir [%s] does not exist!',optStruct.baseSaveDir));
+                    throw(MException('TDTTranslator:DirectoryNotFound',sprintf('options.baseSaveDir [%s] does not exist!',optStruct.baseSaveDir)));
                 end
                 if ~exist(optStruct.eventDefFile,'file')
-                    throw(MException('TDTTranslator:FileNotFound','options.eventDefFile [%s] does not exist!',optStruct.eventDefFile));
+                    throw(MException('TDTTranslator:FileNotFound',sprintf('options.eventDefFile [%s] does not exist!',optStruct.eventDefFile)));
                 end
                 if ~exist(optStruct.infosDefFile,'file')
-                    throw(MException('TDTTranslator:FileNotFound','options.infosDefFile [%s] does not exist!',optStruct.infosDefFile));
+                    throw(MException('TDTTranslator:FileNotFound',sprintf('options.infosDefFile [%s] does not exist!',optStruct.infosDefFile)));
                 end
                 if optStruct.hasEdfDataFile && ~exist(fullfile(optStruct.sessionDir,'dataEDF.mat'),'file')
-                    throw(MException('TDTTranslator:FileNotFound','options.hasEdfDataFile is set to true, but file [%s] does not exist!',fullfile(optStruct.sessionDir,'dataEDF.mat')));
+                    throw(MException('TDTTranslator:FileNotFound',sprintf('options.hasEdfDataFile is set to true, but file [%s] does not exist!',fullfile(optStruct.sessionDir,'dataEDF.mat'))));
                 end
             catch me
                 error(me.message)
-            end
-            
+            end 
         end
         
-        function verifyEdfOptions(~, optStruct)
-            
+        function verifyEdfOptions(~, optStruct)      
             try
                 if isempty(regexp(optStruct.useEye,'(?<p>[XY])','names','ignorecase'))
                     throw(MException('TDTTranslator:IncorrectValue','options.edf.useEye must be [X or Y] but was [%s]!',optStruct.useEye));
@@ -125,6 +131,13 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
             catch me
                 error(me.message)
             end
+        end
+        
+        function [opts, edfOpts] = getEmptyOptions(obj)
+            fns = cellfun(@(x) x{1}, obj.optionFieldPrompts,'UniformOutput',false)';
+            opts = table2struct(array2table(ones(1,numel(fns)),'VariableNames',fns));
+            fns = cellfun(@(x) x{1}, obj.edfOptionFieldPrompts,'UniformOutput',false)';
+            edfOpts = table2struct(array2table(ones(1,numel(fns)),'VariableNames',fns));
         end
         
     end

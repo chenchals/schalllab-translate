@@ -1,6 +1,6 @@
-function [output] = getNames(inArg, varargin)
-%GETNAMES Summary of this function goes here
-%   Detailed explanation goes here
+function [output] = getFieldnames(inArg, varargin)
+%GETFIELDNAMES Get fieldnames of a given Struct (nested)
+%   
     pre = [];
     if nargin == 1
         output = {};
@@ -26,7 +26,7 @@ function [output] = getNames(inArg, varargin)
                 fn = strcat(pre,'.',fn);
             end
             if isstruct(temp) || istable(temp)
-                output = getNames(temp, output, fn);
+                output = getFieldnames(temp, output, fn);
             else
                 output = [output ; fn]; %#ok<AGROW>
             end

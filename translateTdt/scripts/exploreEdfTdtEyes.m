@@ -170,13 +170,35 @@ plot(tdtTime,movmean(tdtX,8))
 voltRange = [-5 5];
 signalRange = [-0.2 1.2];
 pixelRangeX = [0 1024]; % Eye-X
-
+tdtHz = trialEyes.tdt.FsHz;
+tdtBinWidth = 1000/tdtHz;
+edfBinWidth = trialEyes.edf.BinWidthMs;
+fudge = 5;
 for t = 2:10:1000
-    plot((1:numel(trialEyes.tdtEyeX{t})).*trialEyes.tdt.BinWidthMs,tdtAnalog2Pixels(trialEyes.tdtEyeX{t},voltRange, signalRange, pixelRangeX),'g')
-    hold on
-    plot((1:numel(trialEyes.edfEyeX{t})).*trialEyes.edf.BinWidthMs,trialEyes.edfEyeX{t},'r')
+    t
+    tX = trialEyes.tdtEyeX{t};
+    eX = trialEyes.edfEyeX{t};
+    
+    %plot((1:numel(tX)).*trialEyes.tdt.BinWidthMs,tdtAnalog2Pixels(tX,voltRange, signalRange, pixelRangeX),'g')
     hold off
-    pause
+    plot((1:numel(eX)).*edfBinWidth,eX,'r')  
+    hold on
+    iNan = find(isnan(eX));
+    iNanR = fliplr(iNan);
+    nanExtents = sort([min(iNan) iNan(diff(iNan)>1) iNanR(diff(iNanR)<-1) max(iNan)]);
+    %nanExtents = sort([max(min(iNan)-5,1) iNan(diff(iNan)>1)+5 iNanR(diff(iNanR)<-1)-5 max(iNan)+5]);
+    nanExtents = reshape(nanExtents,2,[])';
+    nanExtents = round(nanExtents./tdtBinWidth); 
+    iTdt = arrayfun(@(x) nanExtents(x,1)-fudge:nanExtents(x,2)+fudge,(1:size(nanExtents,1)),'UniformOutput',false);
+    iTdt = cell2mat(iTdt);
+    iTdt(iTdt<=0)=[];
+    txNan = tX;
+    txNan(iTdt)=NaN;        
+    
+    plot((1:numel(txNan)).*tdtBinWidth,tdtAnalog2Pixels(txNan,voltRange, signalRange, pixelRangeX),'b')
+    title(num2str(t,'Trial # %d'));
+ 
+       keyboard; 
 end
 
 

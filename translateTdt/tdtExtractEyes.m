@@ -231,7 +231,7 @@ end
 function [out] = addDefinitions(inStruct)
    defMap = getDefinitions();
    truncateFns = {'edf\.Recordings';'edf\.Fevent'};
-   fns = getNames(inStruct);
+   fns = getFieldnames(inStruct);
    for ii = 1:numel(truncateFns)
       fns = unique(regexprep(fns, [truncateFns{ii} '.*'],truncateFns{ii}));
    end

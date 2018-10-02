@@ -28,7 +28,7 @@ volt2pixFx = @(x) tdtAnalog2Pixels(x,voltRange,signalRange,pixelRangeX);
 tdtX2Pix = arrayfun(@(x) volt2pixFx(tdtData{x}), (1:nTrials)','UniformOutput',false);
 
 
-for ii = nTrials:-50:1
+for ii = nTrials:-10:1
     tX = tdtX2Pix{ii};
     eX = edfData{ii};
     plot(1:numel(eX),eX,'r');
@@ -36,7 +36,7 @@ for ii = nTrials:-50:1
     plot((1:numel(tX)).*tdtBinWidth,tX,'b');
     hold off
     xlabel(num2str(ii,'Trial #%d'));
-    pause(1)
+    pause(5)
 end
 
 
