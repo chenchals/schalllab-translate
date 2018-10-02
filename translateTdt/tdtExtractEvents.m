@@ -290,6 +290,3 @@ function [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath)
     clear tdtRaw
 end
 
-
-
-

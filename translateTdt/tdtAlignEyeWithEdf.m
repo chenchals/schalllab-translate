@@ -1,4 +1,4 @@
-function [alignStartIndex, alignedEdfVec] = tdtAlignEyeWithEdf(edfEyeVec, tdtEyeVec, edfSamplingFreqHz, tdtSamplingFreqHz, alignWindowSecs)
+function [alignStartIndex, alignedEdfVec] = tdtAlignEyeWithEdf(edfEyeVec, tdtEyeVec, edfSamplingFreqHz, tdtSamplingFreqHz, alignWindowSecs, edfOptions)
 %TDTALIGNEYEWITHEDF Align EDF eye data with TDT eye data
 %Note:
 % Replace values in EDF eye data that is missed/defaulted
@@ -9,6 +9,11 @@ function [alignStartIndex, alignedEdfVec] = tdtAlignEyeWithEdf(edfEyeVec, tdtEye
 %   edfSamplingFreqHz : Sampling frequency of EDF
 %   tdtSamplingFreqHz : Sampling frequency of TDT for Eye channels
 %   alignWindowSecs : In Seconds. Converted to number of edf bins to slide the data for computing alignment.
+%   edfOptions : A struct with the following fields
+%                    useEye : Which eye data to use X or Y [not used in this function]
+%                    voltRange : voltage range of ADC [-5 5]
+%                    signalRange : signal range of Eyelink [-0.2 1.2]
+%                    pixelRange : screen pixels in X or Y [0 1024]
 %
 %   OUTPUT:
 %     alignStartIndex : The index of edfEyeVec that when aligned with the
@@ -20,14 +25,15 @@ function [alignStartIndex, alignedEdfVec] = tdtAlignEyeWithEdf(edfEyeVec, tdtEye
 %                     between tdtEyeVec and edfEyeVec. 
 %
 % Example:
-%   [alignStartIndex, alignedEdfVec] = eyeAlignEdfWithTdt(edfX, tdtX, 1000, 1017, 100);
+%   [alignStartIndex, alignedEdfVec] = eyeAlignEdfWithTdt(edfX, tdtX, 1000, 1017, 100, edfOptions);
 %
-% See also RESAMPLE, MEAN, EDFANALOG2PIXELS
-% See EDF2MAT in edf-converter https://github.com/uzh/edf-converter for
-%   MISSING_DATA_VALUE 
-%   EMPTY_VALUE 
+% See also RESAMPLE, MEAN, TDTANALOG2PIXELS, EDF2MAT
+% Third-party utility EDF2MAT from edf-converter https://github.com/uzh/edf-converter for
+%   MISSING_DATA_VALUE = -32768;
+%   EMPTY_VALUE  = 1e08;
 %   
-    % From Edf2Mat.m in edf-converter
+
+
     MISSING_DATA_VALUE  = -32768;
     EMPTY_VALUE         = 1e08;
 
@@ -37,25 +43,16 @@ function [alignStartIndex, alignedEdfVec] = tdtAlignEyeWithEdf(edfEyeVec, tdtEye
     edfFs = round(edfSamplingFreqHz);
     tdtFs = round(tdtSamplingFreqHz);
     tdtEyeVecResampled = single(resample(double(tdtEyeVec),edfFs,tdtFs));
-    alignStartIndex = alignVectors(edfEyeVec,tdtEyeVecResampled,alignWindowSecs * edfFs);
+    alignStartIndex = alignVectors(edfEyeVec,tdtEyeVecResampled,alignWindowSecs * edfFs, edfOptions);
     alignedEdfVec = edfEyeVec(alignStartIndex:end);
 end
 
-function [lag] = alignVectors(edfVec, tdtVec, slidingWinBins)
+function [lag] = alignVectors(edfVec, tdtVec, slidingWinBins, edfOptions)
     % for conversion to gaze in pixels
-    voltRange = [-5 5];
-    signalRange = [-0.2 1.2];
-    pixelRange = [0 1024]; % X-only
+    voltRange = edfOptions.voltRange; %[-5 5];
+    signalRange = edfOptions.signalRange; %[-0.2 1.2];
+    pixelRange = edfOptions.pixelRange; %[0 1024]; % X-only
     % In edf bin time 1ms if colledted at 1000Hz
-    %Restrict tdt eye data to double the slidingWinBins
-%     tdtNBins = numel(tdtVec);
-%     if tdtNBins > 2*slidingWinBins
-%         tdtNBins = 2*slidingWinBins;
-%         tdtVec = tdtVec(1:tdtNBins);
-%     end
-%     if numel(edfVec) > 2*slidingWinBins
-%         edfVec = edfVec(1:2*slidingWinBins);
-%     end
     tdtNBins = numel(tdtVec);
     nGazeEdf = (edfVec - min(edfVec))./range(edfVec);
     nGazeTdt = tdtAnalog2Pixels(tdtVec,voltRange,signalRange,pixelRange);

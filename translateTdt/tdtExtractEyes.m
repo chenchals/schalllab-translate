@@ -1,13 +1,19 @@
-function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
+function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, varargin)
 %TDTEXTRACTEYES Extract Eye data from TDT. If file [SESSION_NAME]_EDF.mat
 %               is present in the sessionDir, align TDT Eye data with EDF
 %               eye data and cut it into trials. 
 %
 %   sessionDir: Location of TDT data files [and EDF data file translated
 %               to .mat file see EDF-File* below] are saved 
-%   trialStartTimes: [nx1] double vector of trial Start times [NaN ok]
-%                    The Task.TrialStart_ vector, got by running
-%                    tdtExtractEvents
+%   trialStartTimes: [nx1] double vector of trial Start times in millisecs
+%                    [NaN ok]. Use Task.TrialStart_ vector, got by running
+%                    tdtExtractEvents or runExtraction
+%   varargin       : edfOptions a struct with the following fields
+%                    useEye : Which eye data to use X or Y
+%                    voltRange : voltage range of ADC [-5 5]
+%                    signalRange : signal range of Eyelink [-0.2 1.2]
+%                    pixelRange : screen pixels in X or Y [0 1024]
+%
 %   EDF-File*: To use EDF data all of the followig had to be done: 
 %              (a) Save eye data on Eyelink 
 %              (b) Translate edf data to mat (see Edf2Mat
@@ -35,12 +41,24 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
 %    [SESSION_NAME]_EDF.mat
 %
 %    [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
-% See also TDTEXTRACTEVENTS, TDTALIGNEYEWITHEDF
-
+% See also RUNEXTRACTION, TDTEXTRACTEVENTS, TDTALIGNEYEWITHEDF
+%
+    useEyeX = true;
+    if numel(varargin)==1
+        edfOptions = varargin{1};
+        if edfOptions.useEye == 'Y'
+            useEyeX = false;
+        end
+    end
     % Normalize input path and extract sessionName
     blockPath = regexprep(sessionDir,'[/\\]',filesep);
     binsForTdtMovingAverage = 1; % no moving average
-    maxTdtStartDelay = 100; % in seconds
+    % The number of bins the EDF Eye vector is moved for computing alignment
+    % The value is given is Secs, which is converted later to ms,
+    % assuming the ksampling rate of EDF data is 1000Hz.
+    % In general this value should be about 6-10% of total session
+    % duration in secs. Compute this using trialStartTimes
+    maxWindowToSlideEdf = round(nanmax(trialStartTimes)*0.08/1000); % in seconds
 
     %% Function to parse data vector to trials omit 1st and last trial
     nTrials = numel(trialStartTimes);
@@ -104,26 +122,40 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
     edfY = replaceValue(edfY,EMPTY_VALUE,nan);
     
     %% Align start of tdt (Eye) recording with the start in EDF recording
-    slidingWindowSecs = round(linspace(0,maxTdtStartDelay,4));
+    slidingWindowSecs = round(linspace(0,maxWindowToSlideEdf,4));
     slidingWindowSecs = slidingWindowSecs(2:end);
-    edfDataChunk = 2*maxTdtStartDelay*1000; % Twice the max delay bins
-    tdtDataChunk = 0.1*edfDataChunk; % 10% of no of edfBins
+    % readjust proprtions of EDF and TDT data to use
+    edfDataChunk = 2*maxWindowToSlideEdf*1000; 
+    tdtDataChunk = 0.1*edfDataChunk; 
     fprintf('Finding start index for aligning EDF Eye Data to start of TDT Eye data...\n');
-    partialEdf = edfX(1:edfDataChunk); 
-    partialTdt = tdtX(1:tdtDataChunk);        
-    startIndices = findAlignmentIndices(partialEdf,partialTdt,binsForTdtMovingAverage,edfFsHz,tdtFsHz,slidingWindowSecs);
+    if useEyeX
+        partialEdf = edfX(1:edfDataChunk); 
+        partialTdt = tdtX(1:tdtDataChunk);  
+    else
+        partialEdf = edfY(1:edfDataChunk); 
+        partialTdt = tdtY(1:tdtDataChunk);  
+    end
+    startIndices = findAlignmentIndices(partialEdf,partialTdt,binsForTdtMovingAverage,edfFsHz,tdtFsHz,slidingWindowSecs,edfOptions);
     
     %% Align end of tdt (Eye) recording with the end in EDF recording
     % Basically do te reverse of previous
-    fprintf('Finding end index for aligning EDF Eye Data to end of TDT Eye data...\n');    
-    partialEdf = fliplr(edfX(end-edfDataChunk:end)); 
-    partialTdt = fliplr(tdtX(end-tdtDataChunk:end));    
-    endIndices = findAlignmentIndices(partialEdf,partialTdt,binsForTdtMovingAverage,edfFsHz,tdtFsHz,slidingWindowSecs);    
-    endIndices = numel(edfX)-endIndices;
-    
+    fprintf('Finding end index for aligning EDF Eye Data to end of TDT Eye data...\n'); 
+    if useEyeX
+        partialEdf = fliplr(edfX(end-edfDataChunk:end)); 
+        partialTdt = fliplr(tdtX(end-tdtDataChunk:end));  
+    else
+        partialEdf = fliplr(edfY(end-edfDataChunk:end)); 
+        partialTdt = fliplr(tdtY(end-tdtDataChunk:end));  
+    end
+    endIndices = findAlignmentIndices(partialEdf,partialTdt,binsForTdtMovingAverage,edfFsHz,tdtFsHz,slidingWindowSecs,edfOptions); 
+    if useEyeX
+        endIndices = numel(edfX)-endIndices;
+    else
+        endIndices = numel(edfY)-endIndices;
+    end
     %% Linear function to convert TDT - TrialStart_ time (ms) to index on Eyelink collectd EDF data
-    edfStartBin = startIndices(1);
-    edfEndBin = endIndices(1);
+    edfStartBin = startIndices(end);
+    edfEndBin = endIndices(end);
     % Number of EDF bins per ms
     totalTimeMs = (numel(tdtX)*tdtBinWidthMs);
     edfBinsPerTdtMs = (edfEndBin-edfStartBin)/totalTimeMs;    
@@ -187,12 +219,12 @@ function vec = replaceValue(vec,val,subVal)
       vec(vec==val)=subVal;
 end
 
-function indices = findAlignmentIndices(partialEdf, partialTdt, nBoxcarBins,edfHz, tdtHz, slidingWindowSecs)
+function indices = findAlignmentIndices(partialEdf, partialTdt, nBoxcarBins,edfHz, tdtHz, slidingWindowSecs,edfOptionsStruct)
     indices = nan(numel(slidingWindowSecs),1);
     tic
     for ii = 1:numel(slidingWindowSecs)
         fprintf('Aligning with time win %d secs...\n',slidingWindowSecs(ii));
-        indices(ii,1) = tdtAlignEyeWithEdf(partialEdf,movmean(partialTdt,nBoxcarBins),edfHz,tdtHz,slidingWindowSecs(ii));
+        indices(ii,1) = tdtAlignEyeWithEdf(partialEdf,movmean(partialTdt,nBoxcarBins),edfHz,tdtHz,slidingWindowSecs(ii),edfOptionsStruct);
     end
     toc
 end
@@ -200,7 +232,7 @@ end
 function [out] = addDefinitions(inStruct)
    defMap = getDefinitions();
    truncateFns = {'edf\.Recordings';'edf\.Fevent'};
-   fns = getNames(inStruct);
+   fns = getFieldnames(inStruct);
    for ii = 1:numel(truncateFns)
       fns = unique(regexprep(fns, [truncateFns{ii} '.*'],truncateFns{ii}));
    end

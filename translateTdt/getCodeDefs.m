@@ -26,18 +26,60 @@ function [code2Name, name2Code] = getCodeDefs(codesFile)
 %
 % See also GETRELCODES, VERIFYEVENTCODES, TDTEXTRACTBEHAVIOR
     
-    isInfosDefFile = false;
-    if contains(codesFile,'INFOS.pro')
-        isInfosDefFile = true;
-        matchExpr = '^\s*Event_fifo.*InfosZero\s*\+\s*[abs\(|\(]*(\w*)\s*.*';       
-    elseif contains(codesFile,'EVENTDEF.pro') % EVENDTDEF.pro file
-        matchExpr = '^declare hide constant\s+([A-Z]\w*)\s*=\s*(\d{1,4});';
-    elseif ~isempty(regexp(codesFile,'rig.*\.m$','match'))
-        % it is a '...._rigXXX.m' file
-        matchExpr = 'EV\.([A-Z]\w*)\s*=\s*(\d{1,4});';
+    if contains(codesFile,'INFOS')
+        [ev.code, ev.name] = parseInfosCodes(codesFile);   
+    elseif contains(codesFile,'EVENTDEF') % EVENDTDEF.pro file
+        [ev.code, ev.name] = parseEventCodes(codesFile);
     else
         error('Unknown codes file %s',codesFile);
+    end    
+    % fix duplicate names: ?
+     code2Name = containers.Map(ev.code, ev.name);
+     name2Code = containers.Map(ev.name, ev.code);
+end
+
+function [codes, names] = parseEventCodes(codeFile)
+    content = fileread(codeFile);
+    tokens = regexp(content,'constant\s+([A-Z]\w*)\s*=\s*(\d{1,4});','tokens');
+    tokens = [tokens{:}];
+    tokens = reshape(tokens, [2, numel(tokens)/2])';
+    names = tokens(:,1);
+    codes = cellfun(@str2num,tokens(:,2));
+    codesGt3000 = find(codes>3000);
+    if ~isempty(codesGt3000)
+        warning(sprintf('There are Event codes greater than 3000.\nIf these are commented out, please *REMOVE* commented out line(s)\n')); %#ok<SPWRN>
+        disp(table(names(codesGt3000),codes(codesGt3000),...
+             'VariableNames',{'EventName','EventCode'}));
+        warning(sprintf('EVENTCODES greater than 3000 are NOT Processed...\n')); %#ok<SPWRN>  
     end
+end
+
+function [codes, names] = parseInfosCodes(codesFile)
+    content = fileread(codesFile);
+    content = regexprep(content,'InfosZero\s*\+\s*|abs\(|\(|\s*\+\s*\d*|\);','');
+    sendEvtRegEx = 'SEND_EVT(\w*)';
+    %setEvtRegEx = 'Set_event\]\s*=\s*(\w*[ +]*\w*)';
+    setEvtRegEx = 'Set_event\]\s*=\s*(\w*)';
+    % Check both patterns:
+    names = regexp(content,sendEvtRegEx,'tokens');
+    if isempty(names)
+        names = regexp(content,setEvtRegEx,'tokens');
+    end
+    names = [names{:}]';
+    startInfosIndex = find(strcmp(names,'StartInfos_'));
+    endInfosIndex = find(strcmp(names,'EndInfos_'));
+    names = names(startInfosIndex+1:endInfosIndex-1);
+    codes = (1:numel(names))';
+end
+
+
+function [ev ]= old(codesFile, isInfosDefFile) %#ok<DEFNU>
+    if isInfosDefFile
+        matchExpr = '^\s*Event_fifo.*InfosZero\s*\+\s*[abs\(|\(]*(\w*)\s*.*';
+    else
+        matchExpr = '^declare hide constant\s+([A-Z]\w*)\s*=\s*(\d{1,4});';
+    end
+
     rFid = fopen(codesFile,'r');
     count = 0;
     while ~feof(rFid)
@@ -56,7 +98,5 @@ function [code2Name, name2Code] = getCodeDefs(codesFile)
         end
     end
     fclose(rFid);
-    % fix duplicate names: ?
-     code2Name = containers.Map(ev.code, ev.name);
-     name2Code = containers.Map(ev.name, ev.code);
+
 end
