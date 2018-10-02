@@ -55,11 +55,11 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
             end
         end
         
-        function [Task, TaskInfos, EventCodec, InfosCodec, TrialEyes, SessionInfo] = translate(obj)
+        function [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfo] = translate(obj)
             %TRANSLATE Summary of this method goes here
             checkOptions(obj);
             o = obj.options;
-            [Task, TaskInfos, EventCodec, InfosCodec, TrialEyes, SessionInfo] = runExtraction(o.sessionDir, o.baseSaveDir, o.eventDefFile, o.infosDefFile, o.edf);
+            [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfo] = runExtraction(o.sessionDir, o.baseSaveDir, o.eventDefFile, o.infosDefFile, o.edf);
         end
     end
     methods (Access = private)
