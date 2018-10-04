@@ -112,7 +112,7 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     trialPDTriggerMat = nan(nTasks,maxPDTriggers);
        
     %% Create table for all Infos and set column name as Info_Name
-    trialInfos = struct();
+    trialInfos = repmat(struct(),nTasks,1);
     if hasInfosCodec
     infoNames = infosCodec.code2Name.values';
     startInfosOffset = infosOffestValue;
@@ -166,8 +166,7 @@ tic
             trialEventsTbl.DuplicateEventCodes(t) = {uniqDups'}; 
             trialEventsTbl.DuplicateEventCodesCounts(t) = {dupsCount'}; 
             trialEventsTbl.DuplicateEventCodesTimes(t) = {arrayfun(@(x) tmsTemp(evCodesTemp==x),uniqDups(:),'UniformOutput',false)}; 
-            
-            
+                        
             if setdiff(unique(uniqDups),ignoreDuplicateEvents)
                trialEventsTbl.GoodTrial(t) = 0;
             end
@@ -191,38 +190,74 @@ tic
             % in INFOS.pro (see tone_duration, trial_length)
             if ismember(startInfosCode, evs) && ismember(endInfosCode, evs)
                 infos = allC(find(allC==startInfosCode)+1:find(allC==endInfosCode)-1);
-                fprintf('Number of infos codes including start and end infos = %d of total: %d InfoCodec Codes\n',...
-                    numel(infos),numel(infosCodec.code2Name.keys));
+                fprintf('TrlNo = %d, Number of infos codes including start and end infos = %d of total: %d InfoCodec Codes\n',...
+                    t,numel(infos),numel(infosCodec.code2Name.keys));
                 % InfoCode annot be less than startInfosOffset
-                trialInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = 0;
+                trialInfos(t,1).numberOfInfoCodeValuesLowerThanOffset = 0;
                 if find(infos < startInfosOffset) % Negative value for info codes??
-                    trialInfos.numberOfInfoCodeValuesLowerThanOffset(t,1) = sum(infos < startInfosOffset);
-                    warning('****Removing %d InfoCodes that are SMALLER startInfosOffset of %d, before parsing InfoCodes into fields***\n',...
+                    trialInfos(t,1).numberOfInfoCodeValuesLowerThanOffset = sum(infos < startInfosOffset);
+                    warning('****NOT...Removing %d InfoCodes that are SMALLER startInfosOffset of %d, before parsing InfoCodes into fields***\n',...
                         sum(infos < startInfosOffset),startInfosOffset);
-                    infos = infos(infos>=startInfosOffset);
+                    %infos = infos(infos>=startInfosOffset);
                 end
-                % Parse infos into fields
-                for kk = 1:numel(infos)
+                infos = infos - startInfosOffset;
+                % If infos contains name:displayItemSize, then process
+                % stimulus attributes
+                if sum(contains(infoNames,'displayItemSize'))
+                    displaySizeInfoIndex = find(contains(infoNames,'displayItemSize'));
+                    nItemAttributesIndex = find(contains(infoNames,'nItemAttributes'));
+                    nonArrayInfos = infos(1:displaySizeInfoIndex);
+                    displaySize =  nonArrayInfos(end);
+                    stimulusAttribNames = infoNames(displaySizeInfoIndex+1:nItemAttributesIndex-1);
+                    nStimulusAttributes = numel(stimulusAttribNames);
+                    % Includes includes nInfos and nItemAttributes
+                    arrayInfos = infos((1:nStimulusAttributes*displaySize)+displaySizeInfoIndex);
+                else
+                    nonArrayInfos = infos;
+                    arrayInfos = [];
+                end
+                
+                % Parse non-stimulus array related infos into fields
+                for kk = 1:numel(nonArrayInfos)
                     try
-                        trialInfos.(infoNames{kk})(t,1) = infos(kk) - startInfosOffset;
+                        trialInfos(t,1).(infoNames{kk}) = nonArrayInfos(kk);
                     catch me
                         warning(me.message);
                         fprintf('No. of Infos %d of total %d\n',numel(infos),numel(infosCodec.code2Name.keys));
                     end
                 end
+                % Process stimulus Display array infos
+                if ~isempty(arrayInfos)
+                    displayItems = array2table(reshape(arrayInfos,nStimulusAttributes,displaySize)',...
+                                   'VariableNames', stimulusAttribNames);
+                    targItem = displayItems(displayItems.itemIsTarget==1,:);
+                    for jj = 1: numel(stimulusAttribNames)
+                         fn = stimulusAttribNames{jj};
+                         trialInfos(t,1).(fn) = targItem.(fn);
+                    end                   
+                    trialInfos(t,1).displayItems = displayItems;
+                end
                 
             end
-        end
-
-        
+        end       
     end
    toc 
    % Prune trialPDTriggerMat
    trialPDTriggerMat(:,all(ismissing(trialPDTriggerMat))) = [];
-   % prune all NaN
+   % prune all NaN Columns (events), if the whole column is NaN
    trialEventsTbl = trialEventsTbl(:,any(~ismissing(trialEventsTbl)));
    % Add pdTrigger to table
    trialEventsTbl.PDTriggersAll = trialPDTriggerMat;
+   % Remove all rows (trials) where trialStart_ is NaN as we cannot use
+   % these trials. Happens for 1st/0th trial where only room num is sent as
+   % well as during cases where TEMPO's clock is stopped, while TDT is
+   % passively acquiring. When TEMPO's clock is restarted, the trial Num is
+   % reset to 0, as well as there will be no TrailStart_ since the trial 0
+   % case repeats.
+   nanTrialStarts = isnan(trialEventsTbl.TrialStart_);
+   trialEventsTbl(nanTrialStarts,:) = [];
+   trialInfos(nanTrialStarts) = [];
+   % Convert table to struct
    trialEvents = table2struct(trialEventsTbl,'ToScalar',true);
    
     %%  TODO: Read TDT Eye data including times   %%

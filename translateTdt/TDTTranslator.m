@@ -95,7 +95,7 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
             end
         end
         
-        function [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfo] = translate(obj)
+        function [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfo] = translate(obj,varargin)
         %TRANSLATE Translate the TDT session data using processing options
         % OUTPUTS:
         %     Task       - A struct of all EVENT codes by trials
@@ -115,7 +115,11 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
         
             checkOptions(obj);
             o = obj.options;
-            [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfo] = runExtraction(o.sessionDir, o.baseSaveDir, o.eventDefFile, o.infosDefFile, o.edf);
+            e = [];
+            if isfield(o,'edf')
+                e = o.edf;
+            end
+            [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfo] = runExtraction(o.sessionDir, o.baseSaveDir, o.eventDefFile, o.infosDefFile, e ,varargin{:});
         end
     end
     methods (Access = private)
@@ -138,7 +142,11 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
                 end
             end
             verifyFileOptions(obj,obj.options);
-            verifyEdfOptions(obj,obj.options.edf);         
+            if isfield(obj.options, 'hasEdfDataFile') && obj.options.hasEdfDataFile
+                verifyEdfOptions(obj,obj.options.edf); 
+            else
+                %obj.options.edf=[];
+            end
         end
         
         function out = processFields(~,fieldnamePrompts)

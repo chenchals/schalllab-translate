@@ -43,10 +43,12 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, varargin)
 %    [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes)
 % See also RUNEXTRACTION, TDTEXTRACTEVENTS, TDTALIGNEYEWITHEDF
 %
+    edfOptions = [];
+    edfMatDataFile = 'dataEDF.mat';
     useEyeX = true;
     if numel(varargin)==1
         edfOptions = varargin{1};
-        if edfOptions.useEye == 'Y'
+        if ~isempty(edfOptions) && edfOptions.useEye == 'Y'
             useEyeX = false;
         end
     end
@@ -58,14 +60,19 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, varargin)
     % assuming the ksampling rate of EDF data is 1000Hz.
     % In general this value should be about 6-10% of total session
     % duration in secs. Compute this using trialStartTimes
-    maxWindowToSlideEdf = round(nanmax(trialStartTimes)*0.08/1000); % in seconds
+    maxWindowToSlideEdf = max([round(nanmax(trialStartTimes)*0.2/1000), 100]); % in seconds
 
     %% Function to parse data vector to trials omit 1st and last trial
     nTrials = numel(trialStartTimes);
+%     splitEyeDataIntoTrialsFx = @(eyeVec,timeBins)...
+%         [NaN;...
+%         arrayfun(@(ii) eyeVec(timeBins(ii):timeBins(ii+1)-1),(2:nTrials-1)','UniformOutput',false);...
+%         NaN];
+    %% Omit last trial only
     splitEyeDataIntoTrialsFx = @(eyeVec,timeBins)...
-        [NaN;...
-        arrayfun(@(ii) eyeVec(timeBins(ii):timeBins(ii+1)-1),(2:nTrials-1)','UniformOutput',false);...
-        NaN];
+        [...
+        arrayfun(@(ii) eyeVec(timeBins(ii):timeBins(ii+1)-1),(1:nTrials-1)','UniformOutput',false);...
+        NaN];    
     
     %% Initialize output
     trialEyes = struct();
@@ -93,15 +100,16 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, varargin)
     trialEyes.tdt.FsHz = tdtFsHz;
     trialEyes.tdt.BinWidthMs = tdtBinWidthMs;
     trialEyes.tdt.EyeDataBins = numel(tdtX);
+    
+    fprintf('Done Extracting TDT Eye data\n');
 
-    trialEyes.DEFINITIONS = addDefinitions(trialEyes);
-    trialEyes.WHAT_IS = getDefinitions();
+    [trialEyes.DEFINITIONS, trialEyes.WHAT_IS] = addDefinitions(trialEyes);
     
     %% If Eyelink translated data is present 
     %  Align TDT Eye data with Eyelink eye data and parse into trials
-    fprintf('Reading EDF Eye Data...\n');
-    edfMatFile = fullfile(sessionDir, 'dataEDF.mat');
-    if ~exist(edfMatFile, 'file')
+    fprintf('Checking for EDF Eye Data...\n');
+    edfMatFile = fullfile(sessionDir, edfMatDataFile);
+    if ~exist(edfMatFile, 'file') || isempty(edfOptions)
         warning('EDF Eye Data File [%s] not found.', edfMatFile);
         return;
     end
@@ -192,8 +200,7 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, varargin)
     trialEyes.edf.Header = edf.(edfDataField).HEADER;
     trialEyes.edf.Recordings = edf.(edfDataField).RECORDINGS;
     trialEyes.edf.Fevent = edf.(edfDataField).FEVENT;
-    trialEyes.DEFINITIONS = addDefinitions(trialEyes); 
-   
+   [trialEyes.DEFINITIONS, trialEyes.WHAT_IS] = addDefinitions(trialEyes);
         
 end
 
@@ -229,7 +236,7 @@ function indices = findAlignmentIndices(partialEdf, partialTdt, nBoxcarBins,edfH
     toc
 end
 
-function [out] = addDefinitions(inStruct)
+function [out,defMap] = addDefinitions(inStruct)
    defMap = getDefinitions();
    truncateFns = {'edf\.Recordings';'edf\.Fevent'};
    fns = getFieldnames(inStruct);
@@ -243,6 +250,7 @@ function [out] = addDefinitions(inStruct)
           out = [out; defMap(fn)]; %#ok<AGROW>
        end
    end
+   remove(defMap, setdiff(defMap.keys,fns));
 end
 
 function [defMap] = getDefinitions()
@@ -285,6 +293,8 @@ function [defMap] = getDefinitions()
         'edf.EdfMatFile: (char) The Eyelink EDF file that is translated to dataEDF.mat'
         'edf.BinWidthMs: (ms) Size of each Eyelink EDF Eye data bin'
         };
+    
+    
     temp = split(defs,':');
     defMap = containers.Map(temp(:,1),defs);
 end

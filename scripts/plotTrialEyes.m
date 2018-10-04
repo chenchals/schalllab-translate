@@ -1,6 +1,6 @@
 
-edfData = trialEyes.edfEyeY;
-tdtData = trialEyes.tdtEyeY;
+edfData = trialEyes.edfEyeX;
+tdtData = trialEyes.tdtEyeX;
 
 tdtFs = trialEyes.tdt.FsHz;
 edfFs = trialEyes.edf.FsHz;
@@ -27,8 +27,9 @@ volt2pixFx = @(x) tdtAnalog2Pixels(x,voltRange,signalRange,pixelRangeX);
 
 tdtX2Pix = arrayfun(@(x) volt2pixFx(tdtData{x}), (1:nTrials)','UniformOutput',false);
 
+skip = -ceil(nTrials/100);
 
-for ii = nTrials:-10:1
+for ii = nTrials:skip:1
     tX = tdtX2Pix{ii};
     eX = edfData{ii};
     plot(1:numel(eX),eX,'r');
@@ -36,7 +37,7 @@ for ii = nTrials:-10:1
     plot((1:numel(tX)).*tdtBinWidth,tX,'b');
     hold off
     xlabel(num2str(ii,'Trial #%d'));
-    pause(5)
+    pause(3)
 end
 
 
