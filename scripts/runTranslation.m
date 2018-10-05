@@ -2,8 +2,8 @@ sessName = 'Leonardo-180928-170509_singletonPlusDistractors';
 
 sessName = 'Leonardo-180928-150814'; % not working... choice of correct INFOS.pro
 
-on10_03_session = 'Leonardo-181003-142453';
-on10_03 ='/Users/subravcr/teba/local/Tempo/rigProcLibs/FixRoom030/ProcLib-LEO-18-10-03';
+on10_03_session = 'Leonardo-181005-142210';
+on10_03 ='/Users/subravcr/teba/local/Tempo/rigProcLibs/FixRoom030/ProcLib-LEO-18-10-05';
 sessName = on10_03_session;
 procLib = on10_03;
 
