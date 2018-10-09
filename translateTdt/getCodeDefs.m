@@ -57,6 +57,7 @@ end
 function [codes, names] = parseInfosCodes(codesFile)
     content = fileread(codesFile);
     content = regexprep(content,'InfosZero\s*\+\s*|abs\(|\(|\s*\+\s*\d*|\);','');
+    content = regexprep(content,'Int','');
     sendEvtRegEx = 'SEND_EVT(\w*)';
     %setEvtRegEx = 'Set_event\]\s*=\s*(\w*[ +]*\w*)';
     setEvtRegEx = 'Set_event\]\s*=\s*(\w*)';

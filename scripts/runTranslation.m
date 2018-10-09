@@ -1,17 +1,25 @@
-sessName = 'Leonardo-180928-170509_singletonPlusDistractors';
 
-sessName = 'Leonardo-180928-150814'; % not working... choice of correct INFOS.pro
+sessionBaseDir = '/mnt/teba/data/Leonardo/Search-GNG';
+baseSaveDir = 'dataProcessed/Leonardo';
+sessName = 'Leonardo-181008-132013';
+procLibDir =fullfile(sessionBaseDir,'ProcLib-181008');
+eventDefFile = fullfile(procLibDir,'EVENTDEF.pro');
+infosDefFile = fullfile(procLibDir,'search/INFOS.pro');
 
-on10_03_session = 'Leonardo-181005-142210';
-on10_03 ='/Users/subravcr/teba/local/Tempo/rigProcLibs/FixRoom030/ProcLib-LEO-18-10-05';
-sessName = on10_03_session;
-procLib = on10_03;
 
-opts.sessionDir = fullfile('data/Leonardo/Eyelink-EDF',sessName);
-opts.baseSaveDir = 'dataProcessed/Leonardo';
-opts.eventDefFile = fullfile(procLib,'EVENTDEF.pro');
-opts.infosDefFile = fullfile(procLib,'search/INFOS.pro'); 
-opts.hasEdfDataFile = 0;
+% sessionBaseDir = 'data/Joule';
+% baseSaveDir = 'dataProcessed/Joule';
+% sessName = 'Joule-181008-111153';
+% procLibDir ='/Users/subravcr/teba/local/Tempo/rigProcLibs/FixRoom029/ProcLib_011';
+% eventDefFile = fullfile(procLibDir,'EVENTDEF.PRO');
+% infosDefFile = fullfile(procLibDir,'CMD/INFOS.PRO');
+
+
+opts.sessionDir = fullfile(sessionBaseDir,sessName);
+opts.baseSaveDir = baseSaveDir;
+opts.eventDefFile = eventDefFile;
+opts.infosDefFile = infosDefFile; 
+opts.hasEdfDataFile = 1;
 opts.edf.useEye = 'X';
 opts.edf.voltRange = [-5 5];
 opts.edf.signalRange = [-0.2 1.2];
