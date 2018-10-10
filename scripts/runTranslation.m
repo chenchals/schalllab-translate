@@ -1,8 +1,8 @@
 
-sessionBaseDir = '/mnt/teba/data/Leonardo/Search-GNG';
+sessionBaseDir = '/mnt/teba/data/Leonardo/SingleTgt-Go-NoGo';
 baseSaveDir = 'dataProcessed/Leonardo';
-sessName = 'Leonardo-181008-132013';
-procLibDir =fullfile(sessionBaseDir,'ProcLib-181008');
+sessName = 'Leonardo-181009-151736';%'Leonardo-181008-142316';
+procLibDir =fullfile(sessionBaseDir,sessName,'ProcLib');
 eventDefFile = fullfile(procLibDir,'EVENTDEF.pro');
 infosDefFile = fullfile(procLibDir,'search/INFOS.pro');
 

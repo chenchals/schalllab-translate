@@ -121,6 +121,9 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     warning('OFF','MATLAB:table:RowsAddedExistingVars');
 tic
     for t = 1:nTasks
+        if t==68
+            t
+        end
         allC = evCodes{t};
         allT = evTimes{t};
         evCodesTemp = allC(allC < infosOffestValue);
@@ -199,6 +202,7 @@ tic
                     warning('****NOT...Removing %d InfoCodes that are SMALLER startInfosOffset of %d, before parsing InfoCodes into fields***\n',...
                         sum(infos < startInfosOffset),startInfosOffset);
                     %infos = infos(infos>=startInfosOffset);
+                    infos(infos<startInfosOffset)
                 end
                 infos = infos - startInfosOffset;
                 % If infos contains name:displayItemSize, then process

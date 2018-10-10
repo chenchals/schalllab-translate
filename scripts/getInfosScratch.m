@@ -24,4 +24,5 @@ tokens3 = reshape(tokens3, [2, numel(tokens3)/2])';
 codeNames = tokens3(:,1);
 codeVals = cellfun(@str2num,tokens3(:,2));
 
-
+%For knowing outcome events??
+t = regexp(s,'constant\s+(\w*)\s*=\s*(\d{1,4});[\s*/]?(.*)' ,'tokens','emptymatch')
