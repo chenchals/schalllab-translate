@@ -58,7 +58,7 @@ function [codes, names] = parseInfosCodes(codesFile)
     content = fileread(codesFile);
     content = regexprep(content,'InfosZero\s*\+\s*|abs\(|\(|\s*\+\s*\d*|\);','');
     content = regexprep(content,'Int','');
-    sendEvtRegEx = 'SEND_EVT(\w*)';
+    sendEvtRegEx = 'spawnwait SEND_EVT(\w*)';
     %setEvtRegEx = 'Set_event\]\s*=\s*(\w*[ +]*\w*)';
     setEvtRegEx = 'Set_event\]\s*=\s*(\w*)';
     % Check both patterns:
@@ -66,11 +66,10 @@ function [codes, names] = parseInfosCodes(codesFile)
     if isempty(names)
         names = regexp(content,setEvtRegEx,'tokens');
     end
-    names = [names{:}]';
-    startInfosIndex = find(strcmp(names,'StartInfos_'));
-    endInfosIndex = find(strcmp(names,'EndInfos_'));
-    names = names(startInfosIndex+1:endInfosIndex-1);
+    names = [names{:}]';    
+    names = names(~ismember(names,{'StartInfos_','EndInfos_'}));
     codes = (1:numel(names))';
+
 end
 
 
