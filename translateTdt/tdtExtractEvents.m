@@ -121,7 +121,7 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     warning('OFF','MATLAB:table:RowsAddedExistingVars');
 tic
     for t = 1:nTasks
-        if t==68
+        if t==470
             t
         end
         allC = evCodes{t};
@@ -215,7 +215,13 @@ tic
                     stimulusAttribNames = infoNames(displaySizeInfoIndex+1:nItemAttributesIndex-1);
                     nStimulusAttributes = numel(stimulusAttribNames);
                     % Includes includes nInfos and nItemAttributes
+                    try
                     arrayInfos = infos((1:nStimulusAttributes*displaySize)+displaySizeInfoIndex);
+                    catch
+                        trialEventsTbl.GoodTrial(t) = 0;
+                        arrayInfos = [];
+                        warning('*** Trial [%d] Ignoring arrayInfos for display array, displaySize [%d] is incorrect',t, displaySize);
+                    end
                 else
                     nonArrayInfos = infos;
                     arrayInfos = [];
@@ -234,7 +240,7 @@ tic
                 if ~isempty(arrayInfos)
                     displayItems = array2table(reshape(arrayInfos,nStimulusAttributes,displaySize)',...
                                    'VariableNames', stimulusAttribNames);
-                    targItem = displayItems(displayItems.itemIsTarget==1,:);
+                    targItem = displayItems(displayItems.itemIsSingleton==1,:);
                     for jj = 1: numel(stimulusAttribNames)
                          fn = stimulusAttribNames{jj};
                          trialInfos(t,1).(fn) = targItem.(fn);
