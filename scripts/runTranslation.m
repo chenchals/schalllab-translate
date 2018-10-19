@@ -1,7 +1,7 @@
 
-sessionBaseDir = '/mnt/teba/data/Leonardo/SingleTgt-Go-NoGo';
-baseSaveDir = 'dataProcessed/Leonardo';
-sessName = 'Leonardo-181010-142729';%'Leonardo-181008-142316';
+sessionBaseDir = '/mnt/teba/data/Leonardo/Search-Go-NoGo';
+baseSaveDir = 'dataProcessed/Leonardo/Search-Go-NoGo';
+sessName = 'Leonardo-181017-130257';%'Leonardo-181008-142316';
 procLibDir =fullfile(sessionBaseDir,sessName,'ProcLib');
 eventDefFile = fullfile(procLibDir,'EVENTDEF.pro');
 infosDefFile = fullfile(procLibDir,'search/INFOS.pro');
@@ -18,7 +18,7 @@ opts.sessionDir = fullfile(sessionBaseDir,sessName);
 opts.baseSaveDir = baseSaveDir;
 opts.eventDefFile = eventDefFile;
 opts.infosDefFile = infosDefFile; 
-opts.hasEdfDataFile = 1;
+opts.hasEdfDataFile = 0;
 opts.edf.useEye = 'X';
 opts.edf.voltRange = [-5 5];
 opts.edf.signalRange = [-0.2 1.2];
