@@ -32,12 +32,12 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     % Offset for Info Code values
     infosOffestValue = 3000;
         
-    % Since multiple rewards may be given use a separate table output
-    %juiceStartCode = decodeEvent('JuiceStart_');
-    %juiceEndCode = decodeEvent('JuiceEnd_');
+    % Ignore duplicate events
+    % Manual juice: [juiceStart_ juiceEndCode_]
+    % Photodiode triggers: [PDTriggerLeft_ PDTriggerRight_]
     % use in separate table..
-    % ignoreDuplicateEvents = [juiceStartCode juiceEndCode];% manual juice...
-    ignoreDuplicateEvents = [2777 2776];% manual juice...
+    % ignoreDuplicateEvents = ;% manual juice...
+    ignoreDuplicateEvents = [2777 2776 2990 2991];
     
     % Normalize input path and extract sessionName
     blockPath = regexprep(sessionDir,'[/\\]',filesep);
@@ -48,7 +48,7 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     
   %%  Process Infos specific codes  %%
   %   Infos specific names are indexed by their order of occurrance in the
-  %   INFOS.pro file (see INFOS.pro file for details)
+  %   INFOS.PRO file 
   infosCodec = struct();
   if ~isempty(infosCodecFile)
     [infosCodec.code2Name, infosCodec.name2Code] = ...
@@ -66,10 +66,6 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
         tdtEventTimes(tdtEvents <= 0) = [];
         tdtEvents(tdtEvents <= 0) = [];
     end
-    % why should we do this? We are not sending negatives
-    % if any(tdtEvents > 2^15)
-    %   tdtEvents = tdtEvents-2^15;
-    % end
     %%  TODO: Process TDT events and infoCodes into trials  %%
     decodeEvent = @(x)  evCodec.name2Code(x);
     taskStartCodes = (1501:1510)';
@@ -106,11 +102,7 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     trialEventsTbl.UniqueEventCodes = cell(nTasks,1);
     trialEventsTbl.UniqueEventCodesCounts = cell(nTasks,1);
     trialEventsTbl.Properties.VariableNames(1:end-5) = colNames;
-    
-    %% Create a trial PDTrigger matrix to process PDtrigger_s if collected
-    maxPDTriggers = 10;
-    trialPDTriggerMat = nan(nTasks,maxPDTriggers);
-       
+           
     %% Create table for all Infos and set column name as Info_Name
     trialInfos = repmat(struct(),nTasks,1);
     if hasInfosCodec
@@ -121,9 +113,6 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     warning('OFF','MATLAB:table:RowsAddedExistingVars');
 tic
     for t = 1:nTasks
-        if t==68
-            t
-        end
         allC = evCodes{t};
         allT = evTimes{t};
         evCodesTemp = allC(allC < infosOffestValue);
@@ -246,12 +235,8 @@ tic
         end       
     end
    toc 
-   % Prune trialPDTriggerMat
-   trialPDTriggerMat(:,all(ismissing(trialPDTriggerMat))) = [];
    % prune all NaN Columns (events), if the whole column is NaN
    trialEventsTbl = trialEventsTbl(:,any(~ismissing(trialEventsTbl)));
-   % Add pdTrigger to table
-   trialEventsTbl.PDTriggersAll = trialPDTriggerMat;
    % Remove all rows (trials) where trialStart_ is NaN as we cannot use
    % these trials. Happens for 1st/0th trial where only room num is sent as
    % well as during cases where TEMPO's clock is stopped, while TDT is
