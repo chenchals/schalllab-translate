@@ -117,21 +117,7 @@ tic
         allT = evTimes{t};
         evCodesTemp = allC(allC < infosOffestValue);
         tmsTemp = allT(allC < infosOffestValue);
-        % Process PDTrigger_ event code is present. Since there will be
-        % multiple of these, need to do it before finding uniq codes
-        if evCodec.name2Code.isKey('PDTrigger_')
-            pdTrigIdx = find(evCodesTemp==evCodec.name2Code('PDTrigger_'));
-            if ~isempty(pdTrigIdx)
-                trialPDTriggerMat(t,1:numel(pdTrigIdx)) = tmsTemp(pdTrigIdx);
-                if numel(pdTrigIdx) > 1
-                    % remove all PDTrigger_ codes except the first
-                    evCodesTemp(pdTrigIdx(2:end)) = [];
-                    % remove all times for PDTrigger_ except the first
-                    tmsTemp(pdTrigIdx(2:end)) = [];
-                end
-            end
-        end % if eventcodes has code for PDTrigger_
-        % check unique Event codes
+        % Get unique Event codes, if duplicate get first occurrance
         [evs,iUniq] = unique(evCodesTemp,'stable');
         tms = tmsTemp(iUniq);
         % default some vars to be present
@@ -249,21 +235,6 @@ tic
    % Convert table to struct
    trialEvents = table2struct(trialEventsTbl,'ToScalar',true);
    
-    %%  TODO: Read TDT Eye data including times   %%
-    % Read Eye_X stream, and Eye_Y Stream from TDT
-    % assume STORE names are 'EyeX', 'EyeY'
-%     [tdtEyeX, tdtEyeY, tdtEyeFs] = getTdtEyeData(blockPath);
-%     tdtTime = (0:numel(tdtEyeX)-1).*(1000/tdtEyeFs);
-
-    
-    %% TODO: Process TDT eye data into trials %%
-
-    %% TODO: Save processed data into file/files %%
-    
-    %%  TOTO: Done ....ready for cleanup...   %%
-    
-    %% TODO: Timeit and optimize??.. %%
-    
 end
 
 
