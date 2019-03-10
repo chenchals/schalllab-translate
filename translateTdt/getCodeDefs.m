@@ -1,4 +1,4 @@
-function [code2Name, name2Code] = getCodeDefs(codesFile)
+function [code2Name, name2Code, codeTable] = getCodeDefs(codesFile)
 %GETCODEDEFS Parse files conatining declarations for Event or Info codes.
 %
 %   codesFile : File that contains declarations for (Code, Name) pairs.
@@ -36,6 +36,8 @@ function [code2Name, name2Code] = getCodeDefs(codesFile)
     % fix duplicate names: ?
      code2Name = containers.Map(ev.code, ev.name);
      name2Code = containers.Map(ev.name, ev.code);
+     
+     codeTable = table([code2Name.values]',cell2mat(code2Name.keys)', 'VariableNames',{'name','code'});
 end
 
 function [codes, names] = parseEventCodes(codeFile)
@@ -57,8 +59,10 @@ end
 function [codes, names] = parseInfosCodes(codesFile)
     content = fileread(codesFile);
     content = regexprep(content,'InfosZero\s*\+\s*|abs\(|\(|\s*\+\s*\d*|\);','');
-    content = regexprep(content,'Int','');
-    sendEvtRegEx = 'spawnwait SEND_EVT(\w*)';
+    content = regexprep(content,'Int|spawnwait|spawn','');
+    % for new Proclib code:(Idempotent for other INFOS?)
+    content = regexprep(content,'INFOS_ZERO|int|\s*WAIT_INFOS\n*','');
+    sendEvtRegEx = 'SEND_EVT(\w*)';
     %setEvtRegEx = 'Set_event\]\s*=\s*(\w*[ +]*\w*)';
     setEvtRegEx = 'Set_event\]\s*=\s*(\w*)';
     % Check both patterns:
