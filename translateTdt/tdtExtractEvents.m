@@ -28,7 +28,7 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
 %    [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = ...
 %            tdtExtractEvents(sessDir, evDefFile, infosDefFile);
 
-    useTaskEndCode = false;
+    useTaskEndCode = true;
     % Offset for Info Code values
     infosOffestValue = 3000;
         
@@ -37,13 +37,14 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     % Photodiode triggers: [PDTriggerLeft_ PDTriggerRight_]
     % use in separate table..
     % ignoreDuplicateEvents = ;% manual juice...
-    ignoreDuplicateEvents = [2777 2776 2990 2991];
+    % ignoreDuplicateEvents = [2777 2776 2990 2991];
+    ignoreDuplicateEvents = [];
     
     % Normalize input path and extract sessionName
     blockPath = regexprep(sessionDir,'[/\\]',filesep);
       
     %%  Process Rig specific event codes and event names   %
-    [evCodec.code2Name, evCodec.name2Code] = ...
+    [evCodec.code2Name, evCodec.name2Code, evCodec.evTable] = ...
         getCodeDefs(regexprep(eventCodecFile,'[/\\]',filesep));
     
   %%  Process Infos specific codes  %%
@@ -51,7 +52,7 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
   %   INFOS.PRO file 
   infosCodec = struct();
   if ~isempty(infosCodecFile)
-    [infosCodec.code2Name, infosCodec.name2Code] = ...
+    [infosCodec.code2Name, infosCodec.name2Code, infosCodec.infosTable] = ...
         getCodeDefs(regexprep(infosCodecFile,'[/\\]',filesep));
   end    
     hasInfosCodec =  isfield(infosCodec, 'code2Name');
@@ -81,6 +82,12 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     iTaskStart =  find(ismember(tdtEvents,taskStartCodes));
     if useTaskEndCode    
         iTaskEnd = find(ismember(tdtEvents,decodeEvent('TaskEnd_'))); %#ok<UNRCH>
+        if(numel(iTaskStart) - numel(iTaskEnd)) == 1
+            % happens when session ends before new trail is completed.
+            % So taskEnd marker will NOT be present for the LAST trial
+            % so remove LAST iTaskStart marker
+            iTaskStart = iTaskStart(1:end-1);
+        end
     else
         iTaskEnd = [iTaskStart(2:end)-1;nEvents];
     end
@@ -168,6 +175,14 @@ tic
             % in INFOS.pro (see tone_duration, trial_length)
             if ismember(startInfosCode, evs) && ismember(endInfosCode, evs)
                 infos = allC(find(allC==startInfosCode)+1:find(allC==endInfosCode)-1);
+             else % if there are startInfos_ and endInfos_ are sent
+                 warning('****Cannot find StartInfos_ and EndInfos_. Check if they are sent by TEMPO*****\n');
+                 warning('Using *ALL* codes above  >= startInfosOffset [%d] to get infos\n',startInfosOffset);
+                 infos = allC(allC>=startInfosOffset);
+            end            
+             if(numel(infos)==0)
+                 warning('****Trl [%d] Cannot find Infos. Check if they are sent by TEMPO*****\n',t);
+             else
                 fprintf('TrlNo = %d, Number of infos codes including start and end infos = %d of total: %d InfoCodec Codes\n',...
                     t,numel(infos),numel(infosCodec.code2Name.keys));
                 % InfoCode annot be less than startInfosOffset
@@ -179,6 +194,7 @@ tic
                     %infos = infos(infos>=startInfosOffset);
                     infos(infos<startInfosOffset)
                 end
+                                 
                 infos = infos - startInfosOffset;
                 % If infos contains name:displayItemSize, then process
                 % stimulus attributes
