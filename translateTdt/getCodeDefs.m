@@ -73,34 +73,17 @@ function [codes, names] = parseInfosCodes(codesFile)
     names = [names{:}]';    
     names = names(~ismember(names,{'StartInfos_','EndInfos_'}));
     codes = (1:numel(names))';
+    % check underscores: remove and convert to upper camel case
+    names = upperCamelCase(names);
 
 end
 
-
-function [ev ]= old(codesFile, isInfosDefFile) %#ok<DEFNU>
-    if isInfosDefFile
-        matchExpr = '^\s*Event_fifo.*InfosZero\s*\+\s*[abs\(|\(]*(\w*)\s*.*';
-    else
-        matchExpr = '^declare hide constant\s+([A-Z]\w*)\s*=\s*(\d{1,4});';
-    end
-
-    rFid = fopen(codesFile,'r');
-    count = 0;
-    while ~feof(rFid)
-        toks = regexp(fgetl(rFid),matchExpr,'tokens');
-        if ~isempty(toks)
-            count = count + 1;
-            ev.name{count,1} = toks{1}{1};
-            if isInfosDefFile 
-                % only 1 token use count as code
-                % code will be count = index into Info Vector
-                % codeValue = tdtEventCode - InfosZero (3000)
-                ev.code{count,1} = count;
-            else
-                ev.code{count,1} = str2double(toks{1}{2});
-            end
-        end
-    end
-    fclose(rFid);
-
+function [ccNames ]= upperCamelCase(names)
+    %  
+    % see: https://www.mathworks.com/matlabcentral/answers/107307-function-to-capitalize-first-letter-in-each-word-in-string-but-forces-all-other-letters-to-be-lowerc
+    names = char(join(lower(strcat('_',names')),'|'));
+    regexForUnderscore = '(?<=_)[a-z]';
+    idxForUpper = regexp(names,regexForUnderscore,'start');
+    names(idxForUpper) = upper(names(idxForUpper));
+    ccNames = split(regexprep(names,'_',''),'|');
 end
