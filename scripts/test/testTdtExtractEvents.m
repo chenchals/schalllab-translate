@@ -3,8 +3,8 @@
 
 %function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractEvents(sessionDir, eventCodecFile, infosCodecFile)
 
-codesDir = 'local-data/Users/Chenchal/Tempo_NewCode/Joule-190308-161547/ProcLib/CMD';
-sessionDir = 'local-data/Users/Chenchal/Tempo_NewCode/Joule-190308-161547';
+codesDir = 'T:/Users/Chenchal/Tempo_NewCode/Joule-190311-095924/ProcLib/CMD';
+sessionDir = 'T:/Users/Chenchal/Tempo_NewCode/Joule-190311-123405';
 eventCodecFile = fullfile(codesDir,'EVENTDEF.PRO');
 infosCodecFile = fullfile(codesDir, 'INFOS.PRO');
 

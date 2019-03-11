@@ -29,6 +29,7 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
 %            tdtExtractEvents(sessDir, evDefFile, infosDefFile);
 
     useTaskEndCode = true;
+    dropNaNTrialStartTrials = false;
     % Offset for Info Code values
     infosOffestValue = 3000;
         
@@ -120,6 +121,9 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     warning('OFF','MATLAB:table:RowsAddedExistingVars');
 tic
     for t = 1:nTasks
+        if (t == 9)
+            fprintf('trialno [%d]...\n',t);
+        end
         allC = evCodes{t};
         allT = evTimes{t};
         evCodesTemp = allC(allC < infosOffestValue);
@@ -245,9 +249,11 @@ tic
    % passively acquiring. When TEMPO's clock is restarted, the trial Num is
    % reset to 0, as well as there will be no TrailStart_ since the trial 0
    % case repeats.
-   nanTrialStarts = isnan(trialEventsTbl.TrialStart_);
-   trialEventsTbl(nanTrialStarts,:) = [];
-   trialInfos(nanTrialStarts) = [];
+   if(dropNaNTrialStartTrials)
+       nanTrialStarts = isnan(trialEventsTbl.TrialStart_);
+       trialEventsTbl(nanTrialStarts,:) = [];
+       trialInfos(nanTrialStarts) = [];
+   end
    % Convert table to struct
    trialEvents = table2struct(trialEventsTbl,'ToScalar',true);
    
