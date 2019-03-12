@@ -62,15 +62,24 @@ function [codes, names] = parseInfosCodes(codesFile)
     content = regexprep(content,'Int|spawnwait|spawn','');
     % for new Proclib code:(Idempotent for other INFOS?)
     content = regexprep(content,'INFOS_ZERO|int|\s*WAIT_INFOS\n*','');
-    sendEvtRegEx = 'SEND_EVT(\w*)';
-    %setEvtRegEx = 'Set_event\]\s*=\s*(\w*[ +]*\w*)';
-    setEvtRegEx = 'Set_event\]\s*=\s*(\w*)';
+    % New TEMPO code infos pattern
+    sendEvtRegEx = 'SEND_INFO_EVT(\w*)|SEND_INFO_REL_TIME(\w*)';
     % Check both patterns:
     names = regexp(content,sendEvtRegEx,'tokens');
     if isempty(names)
-        names = regexp(content,setEvtRegEx,'tokens');
+        names = regexp(content,sendEvtRegEx,'tokens');
     end
-    names = [names{:}]';    
+    if isempty(names)
+        sendEvtRegEx = 'SEND_EVT(\w*)';
+        names = regexp(content,sendEvtRegEx,'tokens');
+    end
+    if isempty(names)
+        %setEvtRegEx = 'Set_event\]\s*=\s*(\w*[ +]*\w*)';
+        sendEvtRegEx = 'Set_event\]\s*=\s*(\w*)';
+        names = regexp(content,sendEvtRegEx,'tokens');
+    end
+    names = [names{:}]'; 
+    names = names(~cellfun(@isempty,names));
     names = names(~ismember(names,{'StartInfos_','EndInfos_'}));
     codes = (1:numel(names))';
     % check underscores: remove and convert to upper camel case
