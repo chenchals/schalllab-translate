@@ -8,3 +8,4 @@ dataProcessed/*
 dataProcessed*
 local-data
 translateTdt/getCodeDefs.asv
+translateTdt/TDTTranslator.asv

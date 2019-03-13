@@ -12,6 +12,7 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
     %                             used by TEMPO to acquire TDT session 
     %           .infosDefFile   - [char] Full filepath to INFOS.pro file 
     %                             used by TEMPO to acquirs TDT session
+    %           .splitEyeIntoTrials  - true/false
     %           .hasEdfDataFile - [T|F] Does the sessionDir contain
     %                             'dataEDF.mat'.  This is edf-datafile
     %                             collected on EYELINK computer that is
@@ -51,8 +52,11 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
             {'baseSaveDir', sprintf('Base directory for saving translation results\n\t(will create dirctoty with session_name)\n\t\t\t\t[string]')}
             {'eventDefFile', sprintf('Full filepath to location of EVENTDEF.pro file used for session\n\t\t\t\t[string]')}
             {'infosDefFile', sprintf('Full filepath to location of INFOS.pro file used for session\n\t\t\t\t [string]')}
+            {'splitEyeIntoTrials', sprintf('Do you want the Eye data to be split into Trials?\n\t\t\t\t[true|false]')}
             {'hasEdfDataFile', sprintf('Does session directory above contain \''dataEDF.mat\'' file?\n\t(This file is data collected on EYELINK computer and translated to \''dataEDF.mat\'' by third-party utility)\n\t\t\t\t[true|false]')}
             };
+        
+        
         edfOptionFieldPrompts = {
             {'useEye', sprintf('Which component of Eye data for TDT and EDF do you want to use for aligning? \n\t\t\t\t [char X|Y]')}
             % ADC volt range of TDT
@@ -119,7 +123,7 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
             if isfield(o,'edf')
                 e = o.edf;
             end
-            [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfo] = runExtraction(o.sessionDir, o.baseSaveDir, o.eventDefFile, o.infosDefFile, e ,varargin{:});
+            [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfo] = runExtraction(o.sessionDir, o.baseSaveDir, o.eventDefFile, o.infosDefFile, o.splitEyeIntoTrials, e ,varargin{:});
         end
     end
     methods (Access = private)

@@ -1,4 +1,4 @@
-function [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfos] = runExtraction(sessionDir,saveBaseDir,eventDefFile,infosDefFile, edfOptions, varargin)
+function [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfos] = runExtraction(sessionDir,saveBaseDir,eventDefFile,infosDefFile,splitEyeIntoTrials,edfOptions, varargin)
 %RUNEXTRACTION Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -30,7 +30,12 @@ function [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfos] = ru
         save(saveFile,'Task','TaskInfos','EventCodec', 'InfosCodec', 'SessionInfos');
     end
     fprintf('Extracting Eye data...\n');
-    [TrialEyes] = tdtExtractEyes(sessionDir, Task.TrialStart_, edfOptions); 
+    if(splitEyeIntoTrials)
+        [TrialEyes] = tdtExtractEyes(sessionDir, Task.TrialStart_, Task.Eot_, edfOptions); 
+    else
+        [TrialEyes] = tdtExtractEyes(sessionDir,[],[],edfOptions); 
+    end
+    
     if saveOutput
         saveFile = fullfile(saveBaseDir,sessionName,[saveFilePrefix 'Eyes.mat']);
         [oDir,~] = fileparts(saveFile);
