@@ -28,7 +28,7 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
 %    [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = ...
 %            tdtExtractEvents(sessDir, evDefFile, infosDefFile);
 
-    useTaskEndCode = true;
+    useTaskStartEndCodes = true;
     dropNaNTrialStartTrials = false;
     useNegativeValsInInfos = true;
     infosNegativeOffset = 32768;
@@ -72,7 +72,7 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     end
     %%  TODO: Process TDT events and infoCodes into trials  %%
     decodeEvent = @(x)  evCodec.name2Code(x);
-    taskStartCodes = (1501:1510)';
+    taskHeaderCodes = (1501:1510)';
     
     % codes
     trialStartCode = decodeEvent('TrialStart_');
@@ -82,8 +82,12 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     
     % Now check for valid TASK blocks
     nEvents = numel(tdtEvents);
-    iTaskStart =  find(ismember(tdtEvents,taskStartCodes));
-    if useTaskEndCode    
+    if (useTaskStartEndCodes)
+        iTaskStart =  find(tdtEvents==decodeEvent('TaskStart_'));
+    else
+        iTaskStart =  find(ismember(tdtEvents,taskHeaderCodes));
+    end
+    if useTaskStartEndCodes    
         iTaskEnd = find(ismember(tdtEvents,decodeEvent('TaskEnd_'))); %#ok<UNRCH>
         if(numel(iTaskStart) - numel(iTaskEnd)) == 1
             % happens when session ends before new trail is completed.
@@ -169,8 +173,8 @@ tic
                 trialEventsTbl.GoodTrial(t) = 0;
             end
         end
-        if intersect(taskStartCodes, evs)
-            trialEventsTbl.TaskType_(t) = intersect(taskStartCodes, evs);
+        if intersect(taskHeaderCodes, evs)
+            trialEventsTbl.TaskType_(t) = intersect(taskHeaderCodes, evs);
         end
         % Events: Get indices to column names for codes
         iTblCols = arrayfun(@(x) min([find(colCodes==x,1),NaN]),evs);

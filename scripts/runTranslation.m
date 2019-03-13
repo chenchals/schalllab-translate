@@ -15,6 +15,13 @@ infosDefFile = fullfile(procLibDir,'search/INFOS.pro');
 % infosDefFile = fullfile(procLibDir,'CMD/INFOS.PRO');
 
 
+% set it up in TranslateTDT
+%     opts.useTaskEndCode = true;
+%     opts.dropNaNTrialStartTrials = false;
+%     opts.useNegativeValsInInfos = true;
+%     opts.infosNegativeOffset = 32768;
+
+
 opts.sessionDir = fullfile(sessionBaseDir,sessName);
 opts.baseSaveDir = baseSaveDir;
 opts.eventDefFile = eventDefFile;

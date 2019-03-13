@@ -1,12 +1,17 @@
-function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, varargin)
+function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, trialEndTimes, varargin)
 %TDTEXTRACTEYES Extract Eye data from TDT. If file [SESSION_NAME]_EDF.mat
 %               is present in the sessionDir, align TDT Eye data with EDF
 %               eye data and cut it into trials. 
+%                For a given trisl if either trialStartTime or trialEndTime
+%                is NaN, then the eye vector will be NaN
 %
 %   sessionDir: Location of TDT data files [and EDF data file translated
 %               to .mat file see EDF-File* below] are saved 
 %   trialStartTimes: [nx1] double vector of trial Start times in millisecs
 %                    [NaN ok]. Use Task.TrialStart_ vector, got by running
+%                    tdtExtractEvents or runExtraction
+%     trialEndTimes: [nx1] double vector of trial end times in millisecs
+%                    [NaN ok]. Use Task.Eot_ vector, got by running
 %                    tdtExtractEvents or runExtraction
 %   varargin       : edfOptions a struct with the following fields
 %                    useEye : Which eye data to use X or Y
@@ -81,20 +86,33 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, varargin)
     fprintf('Reading TDT Eye Data...\n');
     [tdtX, tdtY, tdtFsHz, tdtStartTime] = getTdtEyeData(blockPath);
     tdtBinWidthMs = 1000/tdtFsHz;
+    % append NaN to the end of eye vector data to take care of NaN
+    % trailStartTime or NaN trialEndTime for a given trial
+    tdtX(end+1) = NaN;
+    tdtY(end+1) = NaN;
     
     %% Parse TDT eye date into trials (before doing EDF), in case there is no EDF file
-    trialStartTable = table();
-    trialStartTable.trialStartMsFractional=trialStartTimes;
-    trialStartTable.trialStartMs=round(trialStartTimes);
-    trialStartTable.trialDurationMsFractional=[diff(trialStartTable.trialStartMsFractional);NaN];
-    trialStartTable.trialDurationMs=round(trialStartTable.trialDurationMsFractional);
-    trialStartTable.tdtTrialStartBinFractional=trialStartTable.trialStartMsFractional./tdtBinWidthMs;
-    trialStartTable.tdtTrialStartBin=round(trialStartTable.trialStartMsFractional./tdtBinWidthMs);
-        
-    trialEyes.tdtEyeX = splitEyeDataIntoTrialsFx(tdtX,trialStartTable.tdtTrialStartBin);
-    trialEyes.tdtEyeY = splitEyeDataIntoTrialsFx(tdtY,trialStartTable.tdtTrialStartBin);
+    eyeLookupTable = table();
+    eyeLookupTable.trialStartMsFractional=trialStartTimes;
+    eyeLookupTable.trialStartMs=round(trialStartTimes);
+    eyeLookupTable.trialEndMsFractional=trialEndTimes;
+    eyeLookupTable.trialEndMs=round(trialEndTimes);
+    eyeLookupTable.trialDurationMsFractional=eyeLookupTable.trialEndMsFractional - eyeLookupTable.trialStartMsFractional;
+    eyeLookupTable.trialDurationMs=round(eyeLookupTable.trialDurationMsFractional);
+    eyeLookupTable.tdtTrialStartBinFractional=eyeLookupTable.trialStartMsFractional./tdtBinWidthMs;
+    eyeLookupTable.tdtTrialStartBin=round(eyeLookupTable.trialStartMsFractional./tdtBinWidthMs);
+    eyeLookupTable.tdtTrialEndBinFractional=eyeLookupTable.trialEndMsFractional./tdtBinWidthMs;
+    eyeLookupTable.tdtTrialEndBin=round(eyeLookupTable.trialEndMsFractional./tdtBinWidthMs);
+    % fix NaN indices
+    nanIdx = find(isnan(eyeLookupTable.tdtTrialStartBin));
+    %This value has been set to NaN previously when getting Eye data
+    eyeLookupTable.tdtTrialStartBin(nanIdx) = length(tdtX);
+    eyeLookupTable.tdtTrialEndBin(nanIdx) = length(tdtX);
+     
+    trialEyes.tdtEyeX = splitEyeDataIntoTrialsFx(tdtX,eyeLookupTable.tdtTrialStartBin);
+    trialEyes.tdtEyeY = splitEyeDataIntoTrialsFx(tdtY,eyeLookupTable.tdtTrialStartBin);
     
-    trialEyes.trialTimeTable = trialStartTable;
+    trialEyes.trialTimeTable = eyeLookupTable;
     trialEyes.tdt.sessionDir = blockPath;
     trialEyes.tdt.StartTime = tdtStartTime;
     trialEyes.tdt.FsHz = tdtFsHz;
