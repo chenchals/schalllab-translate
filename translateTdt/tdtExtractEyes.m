@@ -7,6 +7,9 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, trialEndTimes
 %
 %   sessionDir: Location of TDT data files [and EDF data file translated
 %               to .mat file see EDF-File* below] are saved 
+%    *** Note** if trialStartTimes or TrialEntTimes are empty, then
+%    processing stops and tdt eye vectors are returned, No alignment and
+%    trial cutting is done.
 %   trialStartTimes: [nx1] double vector of trial Start times in millisecs
 %                    [NaN ok]. Use Task.TrialStart_ vector, got by running
 %                    tdtExtractEvents or runExtraction
@@ -74,10 +77,8 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, trialEndTimes
 %         arrayfun(@(ii) eyeVec(timeBins(ii):timeBins(ii+1)-1),(2:nTrials-1)','UniformOutput',false);...
 %         NaN];
     %% Omit last trial only
-    splitEyeDataIntoTrialsFx = @(eyeVec,timeBins)...
-        [...
-        arrayfun(@(ii) eyeVec(timeBins(ii):timeBins(ii+1)-1),(1:nTrials-1)','UniformOutput',false);...
-        NaN];    
+    splitEyeDataIntoTrialsFx = @(eyeVec,timeBinsStart, timeBinsEnd)...
+        arrayfun(@(ii) eyeVec(timeBinsStart(ii):timeBinsEnd(ii)),(1:nTrials)','UniformOutput',false);    
     
     %% Initialize output
     trialEyes = struct();
@@ -86,6 +87,22 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, trialEndTimes
     fprintf('Reading TDT Eye Data...\n');
     [tdtX, tdtY, tdtFsHz, tdtStartTime] = getTdtEyeData(blockPath);
     tdtBinWidthMs = 1000/tdtFsHz;
+    
+    % for output
+    trialEyes.tdt.sessionDir = blockPath;
+    trialEyes.tdt.StartTime = tdtStartTime;
+    trialEyes.tdt.FsHz = tdtFsHz;
+    trialEyes.tdt.BinWidthMs = tdtBinWidthMs;
+    trialEyes.tdt.EyeDataBins = numel(tdtX);
+    trialEyes.tdt.EyeX = tdtX;
+    trialEyes.tdt.EyeY = tdtY;
+
+    if (isempty(trialStartTimes) || isempty(trialEndTimes))
+
+       [trialEyes.DEFINITIONS, trialEyes.WHAT_IS] = addDefinitions(trialEyes);      
+        return;       
+    end
+    
     % append NaN to the end of eye vector data to take care of NaN
     % trailStartTime or NaN trialEndTime for a given trial
     tdtX(end+1) = NaN;
@@ -109,15 +126,10 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, trialEndTimes
     eyeLookupTable.tdtTrialStartBin(nanIdx) = length(tdtX);
     eyeLookupTable.tdtTrialEndBin(nanIdx) = length(tdtX);
      
-    trialEyes.tdtEyeX = splitEyeDataIntoTrialsFx(tdtX,eyeLookupTable.tdtTrialStartBin);
-    trialEyes.tdtEyeY = splitEyeDataIntoTrialsFx(tdtY,eyeLookupTable.tdtTrialStartBin);
-    
+    trialEyes.tdtEyeX = splitEyeDataIntoTrialsFx(tdtX,eyeLookupTable.tdtTrialStartBin,eyeLookupTable.tdtTrialEndBin);
+    trialEyes.tdtEyeY = splitEyeDataIntoTrialsFx(tdtY,eyeLookupTable.tdtTrialStartBin,eyeLookupTable.tdtTrialEndBin);
+    % for output
     trialEyes.trialTimeTable = eyeLookupTable;
-    trialEyes.tdt.sessionDir = blockPath;
-    trialEyes.tdt.StartTime = tdtStartTime;
-    trialEyes.tdt.FsHz = tdtFsHz;
-    trialEyes.tdt.BinWidthMs = tdtBinWidthMs;
-    trialEyes.tdt.EyeDataBins = numel(tdtX);
     
     fprintf('Done Extracting TDT Eye data\n');
 
@@ -207,7 +219,16 @@ function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, trialEndTimes
     %% Parse edf Data into trials 
     trialEyes.trialTimeTable.edfTrialStartBinFractional=edfSyncValues.linear.edfBinIndexFx(trialStartTimes);
     trialEyes.trialTimeTable.edfTrialStartBin=round(trialEyes.trialTimeTable.edfTrialStartBinFractional);
-        
+    trialEyes.trialTimeTable.edfTrialEndBinFractional=edfSyncValues.linear.edfBinIndexFx(trialEndTimes);
+    trialEyes.trialTimeTable.edfTrialEndBin=round(trialEyes.trialTimeTable.edfTrialEndBinFractional);
+    % fix NaN indices
+    nanIdx = find(isnan(eyeLookupTable.edfTrialStartBin));
+    edfX(end+1) = NaN;
+    edfY(end+1) = NaN;    
+    %This value has been set to NaN previously when getting Eye data
+    eyeLookupTable.edfTrialStartBin(nanIdx) = length(edfX);
+    eyeLookupTable.edfTrialEndBin(nanIdx) = length(edfX);
+    
     trialEyes.edfEyeX = splitEyeDataIntoTrialsFx(edfX,trialEyes.trialTimeTable.edfTrialStartBin); 
     trialEyes.edfEyeY = splitEyeDataIntoTrialsFx(edfY,trialEyes.trialTimeTable.edfTrialStartBin); 
     

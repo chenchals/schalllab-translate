@@ -10,6 +10,8 @@ infosCodecFile = fullfile(codesDir, 'INFOS.PRO');
 trialStartTimes = trialEvents.TrialStart_;
 trialEndTimes = trialEvents.Eot_;
 
-[trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, trialEndTimes);
+[trialEyes] = tdtExtractEyes(sessionDir,[],[]);
+
+[trialEyes2] = tdtExtractEyes(sessionDir, trialStartTimes, trialEndTimes);
 
 
