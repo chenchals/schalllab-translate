@@ -30,7 +30,9 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
 
     useTaskEndCode = true;
     dropNaNTrialStartTrials = false;
-    % Offset for Info Code values
+    useNegativeValsInInfos = true;
+    infosNegativeOffset = 32768;
+    % Offset for Info Code values_
     infosOffestValue = 3000;
         
     % Ignore duplicate events
@@ -200,6 +202,12 @@ tic
                 end
                                  
                 infos = infos - startInfosOffset;
+                
+                if(useNegativeValsInInfos)
+                    infos(infos>=infosNegativeOffset) = infosNegativeOffset - infos(infos>=infosNegativeOffset);
+                    infos(infos== -1) = NaN;
+               end
+                
                 % If infos contains name:displayItemSize, then process
                 % stimulus attributes
                 if sum(contains(infoNames,'displayItemSize'))
