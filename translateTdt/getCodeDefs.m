@@ -54,6 +54,12 @@ function [codes, names] = parseEventCodes(codeFile)
              'VariableNames',{'EventName','EventCode'}));
         warning(sprintf('EVENTCODES greater than 3000 are NOT Processed...\n')); %#ok<SPWRN>  
     end
+    % Upper camel case names
+    names = upperCamelCase(names);
+    % remove leading Trl prefix
+    names = regexprep(names,'^Evt',''); 
+    % add trailing underscore
+    names = regexprep(names,'([a-z])$','$1_');
 end
 
 function [codes, names] = parseInfosCodes(codesFile)
@@ -82,13 +88,14 @@ function [codes, names] = parseInfosCodes(codesFile)
     names = names(~cellfun(@isempty,names));
     names = names(~ismember(names,{'StartInfos_','EndInfos_'}));
     codes = (1:numel(names))';
-    % check underscores: remove and convert to upper camel case
+    % Upper camel case names
     names = upperCamelCase(names);
-
+    % remove leading Trl prefix
+    names = regexprep(names,'^Trl','');
 end
 
 function [ccNames ]= upperCamelCase(names)
-    %  
+    % check underscores: remove and convert to upper camel case
     % see: https://www.mathworks.com/matlabcentral/answers/107307-function-to-capitalize-first-letter-in-each-word-in-string-but-forces-all-other-letters-to-be-lowerc
     names = char(join(lower(strcat('_',names')),'|'));
     regexForUnderscore = '(?<=_)[a-z]';
