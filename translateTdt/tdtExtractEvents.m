@@ -77,8 +77,16 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     % codes
     trialStartCode = decodeEvent('TrialStart_');
     eotCode = decodeEvent('Eot_');
-    startInfosCode = decodeEvent('StartInfos_');
-    endInfosCode = decodeEvent('EndInfos_');
+    if (evCodec.name2Code.isKey('StartInfos_'))
+        startInfosCode = decodeEvent('StartInfos_');
+    else
+        startInfosCode = decodeEvent('InfosStart_');
+    end
+    if (evCodec.name2Code.isKey('EndInfos_'))
+        endInfosCode = decodeEvent('EndInfos_');
+    else
+        endInfosCode = decodeEvent('InfosEnd_');
+    end
     
     % Now check for valid TASK blocks
     nEvents = numel(tdtEvents);
@@ -204,13 +212,14 @@ tic
                     %infos = infos(infos>=startInfosOffset);
                     infos(infos<startInfosOffset)
                 end
-                                 
-                infos = infos - startInfosOffset;
-                
+                 
                 if(useNegativeValsInInfos)
                     infos(infos>=infosNegativeOffset) = infosNegativeOffset - infos(infos>=infosNegativeOffset);
                     infos(infos== -1) = NaN;
-               end
+                    infos(infos > 0 & infos<infosNegativeOffset) = infos(infos > 0 & infos<infosNegativeOffset) - startInfosOffset;
+                  else
+                    infos = infos - startInfosOffset;
+                end
                 
                 % If infos contains name:displayItemSize, then process
                 % stimulus attributes

@@ -1,9 +1,18 @@
 %function [trialEyes] = tdtExtractEyes(sessionDir, trialStartTimes, varargin)
-
-codesDir = 'T:/Users/Chenchal/Tempo_NewCode/Joule/Joule-190313-133648/ProcLib/CMD';
-sessionDir = 'T:/Users/Chenchal/Tempo_NewCode/Joule/Joule-190313-133648';
+baseDir = '/Volumes/schalllab/Users/Chenchal/Tempo_NewCode/Joule';
+session = 'Joule-190319-123427';
+sessionDir = fullfile(baseDir,session);
+codesDir = fullfile(sessionDir,'ProcLib','CMD');
 eventCodecFile = fullfile(codesDir,'EVENTDEF.PRO');
 infosCodecFile = fullfile(codesDir, 'INFOS.PRO');
+
+
+
+[evCode2Name, evName2Code, evTable] = getCodeDefs(eventCodecFile);
+
+
+[infosCode2Name, infosName2Code, infosTable] = getCodeDefs(infosCodecFile);
+
 
 [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractEvents(sessionDir, eventCodecFile, infosCodecFile);
 
