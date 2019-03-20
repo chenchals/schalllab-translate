@@ -8,17 +8,19 @@ procLibDir =fullfile(sessionBaseDir, sessName, 'ProcLib');
 eventDefFile = fullfile(procLibDir,'CMD/EVENTDEF.PRO');
 infosDefFile = fullfile(procLibDir,'CMD/INFOS.PRO');
 
-% set it up in TranslateTDT
-%     opts.useTaskEndCode = true;
-%     opts.dropNaNTrialStartTrials = false;
-%     opts.useNegativeValsInInfos = true;
-%     opts.infosNegativeOffset = 32768;
-
+% setup options to translate TDT datafile
 
 opts.sessionDir = fullfile(sessionBaseDir,sessName);
 opts.baseSaveDir = baseSaveDir;
 opts.eventDefFile = eventDefFile;
 opts.infosDefFile = infosDefFile; 
+opts.useTaskStartEndCodes = true;
+opts.dropNaNTrialStartTrials = false;
+% Offset for Info Code values_
+opts.infosOffsetValue = 3000;
+opts.infosHasNegativeValues = true;
+opts.infosNegativeValueOffset = 32768;
+% Eye data
 opts.splitEyeIntoTrials = false;
 opts.hasEdfDataFile = 0;
 % opts.edf.useEye = 'X';

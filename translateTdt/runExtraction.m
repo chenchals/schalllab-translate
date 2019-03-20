@@ -6,6 +6,11 @@ function [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfos] = ru
     useSessionNamePrefix = 1;
     if numel(varargin) == 1
         useSessionNamePrefix = varargin{1};
+        evtTranslateOptions = {};
+    end
+    if numel(varargin) == 2
+        useSessionNamePrefix = varargin{1};
+        evtTranslateOptions = varargin{2};
     end
         
     sessionName = regexp(sessionDir,'[-\w]+$','match');
@@ -17,7 +22,7 @@ function [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfos] = ru
         saveFilePrefix = '';
     end
     
-    [Task, TaskInfos, EventCodec, InfosCodec, SessionInfos] = tdtExtractEvents(sessionDir,eventDefFile,infosDefFile);
+    [Task, TaskInfos, EventCodec, InfosCodec, SessionInfos] = tdtExtractEvents(sessionDir,eventDefFile,infosDefFile,evtTranslateOptions);
 
     % Save translated mat file if needed
     if saveOutput

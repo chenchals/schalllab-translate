@@ -4,16 +4,35 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
     %   called with no arguments, will prompt user to provide the options.
     % 
     %   options: Is a struct that sets up data paths and processing options for eyedata.
-    %           .sessionDir     - [char] Location of TDT session directory
-    %           .baseSaveDir    - [char] Base location for saving translated TDT
+    %   .sessionDir             - [char] Location of TDT session directory
+    %   .baseSaveDir            - [char] Base location for saving translated TDT
     %                             session. Do not include session name, since
     %                             a sub-dir with session name is created 
-    %           .eventDefFile   - [char] Full filepath to EVENTDEF.pro file 
+    %   .eventDefFile           - [char] Full filepath to EVENTDEF.pro file 
     %                             used by TEMPO to acquire TDT session 
-    %           .infosDefFile   - [char] Full filepath to INFOS.pro file 
+    %   .infosDefFile           - [char] Full filepath to INFOS.pro file 
     %                             used by TEMPO to acquirs TDT session
-    %           .splitEyeIntoTrials  - true/false
-    %           .hasEdfDataFile - [T|F] Does the sessionDir contain
+    %   .useTaskStartEndCodes   - [false] If true used event codes for
+    %                             TaskStart_ and TaskEnd_ from the
+    %                             eventDefFile 
+    %  .dropNaNTrialStartTrials - [true] After processing, drop all trials
+    %                             and trialInfos where TrialStart_ is NaN   
+    %  .infosOffsetValue         - [3000] Value to be subtracted from
+    %                             translated Infos values. Note different
+    %                             approach for negative values
+    %  .infosHasNegativeValues   - [false] If true, then all 
+    %                             info_values(>=infosNegativeValueOffset) =
+    %                             infosNegativeValueOffset - info_values.
+    %                             Resulting -1 values are replaced with NaN
+    %                             info_values(<infosNegativeValueOffset) =
+    %                             info_values - infosOffsetValue 
+    %  .infosNegativeValueOffset - [32768] If infosHasNegativeValue is set,
+    %                              then this value is used as 0 and anything
+    %                              higher is subtracted from this value to
+    %                              get the negative value
+    %
+    %   .splitEyeIntoTrials      - true/false
+    %   .hasEdfDataFile          - [T|F] Does the sessionDir contain
     %                             'dataEDF.mat'.  This is edf-datafile
     %                             collected on EYELINK computer that is
     %                             transferred to the TDT session directory
@@ -123,7 +142,7 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
             if isfield(o,'edf')
                 e = o.edf;
             end
-            [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfo] = runExtraction(o.sessionDir, o.baseSaveDir, o.eventDefFile, o.infosDefFile, o.splitEyeIntoTrials, e ,varargin{:});
+            [Task, TaskInfos, TrialEyes, EventCodec, InfosCodec, SessionInfo] = runExtraction(o.sessionDir, o.baseSaveDir, o.eventDefFile, o.infosDefFile, o.splitEyeIntoTrials, e ,varargin{:},o);
         end
     end
     methods (Access = private)

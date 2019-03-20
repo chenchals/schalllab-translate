@@ -1,4 +1,4 @@
-function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractEvents(sessionDir, eventCodecFile, infosCodecFile)
+function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractEvents(sessionDir, eventCodecFile, infosCodecFile, varargin)
 %TDTEXTRACTEVENTS Extract Event data from TDT session
 %
 %   sessionDir: Location where TDT data files are saved
@@ -7,41 +7,72 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
 %                    (1) EVENTDEF.pro file used to acquire data (preferred) OR
 %                    (2) [not tested] TEMPO_XXXX_rigDDD.m file used for translation
 %   infosdCodecFile : The INFOS.pro file that has Names for InfoCodes
+%   varargin        : Options for translation.  This is a struct with
+%                     following fields. Fields if not present or if
+%                     varargin is absent, then default values will be used
+%   opts.useTaskStartEndCodes : [false] If true used event codes for
+%                               TaskStart_ and TaskEnd_ from the
+%                               eventCodecFile
+%   opts.dropNaNTrialStartTrials : [true] After processing, drop all trials
+%                                  and trialInfos where TrialStart_ is NaN  
+%   opts.infosOffsetValue : [3000] Value to be subtracted from translated
+%                           Infos values. Note for negative values a
+%                           different approach is used
+%   opts.infosHasNegativeValues : [false] If true, then all info_values
+%                                 (>= infosNegativeValueOffset) = 
+%                                 infosNegativeValueOffset - info_values 
+%                                 resulting -1 values are replaced with NaN
+%                                 info_values(<infosNegativeValueOffset) =
+%                                 info_values - infosOffsetValue
+%  opts.infosNegativeValueOffset : [32768] If infosHasNegativeValue is set,
+%                                  then this value is used as 0 and
+%                                  anything higher is subtracted from this
+%                                  value to get the negative value 
 %
 % Example:
-%    sessDir = 'data/Joule/tdtData/Countermanding/Joule-180714-093508';
-%    sessDir10 = ...
-%    'data/Joule/tdtData/troubleshootEventCodes/Joule-180720-121327'; %//<10
-%    sessDir5 = ...
-%    'data/Joule/tdtData/troubleshootEventCodes/Joule-180720-120340'; %//<5
-%    sessDir2 = ...
-%    'data/Joule/tdtData/troubleshootEventCodes/Joule-180720-120804'; %//<2
-%    evDefFile = 'data/Joule/TEMPO/currentProcLib/EVENTDEF.pro'; %...TEMPO_EV_SEAS_rig029.m
-%    infosDefFile = 'data/Joule/TEMPO/currentProcLib/CMD/INFOS.pro';
-%
-%    [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos] = ...
-%            tdtExtractEvents(sessDir, evDefFile, infosDefFile);
-%
+%    sessDir = 'data/Joule/Joule-session';
+%    evDefFile = 'data/Joule/Joule-session/ProcLib/CMD/EVENTDEF.PRO';
+%    infosDefFile = 'data/Joule/Joule-session/ProcLib/CMD/INFOS.PRO';
+%    opts = as explained above...
 %    [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = ...
 %            tdtExtractEvents(sessDir, evDefFile, infosDefFile);
 %
 %    [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = ...
-%            tdtExtractEvents(sessDir, evDefFile, infosDefFile);
+%            tdtExtractEvents(sessDir, evDefFile, infosDefFile, opts);
+%
+% See also GETCODEDEFS
 
-    useTaskStartEndCodes = true;
-    dropNaNTrialStartTrials = false;
-    useNegativeValsInInfos = true;
-    infosNegativeOffset = 32768;
-    % Offset for Info Code values_
-    infosOffestValue = 3000;
-        
-    % Ignore duplicate events
-    % Manual juice: [juiceStart_ juiceEndCode_]
-    % Photodiode triggers: [PDTriggerLeft_ PDTriggerRight_]
-    % use in separate table..
-    % ignoreDuplicateEvents = ;% manual juice...
-    % ignoreDuplicateEvents = [2777 2776 2990 2991];
-    ignoreDuplicateEvents = [];
+%% Process options for translation, if any
+    if ~isempty(varargin)
+        opts = varargin{1};
+    else
+        opts = struct();
+    end
+    if isfield(opts,'useTaskStartEndCodes')
+        useTaskStartEndCodes = opts.useTaskStartEndCodes;
+    else
+        useTaskStartEndCodes = false;
+    end
+    if isfield(opts,'dropNaNTrialStartTrials')
+        dropNaNTrialStartTrials = opts.dropNaNTrialStartTrials;
+    else
+        dropNaNTrialStartTrials = false;
+    end        
+    if isfield(opts,'infosOffsetValue')
+        infosOffsetValue = opts.infosOffsetValue;
+    else
+        infosOffsetValue = 3000;
+    end        
+    if isfield(opts,'infosHasNegativeValues')
+        infosHasNegativeValues = opts.infosHasNegativeValues;
+    else
+        infosHasNegativeValues = false;
+    end        
+    if isfield(opts,'infosNegativeValueOffset')
+        infosNegativeValueOffset = opts.infosNegativeValueOffset;
+    else
+        infosNegativeValueOffset = 32768;
+    end
     
     % Normalize input path and extract sessionName
     blockPath = regexprep(sessionDir,'[/\\]',filesep);
@@ -51,14 +82,12 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
         getCodeDefs(regexprep(eventCodecFile,'[/\\]',filesep));
     
   %%  Process Infos specific codes  %%
-  %   Infos specific names are indexed by their order of occurrance in the
-  %   INFOS.PRO file 
   infosCodec = struct();
   if ~isempty(infosCodecFile)
     [infosCodec.code2Name, infosCodec.name2Code, infosCodec.infosTable] = ...
         getCodeDefs(regexprep(infosCodecFile,'[/\\]',filesep));
-  end    
-    hasInfosCodec =  isfield(infosCodec, 'code2Name');
+  end 
+  hasInfosCodec =  isfield(infosCodec, 'code2Name');
     %%  Read TDT events and event times   %%
     [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath);
     % TDT events have '0' for code due to the way the TEMPO ring buffer is
@@ -70,13 +99,14 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
         tdtEventTimes(tdtEvents <= 0) = [];
         tdtEvents(tdtEvents <= 0) = [];
     end
-    %%  TODO: Process TDT events and infoCodes into trials  %%
+    %%  Process TDT events and infoCodes into trials  %%
     decodeEvent = @(x)  evCodec.name2Code(x);
     taskHeaderCodes = (1501:1510)';
     
     % codes
     trialStartCode = decodeEvent('TrialStart_');
     eotCode = decodeEvent('Eot_');
+    % Change to Infos event names
     if (evCodec.name2Code.isKey('StartInfos_'))
         startInfosCode = decodeEvent('StartInfos_');
     else
@@ -89,7 +119,6 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     end
     
     % Now check for valid TASK blocks
-    nEvents = numel(tdtEvents);
     if (useTaskStartEndCodes)
         iTaskStart =  find(tdtEvents==decodeEvent('TaskStart_'));
     else
@@ -129,7 +158,7 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     trialInfos = repmat(struct(),nTasks,1);
     if hasInfosCodec
     infoNames = infosCodec.code2Name.values';
-    startInfosOffset = infosOffestValue;
+    startInfosOffset = infosOffsetValue;
     end
     
     warning('OFF','MATLAB:table:RowsAddedExistingVars');
@@ -140,8 +169,8 @@ tic
         end
         allC = evCodes{t};
         allT = evTimes{t};
-        evCodesTemp = allC(allC < infosOffestValue);
-        tmsTemp = allT(allC < infosOffestValue);
+        evCodesTemp = allC(allC < infosOffsetValue);
+        tmsTemp = allT(allC < infosOffsetValue);
         % Get unique Event codes, if duplicate get first occurrance
         [evs,iUniq] = unique(evCodesTemp,'stable');
         tms = tmsTemp(iUniq);
@@ -157,7 +186,7 @@ tic
         trialEventsTbl.UniqueEventCodes(t) = {evsGt0'}; 
         trialEventsTbl.UniqueEventCodesCounts(t) = {evGt0Counts'};       
         
-        if numel(evs) ~= sum(evCodesTemp < infosOffestValue)
+        if numel(evs) ~= sum(evCodesTemp < infosOffsetValue)
             % In case we want to count zeros, using hist (as histc 
             % does not count zeros) by incrementing all codes by 1
             [dupsCount,uniqDups]= hist(evCodesTemp+1,unique(evs+1));
@@ -169,13 +198,9 @@ tic
             trialEventsTbl.DuplicateEventCodes(t) = {uniqDups'}; 
             trialEventsTbl.DuplicateEventCodesCounts(t) = {dupsCount'}; 
             trialEventsTbl.DuplicateEventCodesTimes(t) = {arrayfun(@(x) tmsTemp(evCodesTemp==x),uniqDups(:),'UniformOutput',false)}; 
-                        
-            if setdiff(unique(uniqDups),ignoreDuplicateEvents)
-               trialEventsTbl.GoodTrial(t) = 0;
-            end
         end
         if hasInfosCodec
-            if ~sum(allC >= 3000)
+            if ~sum(allC >= infosOffsetValue)
                 warning('Task block %d has NO INFO codes\n',t);
                 trialEventsTbl.HasInfosCodes(t) = 0;
                 trialEventsTbl.GoodTrial(t) = 0;
@@ -213,10 +238,10 @@ tic
                     infos(infos<startInfosOffset)
                 end
                  
-                if(useNegativeValsInInfos)
-                    infos(infos>=infosNegativeOffset) = infosNegativeOffset - infos(infos>=infosNegativeOffset);
+                if(infosHasNegativeValues)
+                    infos(infos>=infosNegativeValueOffset) = infosNegativeValueOffset - infos(infos>=infosNegativeValueOffset);
                     infos(infos== -1) = NaN;
-                    infos(infos > 0 & infos<infosNegativeOffset) = infos(infos > 0 & infos<infosNegativeOffset) - startInfosOffset;
+                    infos(infos > 0 & infos<infosNegativeValueOffset) = infos(infos > 0 & infos<infosNegativeValueOffset) - startInfosOffset;
                   else
                     infos = infos - startInfosOffset;
                 end
@@ -282,8 +307,6 @@ end
 
 
 %% Sub-functions %%
-
-
 function [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath)
     % Using functions form TDTSDK for reading raw TDT files
     % 
@@ -312,7 +335,7 @@ function [tdtEvents, tdtEventTimes, tdtInfos] = getTdtEvents(blockPath)
     tdtEvents = tdtEvents(:);
     tdtEventTimes = tdtEventTimes(:);
     fprintf('Successfully read TDT event data\n');
-        % Info about the files etc
+    % Info about the files etc
     %  info is struct with fields:
     % Example:
     %    tankpath: 'translateTdt/data/Joule/tdtData/Countermanding'
