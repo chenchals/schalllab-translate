@@ -17,6 +17,8 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
     %                             eventDefFile 
     %  .dropNaNTrialStartTrials - [true] After processing, drop all trials
     %                             and trialInfos where TrialStart_ is NaN   
+    %  .dropEventAllTrialsNaN   - [true] After processing, drop Events
+    %                             where *all trials* for the event is NaN
     %  .infosOffsetValue         - [3000] Value to be subtracted from
     %                             translated Infos values. Note different
     %                             approach for negative values
@@ -70,12 +72,17 @@ classdef TDTTranslator < matlab.mixin.SetGetExactNames
             {'sessionDir', sprintf('Location of TDT session directory\n\t\t\t\t[string]')}
             {'baseSaveDir', sprintf('Base directory for saving translation results\n\t(will create dirctoty with session_name)\n\t\t\t\t[string]')}
             {'eventDefFile', sprintf('Full filepath to location of EVENTDEF.pro file used for session\n\t\t\t\t[string]')}
-            {'infosDefFile', sprintf('Full filepath to location of INFOS.pro file used for session\n\t\t\t\t [string]')}
+            {'infosDefFile', sprintf('Full filepath to location of INFOS.pro file used for session\n\t\t\t\t[string]')}
+            {'useTaskStartEndCodes', sprintf('If true use TaskStart_ and TaskEnd_\n\t\t\t[false true|false]')}
+            {'dropNaNTrialStartTrials',  sprintf('If true, after processing, drop all trialsband trialInfos where TrialStart_ is NaN\n\t\t\t[true true|false]' )}  
+            {'dropEventAllTrialsNaN' sprintf('If true, after processing, drop Events where *all trials* for the event is NaN\n\t\t\t[true true|false]' )} 
+            {'infosOffsetValue', sprintf('Value to be subtracted from translated Infos values. *Note* different approach for negative values\n\t\t\t[3000]')} 
+            {'infosHasNegativeValues', sprintf('If true, then sending negative values from TEMPO\n\t\t\t\t[false true|false]')}
+            {'infosNegativeValueOffset',sprintf('If infosHasNegativeValue is set, 0 and negative values are offset by this value.\n Example: 0 = 32768, -1 = 32769, .. etc\n\t\t\t\t\[32768]')}
             {'splitEyeIntoTrials', sprintf('Do you want the Eye data to be split into Trials?\n\t\t\t\t[true|false]')}
             {'hasEdfDataFile', sprintf('Does session directory above contain \''dataEDF.mat\'' file?\n\t(This file is data collected on EYELINK computer and translated to \''dataEDF.mat\'' by third-party utility)\n\t\t\t\t[true|false]')}
             };
-        
-        
+               
         edfOptionFieldPrompts = {
             {'useEye', sprintf('Which component of Eye data for TDT and EDF do you want to use for aligning? \n\t\t\t\t [char X|Y]')}
             % ADC volt range of TDT

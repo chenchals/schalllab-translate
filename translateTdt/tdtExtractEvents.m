@@ -15,6 +15,8 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
 %                               eventCodecFile
 %   opts.dropNaNTrialStartTrials : [true] After processing, drop all trials
 %                                  and trialInfos where TrialStart_ is NaN  
+%   opts.dropEventAllTrialsNaN   : [true] After processing, drop Events
+%                                  where *all trials* for the event is NaN 
 %   opts.infosOffsetValue : [3000] Value to be subtracted from translated
 %                           Infos values. Note for negative values a
 %                           different approach is used
@@ -57,7 +59,12 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
         dropNaNTrialStartTrials = opts.dropNaNTrialStartTrials;
     else
         dropNaNTrialStartTrials = false;
-    end        
+    end      
+    if isfield(opts,'dropEventAllTrialsNaN')
+        dropEventAllTrialsNaN = opts.dropEventAllTrialsNaN;
+    else
+        dropEventAllTrialsNaN = true;
+    end      
     if isfield(opts,'infosOffsetValue')
         infosOffsetValue = opts.infosOffsetValue;
     else
@@ -73,6 +80,7 @@ function [trialEvents, trialInfos, evCodec, infosCodec, tdtInfos ] = tdtExtractE
     else
         infosNegativeValueOffset = 32768;
     end
+    
     
     % Normalize input path and extract sessionName
     blockPath = regexprep(sessionDir,'[/\\]',filesep);
@@ -287,8 +295,10 @@ tic
         end       
     end
    toc 
-   % prune all NaN Columns (events), if the whole column is NaN
-   trialEventsTbl = trialEventsTbl(:,any(~ismissing(trialEventsTbl)));
+   if (dropEventAllTrialsNaN)
+       % prune all NaN Columns (events), if the whole column is NaN
+       trialEventsTbl = trialEventsTbl(:,any(~ismissing(trialEventsTbl)));
+   end
    % Remove all rows (trials) where trialStart_ is NaN as we cannot use
    % these trials. Happens for 1st/0th trial where only room num is sent as
    % well as during cases where TEMPO's clock is stopped, while TDT is

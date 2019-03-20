@@ -16,6 +16,7 @@ opts.eventDefFile = eventDefFile;
 opts.infosDefFile = infosDefFile; 
 opts.useTaskStartEndCodes = true;
 opts.dropNaNTrialStartTrials = false;
+opts.dropEventAllTrialsNaN = false;
 % Offset for Info Code values_
 opts.infosOffsetValue = 3000;
 opts.infosHasNegativeValues = true;
