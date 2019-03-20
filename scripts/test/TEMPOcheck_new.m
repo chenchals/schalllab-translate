@@ -1,5 +1,9 @@
+baseDir = '/Volumes/schalllab';
+baseSaveDir = fullfile(baseDir,'Users/Chenchal/Tempo_NewCode/dataProcessed');
+sessName = 'Joule-190319-143820';
 
-
+load(fullfile(baseSaveDir,sessName, 'Events.mat'));
+load(fullfile(baseSaveDir,sessName, 'Eyes.mat'));
 
 
 %% Convert to table
@@ -113,7 +117,31 @@ Task_rewardDuration = Task.JuiceEnd_ - Task.JuiceStart_;
 figure; hist( Task_rewardDuration, 100); % INCORRECT!! The distribution looks shorter than what it should be.
 % this seems alright, with a Gaussian distribution around the high and low-
 % reward duration values.
+%% Check outcome flags 
+%     - GO Trials
+go_summary = [sum(TaskInfos.TrialType == 0), ... % all GO trials
+    sum(Task.OutcomeGoCorrect_>0), ...  % all GO correct
+    sum(Task.OutcomeGoError_ > 0), ...  % all Go error
+    sum(Task.OutcomeFixError_(TaskInfos.TrialType==0) > 0), ... % all Fix error (GO trials only)
+    sum(Task.OutcomeFixBreak_(TaskInfos.TrialType==0) > 0)];  % all fix break (GO trials only)
+go = categorical({'All GO','GO-Correct','GO-Error','GO-FixError','GO-FixBreak'});
 
+figure;
+subplot(221)
+bar(go,go_summary)
+subplot(222)
+bar([[go_summary(1),nan(1,numel(go_summary)-2)];go_summary(2:end)],'stacked')
+%    - NOGO Trials
+nogo_summary = [sum(TaskInfos.TrialType == 1), ... % all NOGO trials
+    sum(Task.OutcomeNogoCancelled_>0), ...  % all NOGO cancelled
+    sum(Task.OutcomeNogoNonCancelled_ > 0), ...  % all NOGo non-cancelled
+    sum(Task.OutcomeNogoError_ > 0), ...  % all NOGo error
+    sum(Task.OutcomeFixError_(TaskInfos.TrialType==1) > 0), ... % all Fix error (NOGO trials only)
+    sum(Task.OutcomeFixBreak_(TaskInfos.TrialType==1) > 0)];  % all fix break (NOGO trials only)
+nogo = categorical({'All NOGO','NOGO-Cancelled','NOGO-Non-Cancelled','NOGO-Error','NOGO-FixError','NOGO-FixBreak'});
 
-
+subplot(223)
+bar(nogo,nogo_summary)
+subplot(224)
+bar([[nogo_summary(1),nan(1,numel(nogo_summary)-2)];nogo_summary(2:end)],'stacked')
 
