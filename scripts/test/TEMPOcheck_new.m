@@ -5,6 +5,7 @@ sessName = 'Joule-190319-143820';
 load(fullfile(baseSaveDir,sessName, 'Events.mat'));
 load(fullfile(baseSaveDir,sessName, 'Eyes.mat'));
 
+set(0, 'DefaultTextInterpreter', 'none')
 
 %% Convert to table
 Task = struct2table(Task);
@@ -28,11 +29,7 @@ plot( TaskInfos.TrialNumber, '-')
 figure;
 plot( TaskInfos.BlockNum, '-')
 
-%% Check IsRunning -- removed...
-isRunning_0 = TaskInfos(TaskInfos.IsRunning == 0, :);
-isRunning_1 = TaskInfos(TaskInfos.IsRunning == 1, :);
-
-isRunning_0_task = Task(TaskInfos.IsRunning == 0, :);
+%% Check IsRunning -- removed...from TaskInfos
 %% Check Event: AcquireFix_
 
 % figure;
@@ -41,21 +38,26 @@ isRunning_0_task = Task(TaskInfos.IsRunning == 0, :);
 %% Check Trial duration
 figure;
 subplot(331); plot( Task.TrialStart_ , '-')
+title('TrialStart_');
 subplot(332); plot( Task.Eot_ , '-')
+title('Eot_');
 subplot(333); hist( Task.Eot_ - Task.TrialStart_, 100)  
-
+title('Eot_ - TrialStart_');
 subplot(334)
 hist( Task.TimeoutStart_ - Task.Eot_ , 100)
+title('TimeoutStart_ - Eot_');
 
 % subplot(334); plot( Task.TrialStart_ , '-')
-figure;
 timeoutDuration =  Task.TimeoutEnd_-Task.TimeoutStart_;
-subplot(335); hist(  Task.Eot_ - Task.TrialStart_ + timeoutDuration, 100)
+subplot(335); hist( Task.Eot_ - Task.TrialStart_ + timeoutDuration, 100)
+title('Task.Eot_ - Task.TrialStart_ + timeoutDuration')
 subplot(336); hist(  TaskInfos.UseTrialDuration , 100)
+title('UseTrialDuration')
 %% % This tests the trial duration for GO and STOP trials. They should be the
 % same! 
-figure; subplot(2,1,1); hist( TaskInfos.UseTrialDuration ( TaskInfos.TrialType == 0 ), 100)
-        subplot(2,1,2); hist( TaskInfos.UseTrialDuration ( TaskInfos.TrialType == 1 ), 100)
+figure; 
+subplot(2,1,1); hist( TaskInfos.UseTrialDuration ( TaskInfos.TrialType == 0 ), 100)
+subplot(2,1,2); hist( TaskInfos.UseTrialDuration ( TaskInfos.TrialType == 1 ), 100)
         % we tested and found that they are off by 660ms.
 %% Check RT time to look at fix point      
 figure;
@@ -127,8 +129,10 @@ go_summary = [sum(TaskInfos.TrialType == 0), ... % all GO trials
 go = categorical({'All GO','GO-Correct','GO-Error','GO-FixError','GO-FixBreak'});
 
 figure;
+
 subplot(221)
 bar(go,go_summary)
+title('GO-Outcomes')
 subplot(222)
 bar([[go_summary(1),nan(1,numel(go_summary)-2)];go_summary(2:end)],'stacked')
 %    - NOGO Trials
@@ -142,6 +146,34 @@ nogo = categorical({'All NOGO','NOGO-Cancelled','NOGO-Non-Cancelled','NOGO-Error
 
 subplot(223)
 bar(nogo,nogo_summary)
+title('NOGO-Outcomes')
 subplot(224)
 bar([[nogo_summary(1),nan(1,numel(nogo_summary)-2)];nogo_summary(2:end)],'stacked')
+%% Check Stop signal delays
+ssdTable = TaskInfos(:,{'TrialNumber','TrialType', 'UseSsdIdx', 'UseSsdVrCount','SsdVrCount', 'StopSignalDuration',...
+    'IsCancelled', 'IsNonCancelled'});
+ssdTable =[ssdTable Task(:,{'StopSignal_', 'Target_','OutcomeFixError_','OutcomeFixBreak_','OutcomeGoCorrect_','OutcomeGoError_',...
+    'OutcomeNogoCancelled_', 'OutcomeNogoNonCancelled_','OutcomeNogoError_'})];
+ssdTable.StopSignal_Minus_Target_ = ssdTable.StopSignal_ - ssdTable.Target_;
+ssdTable = sortrows(ssdTable,{'TrialType','UseSsdIdx'});
+
+ss_on_idx = ssdTable.StopSignal_>0;
+
+ssOn_ssdStats = grpstats(ssdTable(ss_on_idx,:),{'TrialType','UseSsdIdx'},{'min','mean','max','std'},...
+                              'DataVars',{'UseSsdVrCount', 'SsdVrCount','StopSignalDuration','StopSignal_Minus_Target_'});
+
+    
+figure
+subplot(331)
+hist(ssdTable.UseSsdVrCount(ssdTable.TrialType==1),unique(ssdTable.UseSsdVrCount(ssdTable.TrialType==1)))
+title('SSD config. in #screen refresh')
+subplot(332)
+bar(unique(ssdTable.UseSsdVrCount(ss_on_idx)),...
+    [histc(ssdTable.UseSsdVrCount(ss_on_idx),unique(ssdTable.UseSsdVrCount(ss_on_idx))),...
+     histc(ssdTable.SsdVrCount(ss_on_idx),unique(ssdTable.UseSsdVrCount(ss_on_idx)))]...
+    )
+legend({'config.','PD-count'})
+title('SSD in #screen refresh')
+
+
 
