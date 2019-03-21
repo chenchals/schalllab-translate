@@ -166,14 +166,19 @@ ssOn_ssdStats = grpstats(ssdTable(ss_on_idx,:),{'TrialType','UseSsdIdx'},{'min',
 figure
 subplot(331)
 hist(ssdTable.UseSsdVrCount(ssdTable.TrialType==1),unique(ssdTable.UseSsdVrCount(ssdTable.TrialType==1)))
-title('SSD config. in #screen refresh')
+xlabel('SSD - # refreshes')
+ylabel('# Stop trials')
+title('SSD config (#refreshes)')
 subplot(332)
 bar(unique(ssdTable.UseSsdVrCount(ss_on_idx)),...
     [histc(ssdTable.UseSsdVrCount(ss_on_idx),unique(ssdTable.UseSsdVrCount(ss_on_idx))),...
      histc(ssdTable.SsdVrCount(ss_on_idx),unique(ssdTable.UseSsdVrCount(ss_on_idx)))]...
     )
 legend({'config.','PD-count'})
-title('SSD in #screen refresh')
+xlabel('SSD - # screen refreshes')
+ylabel('# Stop trials')
+title('SSD (#refreshes) - stop signal ON')
 
+subplot(333)
 
 
