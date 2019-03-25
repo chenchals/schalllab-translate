@@ -1,10 +1,13 @@
-baseDir = '/Volumes/schalllab';
+% Process raw eye values
+tempEyes=csvread('T:\Users\Chenchal\Tempo_NewCode\Joule\Joule-190322-151707-Blinks\ProcLib\rawIVals.csv');
+baseDir = 'T:';
 baseSaveDir = fullfile(baseDir,'Users/Chenchal/Tempo_NewCode/dataProcessed');
-sessName = 'Joule-190319-143820';
-
+sessName = 'Joule-190322-151707-Blinks';
+sess2 = 'Joule-190321-160511';
 load(fullfile(baseSaveDir,sessName, 'Events.mat'));
 load(fullfile(baseSaveDir,sessName, 'Eyes.mat'));
 
+sess2Eyes = load(fullfile(baseSaveDir,sess2, 'Eyes.mat'));
 set(0, 'DefaultTextInterpreter', 'none')
 
 %% Convert to table
@@ -13,10 +16,46 @@ TaskInfos = struct2table(TaskInfos);
 
 %% Plot Eyes
 figure; 
-subplot(211)
+subplot(411)
 plot( tdt.EyeX, '-')
-subplot(212)
+subplot(412)
 plot( tdt.EyeY, '-')
+subplot(413)
+plot( tempEyes(:,1),tempEyes(:,2), '-')
+subplot(414)
+plot( tempEyes(:,1),tempEyes(:,3), '-')
+
+figure;
+plot( tempEyes(:,1),tempEyes(:,2), '-b')
+hold on
+plot( tempEyes(:,1),tempEyes(:,3), ':r')
+hold off
+
+figure;
+plot( tdt.EyeX, '-b')
+hold on
+plot( tdt.EyeY, ':r')
+hold off
+
+figure;
+plot( sess2Eyes.tdt.EyeX, '-b')
+hold on
+plot( sess2Eyes.tdt.EyeY, ':r')
+hold off
+
+
+
+% X and Y-direction:
+Y_passLimit = find( tempEyes(:,3) < -1.6*10000 );
+Y_passLimit_diff = diff( Y_passLimit );
+Y_passLimit_diff ( Y_passLimit_diff <2 ) = [];
+figure; subplot(211); hist( Y_passLimit_diff ,1:2:5000 );
+X_passLimit = find( tempEyes(:,2) < -1.6*10000 );
+X_passLimit_diff = diff( X_passLimit );
+X_passLimit_diff ( X_passLimit_diff <2 ) = [];
+        subplot(212); hist( X_passLimit_diff ,1:2:5000 );
+
+
 %% Check negative nos in the infos
 figure;
 hist( TaskInfos.RandNegNumberTest, 100 )
