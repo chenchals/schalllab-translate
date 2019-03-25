@@ -1,13 +1,11 @@
 % Process raw eye values
-tempEyes=csvread('T:\Users\Chenchal\Tempo_NewCode\Joule\Joule-190322-151707-Blinks\ProcLib\rawIVals.csv');
-baseDir = 'T:';
+baseDir = '/Volumes/schalllab';
 baseSaveDir = fullfile(baseDir,'Users/Chenchal/Tempo_NewCode/dataProcessed');
 sessName = 'Joule-190322-151707-Blinks';
-sess2 = 'Joule-190321-160511';
+
 load(fullfile(baseSaveDir,sessName, 'Events.mat'));
 load(fullfile(baseSaveDir,sessName, 'Eyes.mat'));
 
-sess2Eyes = load(fullfile(baseSaveDir,sess2, 'Eyes.mat'));
 set(0, 'DefaultTextInterpreter', 'none')
 
 %% Convert to table
