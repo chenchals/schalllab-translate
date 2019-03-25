@@ -34,12 +34,12 @@ deltaT = deltaT(2:end);
 temp(temp == 1) = deltaT(2:end);
 hist(deltaT(deltaT>10 & deltaT<500),0:2:400)
 
-% Faster method for counting
+% Easiest and Fastest method for counting
 temp2 = zeros(numel(A),1);
 % find pattern [0 1]
-pattern_0_1 = strfind([0,A(:)'],[0 1]);
+start_pattern_0_1 = strfind([0,A(:)'],[0 1]);
 % find pattern [1 0]
-pattern_1_0 = strfind([A(:)',0],[1 0]);
+end_pattern_1_0 = strfind([A(:)',0],[1 0]);
 deltaT2 =  pattern_1_0  - pattern_0_1 + 1;
 deltaT2 = deltaT2(:);
 temp2(pattern_0_1) = deltaT2;
