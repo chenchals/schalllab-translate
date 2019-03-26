@@ -3,7 +3,7 @@
 baseDir = 'T:';
 sessionBaseDir = fullfile(baseDir,'Users/Chenchal/Tempo_NewCode/Joule');
 baseSaveDir = fullfile(baseDir,'Users/Chenchal/Tempo_NewCode/dataProcessed');
-sessName = 'Joule-190322-151707-Blinks';
+sessName = 'Joule-190326-154110-Blinks';
 procLibDir =fullfile(sessionBaseDir, sessName, 'ProcLib');
 eventDefFile = fullfile(procLibDir,'CMD/EVENTDEF.PRO');
 infosDefFile = fullfile(procLibDir,'CMD/INFOS.PRO');
