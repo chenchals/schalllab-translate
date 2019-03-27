@@ -1,15 +1,16 @@
 % Process raw eye values
-baseDir = '/Volumes/schalllab';
+baseDir = 'T:';
 
 baseSaveDir = fullfile(baseDir,'Users/Chenchal/Tempo_NewCode/dataProcessed');
-sessName = 'Joule-190326-154110-Blinks';
+sessName = 'Amir-190327-155003';
 sessionDir = fullfile(baseDir,'Users/Chenchal/Tempo_NewCode/Joule',sessName);
 
+%tempoEyes = csvread(fullfile(sessionDir,'ProcLib/rawIVals.csv'));
 
 load(fullfile(baseSaveDir,sessName, 'Events.mat'));
 load(fullfile(baseSaveDir,sessName, 'Eyes.mat'));
-if (exist(fullfile(sessionDir,'ProcLib/rawIVals_1.csv'),'file'))
-    tempoEyes = csvread(fullfile(sessionDir,'ProcLib/rawIVals_1.csv'));
+if (exist(fullfile(sessionDir,'ProcLib/rawIVals.csv'),'file'))
+    tempoEyes = csvread(fullfile(sessionDir,'ProcLib/rawIVals.csv'));
 end
 
 set(0, 'DefaultTextInterpreter', 'none')
@@ -34,16 +35,16 @@ noI=tempoEyes.noEyes; noI(noI==0)=NaN;
 dur=tempoEyes.iInvalidDuration; dur(dur==0)=NaN;
 invalid=tempoEyes.iInvalid; invalid(invalid==0)=NaN;
 
-loT=133460/2;
-hiT=133520/2;
+loT=1;
+hiT=numel(tempoEyes.timeMs);
 figure
-plot(tempoEyes.timeMs(loT:hiT),tempoEyes.eyeX(loT:hiT),'-b*');
+plot(tempoEyes.timeMs(loT:hiT),tempoEyes.eyeX(loT:hiT),'-b');
 hold on
-plot(tempoEyes.timeMs(loT:hiT),tempoEyes.eyeY(loT:hiT),'-r*');
+plot(tempoEyes.timeMs(loT:hiT),tempoEyes.eyeY(loT:hiT),'-r');
 hold on
-plot(tempoEyes.timeMs(loT:hiT),tempoEyes.pupil(loT:hiT),'-g*');
+plot(tempoEyes.timeMs(loT:hiT),tempoEyes.pupil(loT:hiT),'-g');
 hold on
-plot(tempoEyes.timeMs(loT:hiT),tempoEyes.iInvalid(loT:hiT)*-16000,'-k*');
+plot(tempoEyes.timeMs(loT:hiT),tempoEyes.iInvalid(loT:hiT)*-16000,'-k');
 hold on
 %plot(tempoEyes.timeMs,dur,'-m');
 hold off
