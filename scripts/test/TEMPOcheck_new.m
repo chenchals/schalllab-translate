@@ -1,7 +1,7 @@
 % Process raw eye values
-baseDir = '/Volumes/schalllab';
+baseDir = 'T:';
 baseSaveDir = fullfile(baseDir,'Users/Chenchal/Tempo_NewCode/dataProcessed');
-sessName = 'Joule-190322-151707-Blinks';
+sessName = 'Amir-190328-102128';
 
 load(fullfile(baseSaveDir,sessName, 'Events.mat'));
 load(fullfile(baseSaveDir,sessName, 'Eyes.mat'));
@@ -218,4 +218,43 @@ title('SSD (#refreshes) - stop signal ON')
 
 subplot(333)
 
+%% Inhibition function:
+Inh_table.SSDlist = TaskInfos.UseSsdIdx;
+Inh_table.NC1 = ~isnan(Task.OutcomeNogoNonCancelBrk_) ;
+Inh_table.NC2 = ~isnan(Task.OutcomeNogoNonCancelNoBrk_) ;
+Inh_table.C1 = ~isnan(Task.OutcomeNogoCancelBrk_) ;
+Inh_table.C2 = ~isnan(Task.OutcomeNogoCancelNoBrk_) ;
 
+Inh_table.NC = zeros( size(Inh_table.NC1 ));
+Inh_table.C = zeros( size(Inh_table.C1 ));
+
+Inh_table.NC( Inh_table.NC1 == 1 ) = 1;
+Inh_table.NC( Inh_table.NC2 == 1 ) = 1;
+Inh_table.C( Inh_table.C1 == 1 ) = 1;
+Inh_table.C( Inh_table.C2 == 1 ) = 1;
+
+InhPlot = table
+InhPlot.SSD = Inh_table.SSDlist
+InhPlot.SSD = Inh_table.SSDlist+1
+InhPlot.NC = Inh_table.NC
+InhPlot.C = Inh_table.C
+
+for currSSD = 1:10  % 10 SSDs);
+    SSDind = find( InhPlot.SSD == currSSD );
+    inh.nTr(currSSD) = length(SSDind);
+    inh.NC(currSSD) = sum(InhPlot.NC(SSDind));
+    inh.C(currSSD) = sum(InhPlot.C(SSDind));
+end
+
+numerator = inh.NC;
+denominator = inh.NC + inh.C;
+figure;
+plot( numerator./denominator, '-' )
+%% RT calculation:
+figure; 
+subplot(211); hist( Task.Decide_(TaskInfos.TrialType == 0) - Task.Target_(TaskInfos.TrialType == 0), 1:10:700 );
+subplot(212); hist( Task.Decide_(TaskInfos.TrialType == 1) - Task.Target_(TaskInfos.TrialType == 1), 1:10:700 );
+ 
+%%
+sum(TaskInfos.TrialType)/length(TaskInfos.TrialType)
+figure; plot(TaskInfos.TrialType, '-')
