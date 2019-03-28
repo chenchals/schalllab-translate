@@ -233,11 +233,11 @@ Inh_table.NC( Inh_table.NC2 == 1 ) = 1;
 Inh_table.C( Inh_table.C1 == 1 ) = 1;
 Inh_table.C( Inh_table.C2 == 1 ) = 1;
 
-InhPlot = table
-InhPlot.SSD = Inh_table.SSDlist
-InhPlot.SSD = Inh_table.SSDlist+1
-InhPlot.NC = Inh_table.NC
-InhPlot.C = Inh_table.C
+InhPlot = table;
+InhPlot.SSD = Inh_table.SSDlist;
+InhPlot.SSD = Inh_table.SSDlist+1;
+InhPlot.NC = Inh_table.NC;
+InhPlot.C = Inh_table.C;
 
 for currSSD = 1:10  % 10 SSDs);
     SSDind = find( InhPlot.SSD == currSSD );
@@ -256,13 +256,13 @@ subplot(211); hist( Task.Decide_(TaskInfos.TrialType == 0) - Task.Target_(TaskIn
 subplot(212); hist( Task.Decide_(TaskInfos.TrialType == 1) - Task.Target_(TaskInfos.TrialType == 1), 1:10:700 );
  
 %% Trial types
-sum(TaskInfos.TrialType)/length(TaskInfos.TrialType);
+sum(TaskInfos.TrialType)/length(TaskInfos.TrialType); %#ok<VUNUS>
 figure; plot(TaskInfos.TrialType, '-');
 
 %% Inhibition Fx
 inhibition.varNames = {'UseSsdIdx','UseSsdVrCount','SsdVrCount','StopSignalDuration','IsCancelledNoBrk','IsCancelledBrk',...
     'IsNonCancelledNoBrkNoBrk','IsNonCancelledBrk'};
-inhibition.varTable =TaskInfos(:,varNames);
+inhibition.varTable =TaskInfos(:,inhibition.varNames);
 inhibition.values=grpstats(inhibition.varTable, {'UseSsdIdx'},{'sum'});
 inhibition.values.NC = inhibition.values.sum_IsNonCancelledBrk + inhibition.values.sum_IsNonCancelledNoBrkNoBrk;
 inhibition.values.C = inhibition.values.sum_IsCancelledBrk + inhibition.values.sum_IsCancelledNoBrk;
@@ -270,12 +270,12 @@ inhibition.values.prob = inhibition.values.NC./(inhibition.values.C + inhibition
 % Correctly cancelled trial SSD durations men
 inhibition.ssdStatsCancelled = grpstats(inhibition.varTable(inhibition.varTable.IsCancelledNoBrk==1,:),...
                       {'UseSsdIdx'},{'mean'},'DataVars',{'UseSsdIdx', 'UseSsdVrCount','SsdVrCount','StopSignalDuration'});
-% All trial SSD durations men
+% All trial SSD durations mean
 inhibition.ssdStatsAll = grpstats(inhibition.varTable,...
                       {'UseSsdIdx'},{'mean'},'DataVars',{'UseSsdIdx', 'UseSsdVrCount','SsdVrCount','StopSignalDuration'});
 
 figure; 
 plot(inhibition.ssdStatsAll.mean_UseSsdIdx+1, inhibition.values.prob,'o-b');
-hold
+hold on
 plot(inhibition.ssdStatsCancelled.mean_UseSsdIdx+1, inhibition.values.prob(1:3),'*r');
-
+hold off
