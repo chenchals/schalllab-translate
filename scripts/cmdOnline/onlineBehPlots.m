@@ -86,5 +86,5 @@ ylim([0 1.02])
 xlabel('Reaction Time (ms)')
 ylabel('Normalized cumulative count')
 legend('Go','NonCancelled')
-
+title('Normalized Reaction Time CDF')
 
