@@ -34,17 +34,20 @@ beh.values = [TaskInfos(:,beh.infosVarNames) Task(:,beh.taskVarNames)];
 beh.values.reactionTime = beh.values.Decide_ - beh.values.Target_;
 
 %% Extract Trial Proportions
+beh.trialTypes.values = grpstats(beh.values,{'TrialType'},{'sum'},...
+    'DataVars', {'IsCancelledNoBrk','IsCancelledBrk','IsNonCancelledNoBrkNoBrk',...
+    'IsNonCancelledBrk','IsNogoErr','IsGoCorrect','IsGoErr'});
 
 %% Extract all Trial outcomes
 
 
 %% Extract Inhibition function values
-beh.inhibition.values=grpstats(beh.values, {'UseSsdIdx'},{'sum'},'DataVars',...
+beh.inhFx.values=grpstats(beh.values, {'UseSsdIdx'},{'sum'},'DataVars',...
     {'IsCancelledNoBrk','IsCancelledBrk','IsNonCancelledNoBrkNoBrk','IsNonCancelledBrk','IsNogoErr'});
-beh.inhibition.values.NC = beh.inhibition.values.sum_IsNonCancelledBrk + beh.inhibition.values.sum_IsNonCancelledNoBrkNoBrk;
-beh.inhibition.values.C = beh.inhibition.values.sum_IsCancelledBrk + beh.inhibition.values.sum_IsCancelledNoBrk;
-beh.inhibition.values.pNC = beh.inhibition.values.NC./(beh.inhibition.values.C + beh.inhibition.values.NC);
-beh.inhibition.values.nTrials = beh.inhibition.values.C + beh.inhibition.values.NC;
+beh.inhFx.values.NC = beh.inhFx.values.sum_IsNonCancelledBrk + beh.inhFx.values.sum_IsNonCancelledNoBrkNoBrk;
+beh.inhFx.values.C = beh.inhFx.values.sum_IsCancelledBrk + beh.inhFx.values.sum_IsCancelledNoBrk;
+beh.inhFx.values.pNC = beh.inhFx.values.NC./(beh.inhFx.values.C + beh.inhFx.values.NC);
+beh.inhFx.values.nTrials = beh.inhFx.values.C + beh.inhFx.values.NC;
 
 % Correctly cancelled trial SSD durations men
 beh.inhibition.ssdStatsCancelled = grpstats(beh.values(beh.values.IsCancelledNoBrk==1,:),...
@@ -52,9 +55,9 @@ beh.inhibition.ssdStatsCancelled = grpstats(beh.values(beh.values.IsCancelledNoB
 % All trial SSD durations mean
 beh.inhibition.ssdStatsAll = grpstats(beh.values,...
                       {'UseSsdIdx'},{'mean'},'DataVars',{'UseSsdIdx', 'UseSsdVrCount','SsdVrCount','StopSignalDuration'});
-beh.inhibition.values.refreshRate(:) = 1000.0/monitorRefreshHz;
-beh.inhibition.values.vrCounts = beh.inhibition.ssdStatsAll.mean_UseSsdVrCount;
-beh.inhibition.values.vrDuration = beh.inhibition.values.vrCounts.* beh.inhibition.values.refreshRate;
+beh.inhFx.values.refreshRate(:) = 1000.0/monitorRefreshHz;
+beh.inhFx.values.vrCounts = beh.inhibition.ssdStatsAll.mean_UseSsdVrCount;
+beh.inhFx.values.vrDuration = beh.inhFx.values.vrCounts.* beh.inhFx.values.refreshRate;
 
 
 %% Extract Reactions times
