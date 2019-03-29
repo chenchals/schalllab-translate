@@ -252,9 +252,40 @@ figure;
 plot( numerator./denominator, '-*r' )
 %% RT calculation:
 figure; 
-subplot(211); hist( Task.Decide_(TaskInfos.TrialType == 0) - Task.Target_(TaskInfos.TrialType == 0), 1:10:700 );
-subplot(212); hist( Task.Decide_(TaskInfos.TrialType == 1) - Task.Target_(TaskInfos.TrialType == 1), 1:10:700 );
- 
+subplot(211); 
+hist( Task.Decide_(TaskInfos.TrialType == 0) - Task.Target_(TaskInfos.TrialType == 0), 1:10:700 );
+subplot(212); 
+hist( Task.Decide_(TaskInfos.TrialType == 1) - Task.Target_(TaskInfos.TrialType == 1), 1:10:700 );
+
+
+[hG,hGE]=histcounts(Task.Decide_(TaskInfos.TrialType == 0) - Task.Target_(TaskInfos.TrialType == 0), 0:550);
+[hS,hSE]=histcounts(Task.Decide_(TaskInfos.TrialType == 1) - Task.Target_(TaskInfos.TrialType == 1), 0:550);
+
+figure;
+subplot(211)
+plot(hGE(2:end)-1,cumsum(hG),'-b','LineWidth',1.5)
+hold on
+plot(hGE(2:end)-1,cumsum(hS),'--r','LineWidth',1.5)
+hold off
+xlim([150 550])
+xlabel('Reaction Time (ms)')
+ylabel('Cumulative count')
+title('Reaction time distribution')
+legend('Go','NonCancelled')
+subplot(212)
+plot(hGE(2:end)-1,cumsum(hG)./sum(hG),'-b','LineWidth',1.5)
+hold on
+plot(hGE(2:end)-1,cumsum(hS)./sum(hS),'--r','LineWidth',1.5)
+hold off
+xlim([150 550])
+ylim([0 1.02])
+xlabel('Reaction Time (ms)')
+ylabel('Normalized cumulative count')
+legend('Go','NonCancelled')
+
+
+
+
 %% Trial types
 sum(TaskInfos.TrialType)/length(TaskInfos.TrialType); %#ok<VUNUS>
 figure; plot(TaskInfos.TrialType, '-');
