@@ -88,3 +88,39 @@ ylabel('Normalized cumulative count')
 legend('Go','NonCancelled')
 title('Normalized Reaction Time CDF')
 
+%% Reward duration by trial no/block num
+figure
+lo=beh.reward.values.rewardDuration(beh.reward.values.IsLoRwrd==1);
+hi=beh.reward.values.rewardDuration(beh.reward.values.IsLoRwrd==0);
+subplot(211)
+hist(lo,100)
+subplot(212)
+hist(hi,100)
+
+
+figure
+dur = beh.reward.values.rewardDuration;
+durMean = nanmean(dur);
+dur(isnan(dur))=0;
+boxcar = 10;
+plot(beh.reward.values.TrialNumber,[dur movmean(dur,boxcar)])
+
+
+%time by block mark
+vx = [0;beh.reward.block.cumulTaskDuration];
+%vx = [0;beh.reward.block.endTrialNum];
+
+vertices = arrayfun(@(x) [vx(x,1),0;vx(x+1,1),0;vx(x+1,1),100;vx(x,1),100],...
+          (1:size(vx,1)-1)','UniformOutput',false);
+nPatches = size(vertices,1);
+
+figure
+v= cell2mat(vertices(1:2:nPatches));
+f = reshape(1:size(v,1),4,[])';
+patch('Faces',f,'Vertices',v,'FaceColor',[0.8 0.8 0.8]);
+
+v= cell2mat(vertices(2:2:nPatches));
+f = reshape(1:size(v,1),4,[])';
+patch('Faces',f,'Vertices',v,'FaceColor',[0.9 0.9 0.9]);
+
+

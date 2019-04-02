@@ -31,7 +31,7 @@ beh.infosVarNames = {'TrialType','UseSsdIdx','UseSsdVrCount','SsdVrCount','StopS
     'IsGoCorrect','IsGoErr', 'IsStopSignalOn'};
 beh.taskOutcomes = Task.Properties.VariableNames(...
     ~cellfun(@isempty,regexp(Task.Properties.VariableNames,'^Outcome','match')));
- beh.taskVarNames = {'Decide_','Target_'};
+beh.taskVarNames = {'Decide_','Target_'};
 
 beh.values = [TaskInfos(:,beh.infosVarNames),...
               array2table(~cell2mat(cellfun(@isnan,table2cell(Task(:,beh.taskOutcomes)),'UniformOutput',false)),...
@@ -79,13 +79,32 @@ beh.inhFx.values.vrDuration = beh.inhFx.values.vrCounts.* beh.inhFx.values.refre
 
 
 %% Extract Reactions times
-rtBins = [0:550];
+rtBins = (0:550);
 beh.reactionTimes.xlims = [150 550];
 [beh.reactionTimes.GoCorrect, beh.reactionTimes.binEdges]=histcounts(beh.values.reactionTime(beh.values.TrialType == 0), rtBins);
 [beh.reactionTimes.NonCancelled, ~]=histcounts(beh.values.reactionTime(beh.values.TrialType == 1), rtBins);
 
 
-
+%% Extract reward durations/amount(?)
+beh.reward.varNames = {'TrialType','TrialNumber','BlockNum', 'IsLoRwrd','UseRwrdDuration','JuiceStart_','JuiceEnd_','rewardDuration','cumulTaskDuration'};
+beh.reward.values = array2table(...
+     [TaskInfos.TrialType TaskInfos.TrialNumber TaskInfos.BlockNum TaskInfos.IsLoRwrd TaskInfos.UseRwrdDuration ...
+     Task.JuiceStart_ Task.JuiceEnd_ Task.JuiceEnd_-Task.JuiceStart_ Task.TaskEnd_ - Task.TaskStart_(1)],...
+     'VariableNames', beh.reward.varNames);
+ beh.reward.values.BlockStart = diff([0;beh.reward.values.BlockNum]);
+ beh.reward.values.BlockEnd = diff([beh.reward.values.BlockNum;0]);
+ % Cumulative reward duration by block
+ blkStartEndVals = [find(beh.reward.values.BlockStart) find(beh.reward.values.BlockEnd)];
+ temp = beh.reward.values.rewardDuration;
+ temp(isnan(temp))=0;
+ beh.reward.values.cumulRwrdDuration = cumsum(temp);
+ beh.reward.values.cumulBlockRwrdDuration = cell2mat(arrayfun(@(x,y) cumsum(temp(x:y)),blkStartEndVals(:,1),blkStartEndVals(:,2),'UniformOutput',false));
+ % cumulative task duration by block
+ temp = cumsum(beh.reward.values.cumulTaskDuration);
+ beh.reward.values.cumulBlockTaskdDuration = cell2mat(arrayfun(@(x,y) cumsum(temp(x:y)),blkStartEndVals(:,1),blkStartEndVals(:,2),'UniformOutput',false));
+ % add trial nos for block start and end 
+ beh.reward.block=array2table([(1:size(blkStartEndVals,1))' blkStartEndVals],'VariableNames',{'blkNum','startTrlNum','endTrialNum'});
+ beh.reward.block.cumulTaskDuration = temp(beh.reward.block.endTrialNum);
 
 end
 
