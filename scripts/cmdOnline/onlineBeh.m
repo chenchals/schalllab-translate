@@ -95,6 +95,9 @@ beh.reward.values = array2table(...
  beh.reward.values.BlockEnd = diff([beh.reward.values.BlockNum;0]);
  % Cumulative reward duration by block
  blkStartEndVals = [find(beh.reward.values.BlockStart) find(beh.reward.values.BlockEnd)];
+  % add trial nos for block start and end 
+ beh.reward.block=array2table([(1:size(blkStartEndVals,1))' blkStartEndVals],'VariableNames',{'blkNum','startTrlNum','endTrialNum'});
+
  temp = beh.reward.values.rewardDuration;
  temp(isnan(temp))=0;
  beh.reward.values.cumulRwrdDuration = cumsum(temp);
@@ -102,8 +105,6 @@ beh.reward.values = array2table(...
  % cumulative task duration by block
  temp = cumsum(beh.reward.values.cumulTaskDuration);
  beh.reward.values.cumulBlockTaskdDuration = cell2mat(arrayfun(@(x,y) cumsum(temp(x:y)),blkStartEndVals(:,1),blkStartEndVals(:,2),'UniformOutput',false));
- % add trial nos for block start and end 
- beh.reward.block=array2table([(1:size(blkStartEndVals,1))' blkStartEndVals],'VariableNames',{'blkNum','startTrlNum','endTrialNum'});
  beh.reward.block.cumulTaskDuration = temp(beh.reward.block.endTrialNum);
 
 end

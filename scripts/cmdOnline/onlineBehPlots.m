@@ -89,6 +89,58 @@ legend('Go','NonCancelled')
 title('Normalized Reaction Time CDF')
 
 %% Reward duration by trial no/block num
+dur = beh.reward.values.rewardDuration;
+dur(isnan(dur))=0;
+dur = movmean(dur,10);
+subplot(6,2,8)
+
+% add block number patches to the plot 
+yLims = [0 ceil(max(dur)/50)*50];
+vx = [0;beh.reward.block.endTrialNum];
+vertices = arrayfun(@(x) [...
+                          vx(x,1),yLims(1)   %(x1y1)
+                          vx(x+1,1),yLims(1) %(x2y1)
+                          vx(x+1,1),yLims(2) %(x2y2)
+                          vx(x,1),yLims(2)],... %(x1y2)
+          (1:size(vx,1)-1)','UniformOutput',false);
+nPatches = size(vertices,1);
+% odd blocks
+v= cell2mat(vertices(1:2:nPatches));
+f = reshape(1:size(v,1),4,[])';
+patch('Faces',f,'Vertices',v,'FaceColor',[0.8 0.8 0.8],'FaceAlpha',0.5);
+% even blocks
+v= cell2mat(vertices(2:2:nPatches));
+f = reshape(1:size(v,1),4,[])';
+patch('Faces',f,'Vertices',v,'FaceColor',[0.9 0.9 0.9],'FaceAlpha',0.5);
+hold on
+% plot the line as stairs plot
+stairs(beh.reward.values.TrialNumber,dur,'LineWidth',1.25)
+ylabel('Moving Avg. (ms)')
+xlabel('Trial number')
+xlim([0 numel(dur)])
+title('Reward duration during session')
+
+hold off
+%% Cumulative Reward duration (CRD) by session time by block 
+% The cumulative reward duration is reset when new block starts
+
+
+subplot(6,2,10)
+ylabel('Cumul. (ms)')
+xlabel('Session time (s)')
+
+subplot(6,2,12)
+ylabel('Level (lo/hi)')
+xlabel('Session time (s)')
+
+
+
+
+
+
+
+
+
 figure
 lo=beh.reward.values.rewardDuration(beh.reward.values.IsLoRwrd==1);
 hi=beh.reward.values.rewardDuration(beh.reward.values.IsLoRwrd==0);
@@ -98,12 +150,7 @@ subplot(212)
 hist(hi,100)
 
 
-figure
-dur = beh.reward.values.rewardDuration;
-durMean = nanmean(dur);
-dur(isnan(dur))=0;
-boxcar = 10;
-plot(beh.reward.values.TrialNumber,[dur movmean(dur,boxcar)])
+
 
 
 %time by block mark
