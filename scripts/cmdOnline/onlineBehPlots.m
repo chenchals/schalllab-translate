@@ -89,85 +89,126 @@ legend('Go','NonCancelled')
 title('Normalized Reaction Time CDF')
 
 %% Reward duration by trial no/block num
-dur = beh.reward.values.rewardDuration;
-dur(isnan(dur))=0;
-dur = movmean(dur,10);
+blockColors = [0.7 0.7 0.7
+               0.8 0.8 0.8];
+blockAlpha = 0.5;
+vy = beh.reward.values.rewardDuration;
+vy(isnan(vy))=0;
+vy = movmean(vy,10);
 subplot(6,2,8)
+box on
 
 % add block number patches to the plot 
-yLims = [0 ceil(max(dur)/50)*50];
+yLims = [0 ceil(max(vy)/50)*50];
 vx = [0;beh.reward.block.endTrialNum];
 vertices = arrayfun(@(x) [...
-                          vx(x,1),yLims(1)   %(x1y1)
-                          vx(x+1,1),yLims(1) %(x2y1)
-                          vx(x+1,1),yLims(2) %(x2y2)
-                          vx(x,1),yLims(2)],... %(x1y2)
+                          vx(x),yLims(1)   %(x1y1)
+                          vx(x+1),yLims(1) %(x2y1)
+                          vx(x+1),yLims(2) %(x2y2)
+                          vx(x),yLims(2)],... %(x1y2)
           (1:size(vx,1)-1)','UniformOutput',false);
 nPatches = size(vertices,1);
-% odd blocks
-v= cell2mat(vertices(1:2:nPatches));
-f = reshape(1:size(v,1),4,[])';
-patch('Faces',f,'Vertices',v,'FaceColor',[0.8 0.8 0.8],'FaceAlpha',0.5);
-% even blocks
-v= cell2mat(vertices(2:2:nPatches));
-f = reshape(1:size(v,1),4,[])';
-patch('Faces',f,'Vertices',v,'FaceColor',[0.9 0.9 0.9],'FaceAlpha',0.5);
+%odd blocks
+idx = 1:2:nPatches;
+patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
+      'FaceColor',blockColors(1,:),'FaceAlpha',blockAlpha, 'EdgeColor', 'none');
+%even blocks
+idx = 2:2:nPatches;
+patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
+      'FaceColor',blockColors(2,:),'FaceAlpha',blockAlpha, 'EdgeColor', 'none');
 hold on
 % plot the line as stairs plot
-stairs(beh.reward.values.TrialNumber,dur,'LineWidth',1.25)
+stairs(beh.reward.values.TrialNumber,vy,'LineWidth',1.25)
 ylabel('Moving Avg. (ms)')
+ylim(yLims)
 xlabel('Trial number')
-xlim([0 numel(dur)])
+xlim([0 numel(vy)])
 title('Reward duration during session')
 
 hold off
 %% Cumulative Reward duration (CRD) by session time by block 
 % The cumulative reward duration is reset when new block starts
-
-
 subplot(6,2,10)
+box on
+% add block number patches to the plot 
+yLims = [0 ceil(max(beh.reward.values.cumulBlockRwrdDuration)/50)*50];
+vx = [0;beh.reward.values.sessionTime(beh.reward.block.endTrialNum)];
+xLims = [0 max(vx)];
+vertices = arrayfun(@(x) [...
+                          vx(x),yLims(1)   %(x1y1)
+                          vx(x+1),yLims(1) %(x2y1)
+                          vx(x+1),yLims(2) %(x2y2)
+                          vx(x),yLims(2)],... %(x1y2)
+          (1:size(vx,1)-1)','UniformOutput',false);
+nPatches = size(vertices,1);
+%odd blocks
+idx = 1:2:nPatches;
+patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
+      'FaceColor',blockColors(1,:),'FaceAlpha',blockAlpha,...
+      'EdgeColor', blockColors(1,:),'LineWidth', 0.5);
+%even blocks
+idx = 2:2:nPatches;
+patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
+      'FaceColor',blockColors(2,:),'FaceAlpha',blockAlpha,...
+      'EdgeColor', blockColors(1,:),'LineWidth', 0.5);
 ylabel('Cumul. (ms)')
+ylim(yLims)
 xlabel('Session time (s)')
+xlim(xLims)
+hold on
+% Compute vertices for all outcomes
+vx = [0;beh.reward.values.sessionTime];
+vy = [0;beh.reward.values.cumulBlockRwrdDuration];
+vy1 = vy(1:end-1);
+vy2 = vy(2:end);
+% when new block starts reset to zero
+vy1(beh.reward.block.startTrialNum) = 0;
+
+vertices = arrayfun(@(x) [...
+                          vx(x),vy1(x)   %(x1y1)
+                          vx(x+1),vy1(x) %(x2y1)
+                          vx(x+1),vy2(x) %(x2y2)
+                          vx(x),vy2(x)],... %(x1y2)
+          (1:size(vx,1)-1)','UniformOutput',false);
+nPatches = size(vertices,1);
+% draw patches for each outcome
+patchLabels = {'Go';'Cancelled';'NonCancelled';'Timeout/Error'};
+patchColors = {[0.0 0.0 0.0];[0.0 0.0 1.0];[1.0 0.0 0.0];[0.5 0.5 0.5]};
+
+% go patches
+h=[];
+idx = find(beh.reward.values.Go==1);
+h(1) = patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
+      'FaceColor',patchColors{1},'EdgeColor',patchColors{1});
+% cancelled patches
+idx = find(beh.reward.values.Cancelled==1);
+h(2) = patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
+      'FaceColor',patchColors{2},'EdgeColor',patchColors{2});
+% non-cancelled patches
+idx = find(beh.reward.values.NonCancelled==1);
+h(3) = patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
+      'FaceColor',patchColors{3},'EdgeColor',patchColors{3},'LineWidth',2);
+% timeout-error patches
+idx = find(beh.reward.values.ErrorOrTimeout==1);
+h(4) = patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
+      'FaceColor',patchColors{4},'EdgeColor', patchColors{4},'LineWidth',2);
+
+l=legend(h,patchLabels');
+set(l,'Position',[0.91 0.30 0.054 0.054])
+
+
+
+
+
+
+
+
+%%
 
 subplot(6,2,12)
 ylabel('Level (lo/hi)')
 xlabel('Session time (s)')
 
 
-
-
-
-
-
-
-
-figure
-lo=beh.reward.values.rewardDuration(beh.reward.values.IsLoRwrd==1);
-hi=beh.reward.values.rewardDuration(beh.reward.values.IsLoRwrd==0);
-subplot(211)
-hist(lo,100)
-subplot(212)
-hist(hi,100)
-
-
-
-
-
-%time by block mark
-vx = [0;beh.reward.block.cumulTaskDuration];
-%vx = [0;beh.reward.block.endTrialNum];
-
-vertices = arrayfun(@(x) [vx(x,1),0;vx(x+1,1),0;vx(x+1,1),100;vx(x,1),100],...
-          (1:size(vx,1)-1)','UniformOutput',false);
-nPatches = size(vertices,1);
-
-figure
-v= cell2mat(vertices(1:2:nPatches));
-f = reshape(1:size(v,1),4,[])';
-patch('Faces',f,'Vertices',v,'FaceColor',[0.8 0.8 0.8]);
-
-v= cell2mat(vertices(2:2:nPatches));
-f = reshape(1:size(v,1),4,[])';
-patch('Faces',f,'Vertices',v,'FaceColor',[0.9 0.9 0.9]);
 
 

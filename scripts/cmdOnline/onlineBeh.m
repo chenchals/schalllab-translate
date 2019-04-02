@@ -31,6 +31,7 @@ beh.infosVarNames = {'TrialType','UseSsdIdx','UseSsdVrCount','SsdVrCount','StopS
     'IsGoCorrect','IsGoErr', 'IsStopSignalOn'};
 beh.taskOutcomes = Task.Properties.VariableNames(...
     ~cellfun(@isempty,regexp(Task.Properties.VariableNames,'^Outcome','match')));
+beh.taskOutcomes(end+1:end+2) = {'AcquireFixError_','FixBreak_'}; 
 beh.taskVarNames = {'Decide_','Target_'};
 
 beh.values = [TaskInfos(:,beh.infosVarNames),...
@@ -86,26 +87,32 @@ beh.reactionTimes.xlims = [150 550];
 
 
 %% Extract reward durations/amount(?)
-beh.reward.varNames = {'TrialType','TrialNumber','BlockNum', 'IsLoRwrd','UseRwrdDuration','JuiceStart_','JuiceEnd_','rewardDuration','cumulTaskDuration'};
+beh.reward.varNames = {'TrialType','TrialNumber','BlockNum', 'IsLoRwrd','JuiceStart_','JuiceEnd_','rewardDuration'};
 beh.reward.values = array2table(...
-     [TaskInfos.TrialType TaskInfos.TrialNumber TaskInfos.BlockNum TaskInfos.IsLoRwrd TaskInfos.UseRwrdDuration ...
-     Task.JuiceStart_ Task.JuiceEnd_ Task.JuiceEnd_-Task.JuiceStart_ Task.TaskEnd_ - Task.TaskStart_(1)],...
+     [TaskInfos.TrialType TaskInfos.TrialNumber TaskInfos.BlockNum TaskInfos.IsLoRwrd ...
+     Task.JuiceStart_ Task.JuiceEnd_ Task.JuiceEnd_-Task.JuiceStart_],...
      'VariableNames', beh.reward.varNames);
+ temp =[Task.TaskStart_;Task.TaskEnd_(end)]-Task.TaskStart_(1); 
+ beh.reward.values.sessionTime=temp(2:end)./1000;
+ % Tag with outcomes
+ beh.reward.values.Go = beh.values.IsGoCorrect==1;
+ beh.reward.values.Cancelled = beh.values.IsCancelledNoBrk==1;
+ beh.reward.values.NonCancelled = beh.values.IsNonCancelledNoBrk==1;
+ beh.reward.values.ErrorOrTimeout = (beh.values.IsGoErr==1 | beh.values.IsNogoErr==1 | ...
+                            beh.values.IsCancelledBrk==1 | beh.values.IsNonCancelledBrk==1 | ...
+                            beh.values.AcquireFixError_==1 | beh.values.FixBreak_==1);
+ % Add block start and block end trial numbers
  beh.reward.values.BlockStart = diff([0;beh.reward.values.BlockNum]);
  beh.reward.values.BlockEnd = diff([beh.reward.values.BlockNum;0]);
  % Cumulative reward duration by block
  blkStartEndVals = [find(beh.reward.values.BlockStart) find(beh.reward.values.BlockEnd)];
   % add trial nos for block start and end 
- beh.reward.block=array2table([(1:size(blkStartEndVals,1))' blkStartEndVals],'VariableNames',{'blkNum','startTrlNum','endTrialNum'});
-
+ beh.reward.block=array2table([(1:size(blkStartEndVals,1))' blkStartEndVals],'VariableNames',{'blkNum','startTrialNum','endTrialNum'});
+ % cumul reward duration by block
  temp = beh.reward.values.rewardDuration;
  temp(isnan(temp))=0;
  beh.reward.values.cumulRwrdDuration = cumsum(temp);
  beh.reward.values.cumulBlockRwrdDuration = cell2mat(arrayfun(@(x,y) cumsum(temp(x:y)),blkStartEndVals(:,1),blkStartEndVals(:,2),'UniformOutput',false));
- % cumulative task duration by block
- temp = cumsum(beh.reward.values.cumulTaskDuration);
- beh.reward.values.cumulBlockTaskdDuration = cell2mat(arrayfun(@(x,y) cumsum(temp(x:y)),blkStartEndVals(:,1),blkStartEndVals(:,2),'UniformOutput',false));
- beh.reward.block.cumulTaskDuration = temp(beh.reward.block.endTrialNum);
 
 end
 
