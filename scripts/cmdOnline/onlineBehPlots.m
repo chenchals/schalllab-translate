@@ -1,13 +1,24 @@
+function onlineBehPlots(beh)
+
 figure;
+h_rwrd1 = subplot(321);
+h_inh = subplot(322);
+h_rwrd2 = subplot(323);
+h_rt = subplot(324);
+h_rwrd3 = subplot(325);
+h_trial = subplot(326);
+
 %% Trial outcomes grouped-stack plot
 % stack: pre-, post- SSD only valid for STOP trials
+%Plot
+axes(h_trial);
+addPlotZoom();
 data = table2array(beh.trial.outcomes);
 labels = beh.trial.outcomes.Properties.RowNames';
 groups = size(data,1)/2;
 stacks = size(data,2);
 barsInGroup = 2;
-%Plot
-subplot(221)
+
 hold on;
 for i=1:groups*barsInGroup
     h(i,1:stacks)=bar([data(i,:);nan(1,stacks)],'stacked'); %#ok<SAGROW>
@@ -35,7 +46,8 @@ ylabel('Number of Trials');
 title('Trial outcomes - Stacked [pre-SSD, post-SSD]')
 
 %% Inhibition fx plot - Using taskInfos.Is.... vars
-subplot(222)
+axes(h_inh)
+addPlotZoom();
 yyaxis('left');
 plot(beh.inhFx.ssdStatsAll.mean_UseSsdIdx+1, beh.inhFx.values.pNC,'o-b','LineWidth',2,'MarkerSize',14);
 hold on
@@ -76,7 +88,8 @@ ylabel('# STOP trials')
 % ylabel('# STOP trials')
 
 %% Reaction times
-subplot(223)
+axes(h_rt)
+addPlotZoom();
 plot(beh.reactionTimes.binEdges(2:end)-1,cumsum(beh.reactionTimes.GoCorrect)./sum(beh.reactionTimes.GoCorrect),'-b','LineWidth',1.5)
 hold on
 plot(beh.reactionTimes.binEdges(2:end)-1,cumsum(beh.reactionTimes.NonCancelled)./sum(beh.reactionTimes.NonCancelled),'--r','LineWidth',1.5)
@@ -88,15 +101,18 @@ ylabel('Normalized cumulative count')
 legend('Go','NonCancelled')
 title('Normalized Reaction Time CDF')
 
+
 %% Reward duration by trial no/block num
+axes(h_rwrd1)
+addPlotZoom();
+box on
 blockColors = [0.7 0.7 0.7
                0.8 0.8 0.8];
 blockAlpha = 0.5;
 vy = beh.reward.values.rewardDuration;
 vy(isnan(vy))=0;
 vy = movmean(vy,10);
-subplot(6,2,8)
-box on
+
 
 % add block number patches to the plot 
 yLims = [0 ceil(max(vy)/50)*50];
@@ -104,8 +120,8 @@ vx = [0;beh.reward.block.endTrialNum];
 vertices = arrayfun(@(x) [...
                           vx(x),yLims(1)   %(x1y1)
                           vx(x+1),yLims(1) %(x2y1)
-                          vx(x+1),yLims(2) %(x2y2)
-                          vx(x),yLims(2)],... %(x1y2)
+                          vx(x+1),yLims(2)*0.9 %(x2y2)
+                          vx(x),yLims(2)*0.9],... %(x1y2)
           (1:size(vx,1)-1)','UniformOutput',false);
 nPatches = size(vertices,1);
 %odd blocks
@@ -124,11 +140,12 @@ ylim(yLims)
 xlabel('Trial number')
 xlim([0 numel(vy)])
 title('Reward duration during session')
-
 hold off
+
 %% Cumulative Reward duration (CRD) by session time by block 
 % The cumulative reward duration is reset when new block starts
-subplot(6,2,10)
+axes(h_rwrd2)
+addPlotZoom();
 box on
 % add block number patches to the plot 
 yLims = [0 ceil(max(beh.reward.values.cumulBlockRwrdDuration)/50)*50];
@@ -137,8 +154,8 @@ xLims = [0 max(vx)];
 vertices = arrayfun(@(x) [...
                           vx(x),yLims(1)   %(x1y1)
                           vx(x+1),yLims(1) %(x2y1)
-                          vx(x+1),yLims(2) %(x2y2)
-                          vx(x),yLims(2)],... %(x1y2)
+                          vx(x+1),yLims(2)*0.9 %(x2y2)
+                          vx(x),yLims(2)*0.9],... %(x1y2)
           (1:size(vx,1)-1)','UniformOutput',false);
 nPatches = size(vertices,1);
 %odd blocks
@@ -194,21 +211,16 @@ h(4) = patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(
       'FaceColor',patchColors{4},'EdgeColor', patchColors{4},'LineWidth',2);
 
 l=legend(h,patchLabels');
-set(l,'Position',[0.91 0.30 0.054 0.054])
+%set(l,'Position',[0.91 0.30 0.054 0.054])
 
+end
 
-
-
-
-
-
-
-%%
-
-subplot(6,2,12)
-ylabel('Level (lo/hi)')
-xlabel('Session time (s)')
-
-
+%% Add plot zoom
+function addPlotZoom()
+    thisPlot.pos = get(gca,'Position');
+    thisPlot.zoom = 0;
+    set(gca,'UserData',thisPlot);
+    set(gca,'ButtonDownFcn',@plotZoom);
+end
 
 
