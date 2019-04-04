@@ -1,4 +1,4 @@
-function [beh] = onlineBeh()
+function [beh,Task,TaskInfos] = onlineBeh()
 %ONLINEBEH Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -26,6 +26,11 @@ opts.infosNegativeValueOffset = 32768;
 [Task, TaskInfos] = tdtExtractEvents(sessionDir, eventCodecFile, infosCodecFile, opts);
 Task = struct2table(Task);
 TaskInfos = struct2table(TaskInfos);
+%%%%%%%%%%%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%
+Task = Task(TaskInfos.numberOfInfoCodeValuesLowerThanOffset == 0,:);
+TaskInfos = TaskInfos(TaskInfos.numberOfInfoCodeValuesLowerThanOffset == 0,:);
+%%%%%%%%%%%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%
+
 beh.infosVarNames = {'TrialType','UseSsdIdx','UseSsdVrCount','SsdVrCount','StopSignalDuration',...
     'IsCancelledNoBrk','IsCancelledBrk','IsNonCancelledNoBrk','IsNonCancelledBrk','IsNogoErr',...
     'IsGoCorrect','IsGoErr', 'IsStopSignalOn'};

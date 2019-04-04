@@ -51,7 +51,8 @@ addPlotZoom();
 yyaxis('left');
 plot(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount, beh.inhFx.values.pNC,'o-b','LineWidth',2,'MarkerSize',14);
 hold on
-plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdVrCount, beh.inhFx.values.pNC(1:3),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
+% overplot symbols for values less than 1.0
+plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdVrCount, beh.inhFx.values.pNC(beh.inhFx.values.pNC<1.0),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
 
 hold on
 xticks(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount)
@@ -99,7 +100,7 @@ xlim(beh.reactionTimes.xlims)
 ylim([0 1.02])
 xlabel('Reaction Time (ms)')
 ylabel('Normalized cumulative count')
-legend('Go','NonCancelled')
+legend({'Go','NonCancelled'},'Box','off','Location','northwest')
 title('Normalized Reaction Time CDF')
 
 
@@ -111,26 +112,24 @@ blockColors = [0.7 0.7 0.7
                0.8 0.8 0.8];
 blockAlpha = 0.5;
 vy = beh.reward.values.rewardDuration;
+yLims = [0 ceil(max(vy)/20)*20];
 vy(isnan(vy))=0;
 vy = movmean(vy,10);
-
-
 % add block number patches to the plot 
-yLims = [0 ceil(max(vy)/50)*50];
-vx = [0;beh.reward.block.endTrialNum];
+blockStartEnds = [0;beh.reward.block.endTrialNum];
 vertices = arrayfun(@(x) [...
-                          vx(x),yLims(1)   %(x1y1)
-                          vx(x+1),yLims(1) %(x2y1)
-                          vx(x+1),yLims(2)*0.9 %(x2y2)
-                          vx(x),yLims(2)*0.9],... %(x1y2)
-          (1:size(vx,1)-1)','UniformOutput',false);
-nPatches = size(vertices,1);
+                          blockStartEnds(x),yLims(1)   %(x1y1)
+                          blockStartEnds(x+1),yLims(1) %(x2y1)
+                          blockStartEnds(x+1),yLims(2)*0.9 %(x2y2)
+                          blockStartEnds(x),yLims(2)*0.9],... %(x1y2)
+          (1:size(blockStartEnds,1)-1)','UniformOutput',false);
+nBlocks = size(vertices,1);
 %odd blocks
-idx = 1:2:nPatches;
+idx = 1:2:nBlocks;
 patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
       'FaceColor',blockColors(1,:),'FaceAlpha',blockAlpha, 'EdgeColor', 'none');
 %even blocks
-idx = 2:2:nPatches;
+idx = 2:2:nBlocks;
 patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
       'FaceColor',blockColors(2,:),'FaceAlpha',blockAlpha, 'EdgeColor', 'none');
 hold on
@@ -142,15 +141,46 @@ xlabel('Trial number')
 xlim([0 numel(vy)])
 title('Reward duration during session')
 % plot mean amout per block
+blockStartEnds = [0;beh.reward.block.endTrialNum];
+blockStartEnds = [blockStartEnds(1:end-1) blockStartEnds(2:end) nan(numel(blockStartEnds)-1,1)]';
+blockCenters = nanmean(blockStartEnds)';
 meanDurPerBlk= arrayfun(@(x) nanmean(beh.reward.values.rewardDuration(beh.reward.block.startTrialNum(x):beh.reward.block.endTrialNum(x))), beh.reward.block.blkNum);
-vx = [0;beh.reward.block.endTrialNum];
-xVec = [vx(1:end-1) vx(2:end) nan(numel(vx)-1,1)]';
-yVec = [repmat(meanDurPerBlk,1,2) nan(numel(meanDurPerBlk),1)]';
-xVec = xVec(:);
-yVec = yVec(:);
-plot(xVec,yVec,'-r','LineWidth',2);
-
+blockMeans = [repmat(meanDurPerBlk,1,2) nan(numel(meanDurPerBlk),1)]';
+plot(blockStartEnds(:),blockMeans(:),'-r','LineWidth',2);
 hold off
+%% Reward duration by trial no/block num (Only last n blocks)
+lastNBlocks = 3;
+blkStart = nBlocks-lastNBlocks+1;
+axes(h_rwrd3)
+addPlotZoom();
+box on
+%odd blocks
+idx = nBlocks-lastNBlocks:2:nBlocks;
+patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
+      'FaceColor',blockColors(1,:),'FaceAlpha',blockAlpha, 'EdgeColor', 'none');
+%even blocks
+idx = nBlocks-lastNBlocks:2:nBlocks;
+patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
+      'FaceColor',blockColors(2,:),'FaceAlpha',blockAlpha, 'EdgeColor', 'none');
+hold on
+% plot the line as stairs plot
+lastNBlockTrlIdx = beh.reward.values.BlockNum >= (nBlocks - lastNBlocks);
+stairs(beh.reward.values.TrialNumber(lastNBlockTrlIdx),vy(lastNBlockTrlIdx),'LineWidth',1.25)
+ylabel('Moving Avg. (ms)')
+ylim(yLims)
+xlabel('Trial number')
+xlim([0 numel(vy)])
+title(sprintf('Reward duration - last [%d] blocks',lastNBlocks))
+% plot mean amounts per block
+xVec = blockStartEnds(:,blkStart:end);
+yVec = blockMeans(:,blkStart:end);
+plot(xVec(:),yVec(:),'-r','LineWidth',2);
+xlim([min(xVec(:)) max(xVec(:))])
+grid on
+text(blockCenters(blkStart:end),repmat(max(ylim)*0.9,lastNBlocks,1),...
+    arrayfun(@(x) num2str(x,'#%d'),blkStart:nBlocks,'UniformOutput',false),...
+    'HorizontalAlignment','center','FontWeight','bold');
+
 
 %% Cumulative Reward duration (CRD) by session time by block 
 % The cumulative reward duration is reset when new block starts
@@ -159,22 +189,22 @@ addPlotZoom();
 box on
 % add block number patches to the plot 
 yLims = [0 ceil(max(beh.reward.values.cumulBlockRwrdDuration)/50)*50];
-vx = [0;beh.reward.values.sessionTime(beh.reward.block.endTrialNum)];
-xLims = [0 max(vx)];
+blockStartEnds = [0;beh.reward.values.sessionTime(beh.reward.block.endTrialNum)];
+xLims = [0 max(blockStartEnds)];
 vertices = arrayfun(@(x) [...
-                          vx(x),yLims(1)   %(x1y1)
-                          vx(x+1),yLims(1) %(x2y1)
-                          vx(x+1),yLims(2)*0.9 %(x2y2)
-                          vx(x),yLims(2)*0.9],... %(x1y2)
-          (1:size(vx,1)-1)','UniformOutput',false);
-nPatches = size(vertices,1);
+                          blockStartEnds(x),yLims(1)   %(x1y1)
+                          blockStartEnds(x+1),yLims(1) %(x2y1)
+                          blockStartEnds(x+1),yLims(2)*0.9 %(x2y2)
+                          blockStartEnds(x),yLims(2)*0.9],... %(x1y2)
+          (1:size(blockStartEnds,1)-1)','UniformOutput',false);
+nBlocks = size(vertices,1);
 %odd blocks
-idx = 1:2:nPatches;
+idx = 1:2:nBlocks;
 patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
       'FaceColor',blockColors(1,:),'FaceAlpha',blockAlpha,...
       'EdgeColor', blockColors(1,:),'LineWidth', 0.5);
 %even blocks
-idx = 2:2:nPatches;
+idx = 2:2:nBlocks;
 patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
       'FaceColor',blockColors(2,:),'FaceAlpha',blockAlpha,...
       'EdgeColor', blockColors(1,:),'LineWidth', 0.5);
@@ -184,7 +214,7 @@ xlabel('Session time (s)')
 xlim(xLims)
 hold on
 % Compute vertices for all outcomes
-vx = [0;beh.reward.values.sessionTime];
+blockStartEnds = [0;beh.reward.values.sessionTime];
 vy = [0;beh.reward.values.cumulBlockRwrdDuration];
 vy1 = vy(1:end-1);
 vy2 = vy(2:end);
@@ -192,12 +222,11 @@ vy2 = vy(2:end);
 vy1(beh.reward.block.startTrialNum) = 0;
 
 vertices = arrayfun(@(x) [...
-                          vx(x),vy1(x)   %(x1y1)
-                          vx(x+1),vy1(x) %(x2y1)
-                          vx(x+1),vy2(x) %(x2y2)
-                          vx(x),vy2(x)],... %(x1y2)
-          (1:size(vx,1)-1)','UniformOutput',false);
-nPatches = size(vertices,1);
+                          blockStartEnds(x),vy1(x)   %(x1y1)
+                          blockStartEnds(x+1),vy1(x) %(x2y1)
+                          blockStartEnds(x+1),vy2(x) %(x2y2)
+                          blockStartEnds(x),vy2(x)],... %(x1y2)
+          (1:size(blockStartEnds,1)-1)','UniformOutput',false);
 % draw patches for each outcome
 patchLabels = {'Go';'Cancelled';'NonCancelled';'Timeout/Error'};
 patchColors = {[0.0 0.0 0.0];[0.0 0.0 1.0];[1.0 0.0 0.0];[0.5 0.5 0.5]};
@@ -219,8 +248,9 @@ h(3) = patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(
 idx = find(beh.reward.values.ErrorOrTimeout==1);
 h(4) = patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
       'FaceColor',patchColors{4},'EdgeColor', patchColors{4},'LineWidth',2);
-
-l=legend(h,patchLabels');
+  
+title('Cumulative reward duration for trials in block')
+l=legend(h,patchLabels','Location','North','Orientation','Horizontal','box','off');
 %set(l,'Position',[0.91 0.30 0.054 0.054])
 
 end
