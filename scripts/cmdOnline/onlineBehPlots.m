@@ -141,6 +141,15 @@ ylim(yLims)
 xlabel('Trial number')
 xlim([0 numel(vy)])
 title('Reward duration during session')
+% plot mean amout per block
+meanDurPerBlk= arrayfun(@(x) nanmean(beh.reward.values.rewardDuration(beh.reward.block.startTrialNum(x):beh.reward.block.endTrialNum(x))), beh.reward.block.blkNum);
+vx = [0;beh.reward.block.endTrialNum];
+xVec = [vx(1:end-1) vx(2:end) nan(numel(vx)-1,1)]';
+yVec = [repmat(meanDurPerBlk,1,2) nan(numel(meanDurPerBlk),1)]';
+xVec = xVec(:);
+yVec = yVec(:);
+plot(xVec,yVec,'-r','LineWidth',2);
+
 hold off
 
 %% Cumulative Reward duration (CRD) by session time by block 
