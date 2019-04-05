@@ -5,10 +5,12 @@ function [beh,Task,TaskInfos] = onlineBeh()
 %% Set up session location and ProcLib Location
 monitorRefreshHz = 60;
 sessionBaseDir = '/Volumes/schalllab/Users/Chenchal/Tempo_NewCode/Joule';
-proclibBaseDir = '/Volumes/schalllab/Tempo/rigProcLibs/schalllab-rig029';
-
-session = 'Amir-190328-102128';
+session = 'Joule-190404-084040';
 sessionDir = fullfile(sessionBaseDir,session);
+
+
+proclibBaseDir = sessionDir;
+% 
 codesDir = fullfile(proclibBaseDir,'ProcLib','CMD');
 eventCodecFile = fullfile(codesDir,'EVENTDEF.PRO');
 infosCodecFile = fullfile(codesDir, 'INFOS.PRO');
@@ -21,6 +23,7 @@ opts.infosOffsetValue = 3000;
 opts.infosHasNegativeValues = true;
 opts.infosNegativeValueOffset = 32768;
 
+beh.opts = opts;
 
 %% Extract trial variables for online behavior plots
 [Task, TaskInfos] = tdtExtractEvents(sessionDir, eventCodecFile, infosCodecFile, opts);
@@ -29,6 +32,7 @@ TaskInfos = struct2table(TaskInfos);
 %%%%%%%%%%%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%
 Task = Task(TaskInfos.numberOfInfoCodeValuesLowerThanOffset == 0,:);
 TaskInfos = TaskInfos(TaskInfos.numberOfInfoCodeValuesLowerThanOffset == 0,:);
+beh.badTrialInfos = TaskInfos.numberOfInfoCodeValuesLowerThanOffset > 0;
 %%%%%%%%%%%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%
 
 beh.infosVarNames = {'TrialType','UseSsdIdx','UseSsdVrCount','SsdVrCount','StopSignalDuration',...

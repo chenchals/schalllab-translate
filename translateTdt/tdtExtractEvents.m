@@ -178,6 +178,8 @@ tic
         allC = evCodes{t};
         allT = evTimes{t};
         evCodesTemp = allC(allC < infosOffsetValue);
+        % get all event codes, including event codes inside the
+        % infos-block-of-codes (usually extra_juice code
         tmsTemp = allT(allC < infosOffsetValue);
         % Get unique Event codes, if duplicate get first occurrance
         [evs,iUniq] = unique(evCodesTemp,'stable');
@@ -229,6 +231,7 @@ tic
              else % if there are startInfos_ and endInfos_ are sent
                  warning('****Cannot find StartInfos_ and EndInfos_. Check if they are sent by TEMPO*****\n');
                  warning('Using *ALL* codes above  >= startInfosOffset [%d] to get infos\n',startInfosOffset);
+                 % auto filters all eventCodes
                  infos = allC(allC>=startInfosOffset);
             end            
              if(numel(infos)==0)
@@ -236,7 +239,18 @@ tic
              else
                 fprintf('TrlNo = %d, Number of infos codes including start and end infos = %d of total: %d InfoCodec Codes\n',...
                     t,numel(infos),numel(infosCodec.code2Name.keys));
-                % InfoCode annot be less than startInfosOffset
+                % It is possible that user may have given manual juice reward which will send 
+                %Juice start/stop codes that are always less than startInfosOffset, so remove these event codes 
+                %if they occur between start and end infos, or any other eventCode
+                %infos(infos<startInfosOffset) = [];  <== will also remove
+                %any errors in tempo transmission hence only remove event
+                %codes that were defined in Evenentdef.pro
+                evCodesInInfosBlock = intersect(evCodec.evTable.code,infos);
+                for ee = 1:numel(evCodesInInfosBlock)
+                    infos(infos==evCodesInInfosBlock(ee))=[];
+                end
+                % InfoCode annot be less than startInfosOffset, after
+                % filtering for all event codes
                 trialInfos(t,1).numberOfInfoCodeValuesLowerThanOffset = 0;
                 if find(infos < startInfosOffset) % Negative value for info codes??
                     trialInfos(t,1).numberOfInfoCodeValuesLowerThanOffset = sum(infos < startInfosOffset);
