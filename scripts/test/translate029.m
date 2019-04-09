@@ -1,9 +1,9 @@
 %codesDir = '/Volumes/schalllab/Users/Chenchal/Tempo_NewCode/Joule-190312-162436/ProcLib/CMD';
 
-baseDir = 'T:';
+baseDir = '/Volumes/schalllab';
 sessionBaseDir = fullfile(baseDir,'Users/Chenchal/Tempo_NewCode/Joule');
 baseSaveDir = fullfile(baseDir,'Users/Chenchal/Tempo_NewCode/dataProcessed');
-sessName = 'Joule-190408-092206';
+sessName = 'Joule-190404-084040';
 procLibDir =fullfile(sessionBaseDir, sessName, 'ProcLib');
 eventDefFile = fullfile(procLibDir,'CMD/EVENTDEF.PRO');
 infosDefFile = fullfile(procLibDir,'CMD/INFOS.PRO');

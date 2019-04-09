@@ -1,21 +1,73 @@
 drive = '/Volumes/schalllab';
-load(fullfile(drive,'Users/Chenchal/Tempo_NewCode/dataProcessed/Joule-190408-092206/Events.mat'));
-load(fullfile(drive,'Users/Chenchal/Tempo_NewCode/dataProcessed/Joule-190408-092206/Eyes.mat'));
+session = 'Joule-190404-084040'; % ~1188 trials
+session = 'Joule-190408-092206'; % ~270 trials
+load(fullfile(drive,'Users/Chenchal/Tempo_NewCode/dataProcessed',session,'Events.mat'));
+load(fullfile(drive,'Users/Chenchal/Tempo_NewCode/dataProcessed',session,'Eyes.mat'));
 Task = struct2table(Task);
 TaskInfos = struct2table(TaskInfos);
-
+%% Eye vals in deg
 xGain = 3.622;
 yGain = 3.837;
-%% Eye vals in deg
 fxVolts = @(x,gain)(x.* gain);
 % Eye components
 eyeBinWidth = tdt.BinWidthMs;
 % in case we do by trials
-eyeX = {tdt.EyeX};
-eyeY = {tdt.EyeY};
+eyeX = {[tdt.EyeX NaN]};
+eyeY = {[tdt.EyeY NaN]};
+maxIdx = numel(eyeX{1});
 % Eye components in degrees
 eyeXDeg = cellfun(@(x) fxVolts(x,xGain),eyeX,'UniformOutput',false); 
 eyeYDeg = cellfun(@(x) fxVolts(x,yGain),eyeY,'UniformOutput',false); 
+%% plot eye for task by trial 
+% Set different markers
+markers = {'o','+','*','x','s','d','^','v','>','<','p'};
+colors = {'r','g','b','y','m','c','k'};
+% create all combinations of markers, colors
+[markers,colors]=deal(repmat(markers,1,numel(colors))',repmat(colors,1,numel(markers))');
+% draw empty figure
+
+% Find names of all event markers (ending in _)
+evts = Task.Properties.VariableNames;
+
+% only events containing _
+evts = evts(contains(evts,'_'));
+
+figure
+h_axes=axes;
+set(gca,'PlotBoxAspectRatio',[1 1 1]);
+
+startEvent = 'FixSpotOn_';
+endEvent = 'TimeoutStart_';
+deltaTimeMs = 1000;
+
+
+iBinStart =  ceil(Task.(startEvent) ./eyeBinWidth);
+iBinEnd = ceil(Task.(endEvent) ./eyeBinWidth);
+nBins = ceil(deltaTimeMs/eyeBinWidth);
+
+idx = 1:size(iBinStart,1);
+for ii =1:numel(idx)
+    x = idx(ii);
+    drawFixWin()
+    drawTargWin()
+    if(~isnan(iBinStart(x)) && ~isnan(iBinEnd(x)))
+        plot(eyeXDeg{1}(iBinStart(x):iBinEnd(x)),...
+             eyeYDeg{1}(iBinStart(x):iBinEnd(x)));
+        xlim([-20 20])
+        ylim([-20 20])
+        hold on
+        % scatter events
+        s = ceil(Task{ii,evts}./eyeBinWidth);
+        s(isnan(s)) = maxIdx;
+         for jj = 1:numel(s)
+             scatter(eyeXDeg{1}(s(jj)),eyeYDeg{1}(s(jj)),strcat(markers{jj},colors{jj}));   
+         end
+         legend(evts,'Location','bestoutside','Interpreter','none')
+         title(sprintf('Trial # : %d',x)) 
+        hold off
+        pause
+    end
+end
 
 %% 
 figure
@@ -27,38 +79,23 @@ evtToPlot = {'AcquireFix_','FixSpotOn_','FixBreak_','Fixate_'};
 evtMarker ={'.r','.k','xb','^m'};
 
 cellfun(@(ev,m) fxCart(ev,m), evtToPlot,evtMarker,'UniformOutput',false);
-% draw fix window and fix window large
-iWinDeg = 5;
-iWinFactor = 1.5;
-x=[-iWinDeg/2, iWinDeg/2, iWinDeg/2, -iWinDeg/2];
-y=[-iWinDeg/2, -iWinDeg/2, iWinDeg/2, iWinDeg/2];
-patch(x,y,'k','LineWidth',2,'FaceColor','none','LineWidth',1, 'LineStyle', '--')
-patch(x.*iWinFactor,y.*iWinFactor,'k','LineWidth',2,'FaceColor','none','LineWidth',1,'LineStyle',':')
-xlim([-10 10])
-ylim([-10 10])
-grid on
+drawFixWin();
 %% Trajectories....
 figure
 axes
 hold on
-iWinDeg = 5;
-iWinFactor = 1.5;
-x=[-iWinDeg/2, iWinDeg/2, iWinDeg/2, -iWinDeg/2];
-y=[-iWinDeg/2, -iWinDeg/2, iWinDeg/2, iWinDeg/2];
-patch(x,y,'k','LineWidth',2,'FaceColor','none','LineWidth',1, 'LineStyle', '--')
-patch(x.*iWinFactor,y.*iWinFactor,'k','LineWidth',2,'FaceColor','none','LineWidth',1,'LineStyle',':')
-xlim([-20 20])
-ylim([-20 20])
-grid on
+        xlim([-4 4])
+        ylim([-4 4])
+drawFixWin()
 
 iBinStart =  ceil(Task.FixSpotOn_ ./eyeBinWidth);
 iBinEnd = ceil(Task.FixBreak_ ./eyeBinWidth);
 idx = find(~isnan(Task.FixBreak_));
-for ii =1:numel(idx)
+for ii =1:10
     x = idx(ii);
-    plot(eyeXDeg{1}(iBinStart(x):iBinEnd(x)), eyeYDeg{1}(iBinStart(x):iBinEnd(x)),'r')
-    plot(eyeXDeg{1}(iBinStart(x)), eyeYDeg{1}(iBinStart(x)),'xr','MarkerSize',10)
-    plot(eyeXDeg{1}(iBinEnd(x)), eyeYDeg{1}(iBinEnd(x)),'^r','MarkerSize',10)
+    plot(eyeXDeg{1}(iBinStart(x):iBinEnd(x)+50), eyeYDeg{1}(iBinStart(x):iBinEnd(x)+50),'*r')
+    plot(eyeXDeg{1}(iBinStart(x)), eyeYDeg{1}(iBinStart(x)),'xk','MarkerSize',10)
+    plot(eyeXDeg{1}(iBinEnd(x)), eyeYDeg{1}(iBinEnd(x)),'^k','MarkerSize',10)
     
     drawnow
     pause
@@ -66,11 +103,11 @@ end
 
 iBinEnd = ceil(Task.Fixate_ ./eyeBinWidth);
 idx = find(~isnan(Task.Fixate_));
-for ii =1:numel(idx)
+for ii =1:10
     x = idx(ii);
-    plot(eyeXDeg{1}(iBinStart(x):iBinEnd(x)), eyeYDeg{1}(iBinStart(x):iBinEnd(x)),'b')
-    plot(eyeXDeg{1}(iBinStart(x)), eyeYDeg{1}(iBinStart(x)),'+b','MarkerSize',10)
-    plot(eyeXDeg{1}(iBinEnd(x)), eyeYDeg{1}(iBinEnd(x)),'<b','MarkerSize',10)
+    plot(eyeXDeg{1}(iBinStart(x):iBinEnd(x)), eyeYDeg{1}(iBinStart(x):iBinEnd(x)),'*b')
+    plot(eyeXDeg{1}(iBinStart(x)), eyeYDeg{1}(iBinStart(x)),'+k','MarkerSize',10)
+    plot(eyeXDeg{1}(iBinEnd(x)), eyeYDeg{1}(iBinEnd(x)),'<k','MarkerSize',10)
     
     drawnow
     pause
@@ -80,6 +117,26 @@ end
 
 
 %%
+function drawFixWin()
+    % draw fix window and fix window large
+    iWinDeg = 5;
+    iWinFactor = 1.5;
+    x=[-iWinDeg/2, iWinDeg/2, iWinDeg/2, -iWinDeg/2];
+    y=[-iWinDeg/2, -iWinDeg/2, iWinDeg/2, iWinDeg/2];
+    patch(x,y,'k','LineWidth',2,'FaceColor','none','LineWidth',1, 'LineStyle', '--')
+    patch(x.*iWinFactor,y.*iWinFactor,'k','LineWidth',2,'FaceColor','none','LineWidth',1,'LineStyle',':')
+    drawnow;
+end
+function drawTargWin()
+    % draw fix window and fix window large
+    iWinDeg = 7;
+    iWinEcc = 12.0;
+    x=[-iWinDeg/2, iWinDeg/2, iWinDeg/2, -iWinDeg/2];
+    y=[-iWinDeg/2, -iWinDeg/2, iWinDeg/2, iWinDeg/2];
+    patch(x-iWinEcc,y,'k','LineWidth',2,'FaceColor','none','LineWidth',1, 'LineStyle', '--')
+    patch(x+iWinEcc,y,'k','LineWidth',2,'FaceColor','none','LineWidth',1, 'LineStyle', '--')
+    drawnow
+end
 
 function plotPolarCoord()
 
