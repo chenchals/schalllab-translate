@@ -4,7 +4,8 @@ function [beh,Task,TaskInfos] = onlineBeh()
 
 %% Set up session location and ProcLib Location
 monitorRefreshHz = 60;
-sessionBaseDir = 'T:/Users/Chenchal/Tempo_NewCode/Joule';
+drive = '/Volumes/schalllab';
+sessionBaseDir = fullfile(drive,'/Users/Chenchal/Tempo_NewCode/Joule');
 session = 'Joule-190404-084040';
 sessionDir = fullfile(sessionBaseDir,session);
 
