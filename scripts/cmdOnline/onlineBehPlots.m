@@ -7,6 +7,13 @@ h_rwrd2 = subplot(323);
 h_rt = subplot(324);
 h_rwrd3 = subplot(325);
 h_trial = subplot(326);
+h_infos = axes(gcf,'Position',[0.01 0.95 0.98 0.04]);
+
+%% Infos
+axes(h_infos);
+box off
+set(h_infos,'Visible','off')
+text(0.1,0.5,beh.session,'FontWeight','bold','FontSize',12)
 
 %% Trial outcomes grouped-stack plot
 % stack: pre-, post- SSD only valid for STOP trials
@@ -108,6 +115,7 @@ title('Normalized Reaction Time CDF')
 axes(h_rwrd1)
 addPlotZoom();
 box on
+yyaxis left
 blockColors = [0.7 0.7 0.7
                0.8 0.8 0.8];
 blockAlpha = 0.5;
@@ -141,12 +149,19 @@ xlabel('Trial number')
 xlim([0 numel(vy)])
 title('Reward duration during session')
 % plot mean amout per block
+yyaxis right
 blockStartEnds = [0;beh.reward.block.endTrialNum];
 blockStartEnds = [blockStartEnds(1:end-1) blockStartEnds(2:end) nan(numel(blockStartEnds)-1,1)]';
 blockCenters = nanmean(blockStartEnds)';
-meanDurPerBlk= arrayfun(@(x) nanmean(beh.reward.values.rewardDuration(beh.reward.block.startTrialNum(x):beh.reward.block.endTrialNum(x))), beh.reward.block.blkNum);
+tempReward = beh.reward.values.rewardDuration;
+tempReward(isnan(tempReward))=0;
+nTrlsPerBlk = [beh.reward.block.endTrialNum(1); diff(beh.reward.block.endTrialNum)-1];
+meanDurPerBlk= arrayfun(@(x) mean(tempReward(beh.reward.block.startTrialNum(x):beh.reward.block.endTrialNum(x))), beh.reward.block.blkNum);
 blockMeans = [repmat(meanDurPerBlk,1,2) nan(numel(meanDurPerBlk),1)]';
 plot(blockStartEnds(:),blockMeans(:),'-r','LineWidth',2);
+ylabel('Block Avg. (ms)')
+yLims2 = [0 ceil(max(blockMeans(:))/20)*20];
+ylim(yLims2)
 hold off
 %% Reward duration by trial no/block num (Only last n blocks)
 lastNBlocks = 3;
@@ -154,14 +169,26 @@ blkStart = nBlocks-lastNBlocks+1;
 axes(h_rwrd3)
 addPlotZoom();
 box on
+yyaxis left
+
+if mod(blkStart,2) == 1
 %odd blocks
-idx = nBlocks-lastNBlocks:2:nBlocks;
+idx = blkStart:2:nBlocks;
 patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
       'FaceColor',blockColors(1,:),'FaceAlpha',blockAlpha, 'EdgeColor', 'none');
-%even blocks
-idx = nBlocks-lastNBlocks:2:nBlocks;
+idx = blkStart+1:2:nBlocks;
 patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
       'FaceColor',blockColors(2,:),'FaceAlpha',blockAlpha, 'EdgeColor', 'none');
+else
+%even blocks
+idx = blkStart:2:nBlocks;
+patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
+      'FaceColor',blockColors(2,:),'FaceAlpha',blockAlpha, 'EdgeColor', 'none');
+%even blocks
+idx = blkStart:2:nBlocks;
+patch('Faces',reshape(1:numel(idx)*4,4,[])','Vertices',cell2mat(vertices(idx)),...
+      'FaceColor',blockColors(1,:),'FaceAlpha',blockAlpha, 'EdgeColor', 'none');
+end
 hold on
 % plot the line as stairs plot
 lastNBlockTrlIdx = beh.reward.values.BlockNum >= (nBlocks - lastNBlocks);
@@ -172,10 +199,13 @@ xlabel('Trial number')
 xlim([0 numel(vy)])
 title(sprintf('Reward duration - last [%d] blocks',lastNBlocks))
 % plot mean amounts per block
+yyaxis right
 xVec = blockStartEnds(:,blkStart:end);
 yVec = blockMeans(:,blkStart:end);
 plot(xVec(:),yVec(:),'-r','LineWidth',2);
 xlim([min(xVec(:)) max(xVec(:))])
+ylabel('Block Avg. (ms)')
+ylim(yLims2)
 grid on
 text(blockCenters(blkStart:end),repmat(max(ylim)*0.9,lastNBlocks,1),...
     arrayfun(@(x) num2str(x,'#%d'),blkStart:nBlocks,'UniformOutput',false),...

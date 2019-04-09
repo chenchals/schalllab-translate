@@ -5,7 +5,7 @@ function [beh,Task,TaskInfos] = onlineBeh()
 %% Set up session location and ProcLib Location
 monitorRefreshHz = 60;
 sessionBaseDir = 'T:/Users/Chenchal/Tempo_NewCode/Joule';
-session = 'Joule-190408-092206';
+session = 'Joule-190404-084040';
 sessionDir = fullfile(sessionBaseDir,session);
 
 
@@ -24,7 +24,7 @@ opts.infosHasNegativeValues = true;
 opts.infosNegativeValueOffset = 32768;
 
 beh.opts = opts;
-
+beh.session = session;
 %% Extract trial variables for online behavior plots
 [Task, TaskInfos] = tdtExtractEvents(sessionDir, eventCodecFile, infosCodecFile, opts);
 Task = struct2table(Task);

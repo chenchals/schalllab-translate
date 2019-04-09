@@ -1,4 +1,4 @@
-drive = '/Volumes/schalllab';
+drive = 'T:';
 load(fullfile(drive,'Users/Chenchal/Tempo_NewCode/dataProcessed/Joule-190408-092206/Events.mat'));
 load(fullfile(drive,'Users/Chenchal/Tempo_NewCode/dataProcessed/Joule-190408-092206/Eyes.mat'));
 
