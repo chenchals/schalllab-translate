@@ -4,18 +4,19 @@ function [beh,Task,TaskInfos] = onlineBeh()
 
 %% Set up session location and ProcLib Location
 monitorRefreshHz = 60;
+%% Session
 drive = '/Volumes/schalllab';
 sessionBaseDir = fullfile(drive,'/Users/Chenchal/Tempo_NewCode/Joule');
-session = 'Joule-190404-084040';
-sessionDir = fullfile(sessionBaseDir,session);
+sessionDir = 'D:/Synapse/Tanks/CMD_TSK_029-190212-102605/Joule-190412-102057';
+session = 'Joule-190412-102057';
 
-
-proclibBaseDir = sessionDir;
-% 
+%% Proclib
+proclibBaseDir = 'T:/Tempo/rigProcLibs/schalllab-rig029';
 codesDir = fullfile(proclibBaseDir,'ProcLib','CMD');
 eventCodecFile = fullfile(codesDir,'EVENTDEF.PRO');
 infosCodecFile = fullfile(codesDir, 'INFOS.PRO');
 
+%% Analysis from here
 opts.useTaskStartEndCodes = true;
 opts.dropNaNTrialStartTrials = false;
 opts.dropEventAllTrialsNaN = false;
