@@ -18,12 +18,44 @@ maxIdx = numel(eyeX{1});
 % Eye components in degrees
 eyeXDeg = cellfun(@(x) fxVolts(x,xGain),eyeX,'UniformOutput',false); 
 eyeYDeg = cellfun(@(x) fxVolts(x,yGain),eyeY,'UniformOutput',false); 
-%% plot eye for task by trial 
+
 % Set different markers
 markers = {'o','+','*','x','s','d','^','v','>','<','p'};
 colors = {'r','g','b','y','m','c','k'};
 % create all combinations of markers, colors
 [markers,colors]=deal(repmat(markers,1,numel(colors))',repmat(colors,1,numel(markers))');
+
+%% get eye data between fixAcquire and fix break for fixBreak trials
+idx=find(Task.FixBreak_>0 & isnan(Task.AcquireFixError_));
+iBinStart = ceil(Task.AcquireFix_(idx)./eyeBinWidth);
+iBinEnd = ceil(Task.FixBreak_(idx)./eyeBinWidth);
+evts = {'AcquireFix_','FixBreak_'};
+figure
+axes
+
+for ii =1:numel(idx)
+    trl = idx(ii);
+    ix = eyeXDeg{1}([iBinStart(ii),iBinEnd(ii)])
+    iy = eyeYDeg{1}([iBinStart(ii),iBinEnd(ii)])
+    
+    hold on
+        plot(ix,iy,'^-b');
+         xlim([-5 5])
+         ylim([-5 5])
+         drawFixWin()
+         drawTargWin()
+        s = ceil(Task{trl,evts}./eyeBinWidth)
+        s(isnan(s)) = maxIdx;
+         for jj = 1:numel(s)
+             scatter(eyeXDeg{1}(s(jj)),eyeYDeg{1}(s(jj)),strcat(markers{jj},colors{jj}));   
+         end
+         legend(evts,'Location','bestoutside','Interpreter','none')
+         title(sprintf('Trial # : %d, AcqFix to FixBreak = %4.2d ms',trl,(iBinEnd(ii) - iBinStart(ii))/2)) 
+         hold off
+        pause
+end
+
+%% plot eye for task by trial 
 % draw empty figure
 
 % Find names of all event markers (ending in _)
