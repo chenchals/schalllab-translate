@@ -1,5 +1,5 @@
 function onlineBehPlots(beh)
-
+useOutcomesForInhibitionPlot = 0;
 figure;
 h_rwrd1 = subplot(321);
 h_inh = subplot(322);
@@ -53,48 +53,52 @@ ylabel('Number of Trials');
 title('Trial outcomes - Stacked [pre-SSD, post-SSD]')
 
 %% Inhibition fx plot - Using taskInfos.Is.... vars
-axes(h_inh)
-addPlotZoom();
-yyaxis('left');
-plot(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount, beh.inhFx.values.pNC,'o-b','LineWidth',2,'MarkerSize',14);
-hold on
-% overplot symbols for values less than 1.0
-plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdVrCount, beh.inhFx.values.pNC(beh.inhFx.values.pNC<1.0),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
-
-hold on
-xticks(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount)
-ylim([0 1.1])
-ylabel('pNC')
-xlabel('SSD (# vertical refresh)')
-grid on
-title('Inhibition function')
-yyaxis('right');
-bar(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,beh.inhFx.values.nTrials,...
-    'BarWidth',0.95,'FaceAlpha',0.6);
-ylim([0 max(beh.inhFx.values.nTrials)*1.1])
-set(gca, 'SortMethod', 'depth')
-ylabel('# STOP trials')
-
-
-%% Inhibition fx plot - Using outcomeEvents
-% subplot(223)
-% yyaxis('left');
-% plot(beh.inhFx.ssdStatsAll.mean_UseSsdIdx+1, beh.inhFx.values.pNC_,'o-b','LineWidth',2,'MarkerSize',14);
-% hold on
-% plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdIdx+1, beh.inhFx.values.pNC_(1:3),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
-% hold on
-% ylim([0 1.1])
-% ylabel('pNC')
-% xlabel('SSD (# vertical refresh)')
-% grid on
-% title('Inhibition function')
-% yyaxis('right');
-% bb = bar(beh.inhFx.ssdStatsAll.mean_UseSsdIdx+1,beh.inhFx.values.nTrials,...
-%     'BarWidth',0.95,'FaceAlpha',0.6);
-% ylim([0 max(beh.inhFx.values.nTrials)*1.1])
-% xticklabels([0; beh.inhFx.ssdStatsAll.mean_UseSsdVrCount])
-% set(gca, 'SortMethod', 'depth')
-% ylabel('# STOP trials')
+if ~useOutcomesForInhibitionPlot
+    axes(h_inh)
+    addPlotZoom();
+    yyaxis('left');
+    plot(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount, beh.inhFx.values.pNC,'o-b','LineWidth',2,'MarkerSize',14);
+    hold on
+    % overplot symbols for values less than 1.0
+    plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdVrCount, beh.inhFx.values.pNC(beh.inhFx.values.pNC<1.0),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
+    
+    hold on
+    xticks(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount)
+    ylim([0 1.1])
+    ylabel('pNC')
+    xlabel('SSD (# vertical refresh)')
+    grid on
+    title('Inhibition function')
+    yyaxis('right');
+    bar(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,beh.inhFx.values.nTrials,...
+        'BarWidth',0.95,'FaceAlpha',0.6);
+    ylim([0 max(beh.inhFx.values.nTrials)*1.1])
+    set(gca, 'SortMethod', 'depth')
+    ylabel('# STOP trials')
+else
+    
+    %% Inhibition fx plot - Using outcomeEvents
+    axes(h_inh)
+    addPlotZoom();
+    yyaxis('left');
+    plot(beh.inhFx.ssdStatsAll.mean_UseSsdIdx+1, beh.inhFx.values.pNC_,'o-b','LineWidth',2,'MarkerSize',14);
+    hold on
+    plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdIdx+1, beh.inhFx.values.pNC_(beh.inhFx.values.pNC_<1.0),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
+    hold on
+    xticks(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount)
+    ylim([0 1.1])
+    ylabel('pNC')
+    xlabel('SSD (# vertical refresh)')
+    grid on
+    title('Inhibition function')
+    yyaxis('right');
+    bar(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,beh.inhFx.values.nTrials,...
+        'BarWidth',0.95,'FaceAlpha',0.6);
+    ylim([0 max(beh.inhFx.values.nTrials)*1.1])
+    xticklabels([0; beh.inhFx.ssdStatsAll.mean_UseSsdVrCount])
+    set(gca, 'SortMethod', 'depth')
+    % ylabel('# STOP trials')
+end
 
 %% Reaction times
 axes(h_rt)
@@ -161,7 +165,7 @@ blockMeans = [repmat(meanDurPerBlk,1,2) nan(numel(meanDurPerBlk),1)]';
 plot(blockStartEnds(:),blockMeans(:),'-r','LineWidth',2);
 ylabel('Block Avg. (ms)')
 yLims2 = [0 ceil(max(blockMeans(:))/20)*20];
-ylim(yLims2)
+ylim(yLims)
 hold off
 %% Reward duration by trial no/block num (Only last n blocks)
 lastNBlocks = 3;
@@ -205,7 +209,7 @@ yVec = blockMeans(:,blkStart:end);
 plot(xVec(:),yVec(:),'-r','LineWidth',2);
 xlim([min(xVec(:)) max(xVec(:))])
 ylabel('Block Avg. (ms)')
-ylim(yLims2)
+ylim(yLims)
 grid on
 text(blockCenters(blkStart:end),repmat(max(ylim)*0.9,lastNBlocks,1),...
     arrayfun(@(x) num2str(x,'#%d'),blkStart:nBlocks,'UniformOutput',false),...
