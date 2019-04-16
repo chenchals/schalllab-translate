@@ -6,16 +6,17 @@ function [beh,Task,TaskInfos] = onlineBeh()
 monitorRefreshHz = 60;
 online = 0;
 %% Session
-session = 'Joule-190415-091054';
+session = 'Joule-190416-103550';
 if online
     sessionDir = fullfile('D:/Synapse/Tanks/CMD_TSK_029-190212-102605',session);
     proclibDir = 'T:/Tempo/rigProcLibs/schalllab-rig029/ProcLib/CMD';
+    processedDir = '';
 else
     drive = '/Volumes/schalllab'; 
     sessionDir = fullfile(drive,'/Users/Chenchal/Tempo_NewCode/Joule',session);
     proclibDir = fullfile(sessionDir,'ProcLib/CMD');
+    processedDir = fullfile(drive,'/Users/Chenchal/Tempo_NewCode/dataProcessed',session);
 end
-
 
 %% Proclib
 eventCodecFile = fullfile(proclibDir,'EVENTDEF.PRO');
@@ -33,7 +34,14 @@ opts.infosNegativeValueOffset = 32768;
 beh.opts = opts;
 beh.session = session;
 %% Extract trial variables for online behavior plots
-[Task, TaskInfos] = tdtExtractEvents(sessionDir, eventCodecFile, infosCodecFile, opts);
+if (~isempty(processedDir) && exist(processedDir,'dir') == 7)
+    temp = load(fullfile(processedDir,'Events.mat'));
+    Task = temp.Task;
+    TaskInfos = temp.TaskInfos;
+    clearvars temp;
+else
+    [Task, TaskInfos] = tdtExtractEvents(sessionDir, eventCodecFile, infosCodecFile, opts);
+end
 Task = struct2table(Task);
 TaskInfos = struct2table(TaskInfos);
 %%%%%%%%%%%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%%%%%%%FIX_ME%%%%%
