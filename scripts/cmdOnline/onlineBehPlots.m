@@ -8,7 +8,7 @@ h_rt = subplot(324);
 h_rwrd3 = subplot(325);
 h_trial = subplot(326);
 h_infos = axes(gcf,'Position',[0.01 0.95 0.98 0.04]);
-
+myColors = getColors();
 %% Infos
 axes(h_infos);
 box off
@@ -263,7 +263,8 @@ vertices = arrayfun(@(x) [...
           (1:size(blockStartEnds,1)-1)','UniformOutput',false);
 % draw patches for each outcome
 patchLabels = {'Go';'Cancelled';'NonCancelled';'Timeout/Error'};
-patchColors = {[0.0 0.0 0.0];[0.0 0.0 1.0];[1.0 0.0 0.0];[0.5 0.5 0.5]};
+%patchColors = {[1.0 1.0 0.0];[0.0 0.0 1.0];[1.0 0.0 0.0];[0.5 0.5 0.5]};
+patchColors = {myColors.yellow;myColors.cyan;myColors.red;myColors.gray_5};
 
 % go patches
 h=[];
@@ -297,4 +298,17 @@ function addPlotZoom()
     set(gca,'ButtonDownFcn',@plotZoom);
 end
 
+function myColors =getColors()
+    myColors = struct();
 
+    myColors.blue =[0,0,1];
+    myColors.black = [0,0,0];
+    myColors.red = [1,0,0];
+    myColors.green = [0,1,0];
+    myColors.yellow = [1,1,0];
+    myColors.cyan = [0,1,1];
+    myColors.magenta = [1,0,1];
+    myColors.white = [1,1,1];
+    myColors.gray_5 = [0.5,0.5,0.5];
+    
+end
