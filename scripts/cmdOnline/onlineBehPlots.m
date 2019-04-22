@@ -1,12 +1,12 @@
 function onlineBehPlots(beh)
 useOutcomesForInhibitionPlot = 0;
 figure;
-h_rwrd1 = subplot(321);
-h_inh = subplot(322);
-h_rwrd2 = subplot(323);
+h_rwrdByTrial = subplot(321);
+h_inhbFx = subplot(322);
+h_cumlRwrdBlk = subplot(323);
 h_rt = subplot(324);
-h_rwrd3 = subplot(325);
-h_trial = subplot(326);
+h_rwrdLastBlks = subplot(325);
+h_trialOutcoms = subplot(326);
 h_infos = axes(gcf,'Position',[0.01 0.95 0.98 0.04]);
 myColors = getColors();
 %% Infos
@@ -18,7 +18,7 @@ text(0.1,0.5,beh.session,'FontWeight','bold','FontSize',12)
 %% Trial outcomes grouped-stack plot
 % stack: pre-, post- SSD only valid for STOP trials
 %Plot
-axes(h_trial);
+axes(h_trialOutcoms);
 addPlotZoom();
 data = table2array(beh.trial.outcomes);
 labels = beh.trial.outcomes.Properties.RowNames';
@@ -28,7 +28,7 @@ barsInGroup = 2;
 
 hold on;
 for i=1:groups*barsInGroup
-    h(i,1:stacks)=bar([data(i,:);nan(1,stacks)],'stacked'); %#ok<SAGROW>
+    h(i,1:stacks)=bar([data(i,:);nan(1,stacks)],'stacked'); %#ok<AGROW>
 end
 %Group and set xdata
 x1=1:groups;
@@ -54,7 +54,7 @@ title('Trial outcomes - Stacked [pre-SSD, post-SSD]')
 
 %% Inhibition fx plot - Using taskInfos.Is.... vars
 if ~useOutcomesForInhibitionPlot
-    axes(h_inh)
+    axes(h_inhbFx)
     addPlotZoom();
     yyaxis('left');
     plot(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount, beh.inhFx.values.pNC,'o-b','LineWidth',2,'MarkerSize',14);
@@ -70,15 +70,19 @@ if ~useOutcomesForInhibitionPlot
     grid on
     title('Inhibition function')
     yyaxis('right');
-    bar(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,beh.inhFx.values.nTrials,...
-        'BarWidth',0.95,'FaceAlpha',0.6);
+    %bar(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,beh.inhFx.values.nTrials,...
+    %    'BarWidth',0.95,'FaceAlpha',0.6); 
+    
+    bar(beh.trial.stopOutcomesBySsd.ssdVrCount,table2array(beh.trial.stopOutcomesBySsd(:,2:end)),'stacked');
+    
+    %legend(beh.trial.stopOutcomesBySsd.Properties.VariableNames(2:end),'Box','off','Location','northwest');
+    
     ylim([0 max(beh.inhFx.values.nTrials)*1.1])
     set(gca, 'SortMethod', 'depth')
     ylabel('# STOP trials')
 else
-    
     %% Inhibition fx plot - Using outcomeEvents
-    axes(h_inh)
+    axes(h_inhbFx)
     addPlotZoom();
     yyaxis('left');
     plot(beh.inhFx.ssdStatsAll.mean_UseSsdIdx+1, beh.inhFx.values.pNC_,'o-b','LineWidth',2,'MarkerSize',14);
@@ -92,12 +96,16 @@ else
     grid on
     title('Inhibition function')
     yyaxis('right');
-    bar(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,beh.inhFx.values.nTrials,...
-        'BarWidth',0.95,'FaceAlpha',0.6);
+    %bar(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,beh.inhFx.values.nTrials,...
+    %    'BarWidth',0.95,'FaceAlpha',0.6);
+ 
+    bar(beh.trial.stopOutcomesBySsd.ssdVrCount,table2array(beh.trial.stopOutcomesBySsd(:,2:end)),'stacked');
+    
+    legend([{'';''};beh.trial.stopOutcomesBySsd.Properties.VariableNames(2:end)],'Box','off','Location','northwest');
+    
     ylim([0 max(beh.inhFx.values.nTrials)*1.1])
-    xticklabels([0; beh.inhFx.ssdStatsAll.mean_UseSsdVrCount])
     set(gca, 'SortMethod', 'depth')
-    % ylabel('# STOP trials')
+    ylabel('# STOP trials')
 end
 
 %% Reaction times
@@ -116,7 +124,7 @@ title('Normalized Reaction Time CDF')
 
 
 %% Reward duration by trial no/block num
-axes(h_rwrd1)
+axes(h_rwrdByTrial)
 addPlotZoom();
 box on
 yyaxis left
@@ -170,7 +178,7 @@ hold off
 %% Reward duration by trial no/block num (Only last n blocks)
 lastNBlocks = 3;
 blkStart = nBlocks-lastNBlocks+1;
-axes(h_rwrd3)
+axes(h_rwrdLastBlks)
 addPlotZoom();
 box on
 yyaxis left
@@ -218,7 +226,7 @@ text(blockCenters(blkStart:end),repmat(max(ylim)*0.9,lastNBlocks,1),...
 
 %% Cumulative Reward duration (CRD) by session time by block 
 % The cumulative reward duration is reset when new block starts
-axes(h_rwrd2)
+axes(h_cumlRwrdBlk)
 addPlotZoom();
 box on
 % add block number patches to the plot 

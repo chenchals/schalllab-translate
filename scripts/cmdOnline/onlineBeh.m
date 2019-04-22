@@ -6,7 +6,7 @@ function [beh,Task,TaskInfos] = onlineBeh()
 monitorRefreshHz = 60;
 online = 0;
 %% Session
-session = 'Joule-190416-103550';
+session = 'Joule-190418-092622';
 if online
     sessionDir = fullfile('D:/Synapse/Tanks/CMD_TSK_029-190212-102605',session);
     proclibDir = 'T:/Tempo/rigProcLibs/schalllab-rig029/ProcLib/CMD';
@@ -77,8 +77,7 @@ beh.values.reactionTime = beh.values.Decide_ - beh.values.Target_;
                            sum(beh.values.IsNonCancelledNoBrk==1 & beh.values.TrialType==1 & beh.values.IsStopSignalOn==1)};
  beh.trial.outcomes('NonCancelErr',1:2)= {sum(beh.values.IsNonCancelledBrk==1 & beh.values.TrialType==1 & beh.values.IsStopSignalOn==0),...
                              sum(beh.values.IsNonCancelledBrk==1 & beh.values.TrialType==1 & beh.values.IsStopSignalOn==1)};
- 
-                         
+            
 %% Extract Inhibition function values
 beh.inhFx.values=grpstats(beh.values, {'UseSsdIdx'},{'sum'},'DataVars',...
     [{'IsCancelledNoBrk','IsCancelledBrk','IsNonCancelledNoBrk','IsNonCancelledBrk','IsNogoErr'},...
@@ -102,6 +101,33 @@ beh.inhFx.values.refreshRate(:) = 1000.0/monitorRefreshHz;
 beh.inhFx.values.vrCounts = beh.inhFx.ssdStatsAll.mean_UseSsdVrCount;
 beh.inhFx.values.vrDuration = beh.inhFx.values.vrCounts.* beh.inhFx.values.refreshRate;
 
+% extract all stop outcomes by SSD and Pre- post- ssd
+varNames = {'Cancel','CancelErr','NonCancelPre','NonCancelPost','NonCancelErrPre','NonCancelErrPost'};
+valuesbySsd=grpstats(beh.values, {'UseSsdIdx','IsStopSignalOn'},{'sum'},'DataVars',...
+    [{'IsCancelledNoBrk','IsCancelledBrk','IsNonCancelledNoBrk','IsNonCancelledBrk','IsNogoErr'},...
+    beh.taskOutcomes]);
+uniqSsdIdx = unique(beh.values.UseSsdIdx(~isnan(beh.values.UseSsdIdx)));
+uniqSsdVrCount = unique(beh.values.UseSsdVrCount(~isnan(beh.values.UseSsdIdx)));
+beh.trial.stopOutcomesBySsd = array2table(zeros(numel(uniqSsdVrCount),numel(varNames)+1));
+beh.trial.stopOutcomesBySsd.Properties.RowNames = arrayfun(@(x) num2str(x,'ssdVrCount_%d'),uniqSsdVrCount,'UniformOutput',false);
+beh.trial.stopOutcomesBySsd.Properties.VariableNames = ['ssdVrCount',varNames];
+for ii = 1:numel(uniqSsdIdx)
+    ssdIdx =  uniqSsdIdx(ii);
+    t  = valuesbySsd(valuesbySsd.UseSsdIdx==ssdIdx,:);
+    if (size(t,1)==1)
+        ssOnMissing = setdiff([0 1], t.IsStopSignalOn);
+       t{2,:} = zeros(1,size(t,2));
+       t.IsStopSignalOn(2) = ssOnMissing; 
+       t = sortrows(t,{'IsStopSignalOn'});
+    end
+    beh.trial.stopOutcomesBySsd{ii,'ssdVrCount'}= uniqSsdVrCount(ii);    
+    beh.trial.stopOutcomesBySsd{ii,'Cancel'}= sum(t.sum_IsCancelledNoBrk);
+    beh.trial.stopOutcomesBySsd{ii,'CancelErr'} = sum(t.sum_IsCancelledBrk);
+    beh.trial.stopOutcomesBySsd{ii,'NonCancelPre'} = sum(t.sum_IsNonCancelledNoBrk(t.IsStopSignalOn==0,:));
+    beh.trial.stopOutcomesBySsd{ii,'NonCancelPost'} = sum(t.sum_IsNonCancelledNoBrk(t.IsStopSignalOn==1,:));
+    beh.trial.stopOutcomesBySsd{ii,'NonCancelErrPre'} = sum(t.sum_IsNonCancelledBrk(t.IsStopSignalOn==0,:));
+    beh.trial.stopOutcomesBySsd{ii,'NonCancelErrPost'} = sum(t.sum_IsNonCancelledBrk(t.IsStopSignalOn==1,:));
+end
 
 %% Extract Reactions times
 rtBins = (0:550);
