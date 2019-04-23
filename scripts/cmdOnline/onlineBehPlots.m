@@ -8,7 +8,7 @@ h_rt = subplot(324);
 h_rwrdLastBlks = subplot(325);
 h_trialOutcoms = subplot(326);
 h_infos = axes(gcf,'Position',[0.01 0.95 0.98 0.04]);
-myColors = getColors();
+[myColors, histColors] = getColors();
 %% Infos
 axes(h_infos);
 box off
@@ -53,18 +53,18 @@ ylabel('Number of Trials');
 title('Trial outcomes - Stacked [pre-SSD, post-SSD]')
 
 %% Inhibition fx plot - Using taskInfos.Is.... vars
+yscale = 1.18;
 if ~useOutcomesForInhibitionPlot
     axes(h_inhbFx)
     addPlotZoom();
     yyaxis('left');
-    plot(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount, beh.inhFx.values.pNC,'o-b','LineWidth',2,'MarkerSize',14);
+    plot(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount, beh.inhFx.values.pNC,'o-k','LineWidth',1.5,'MarkerSize',8);
     hold on
     % overplot symbols for values less than 1.0
-    plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdVrCount, beh.inhFx.values.pNC(beh.inhFx.values.pNC<1.0),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
+    % plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdVrCount, beh.inhFx.values.pNC(beh.inhFx.values.pNC<1.0),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
     
-    hold on
     xticks(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount)
-    ylim([0 1.1])
+    ylim([0 yscale])
     ylabel('pNC')
     xlabel('SSD (# vertical refresh)')
     grid on
@@ -73,11 +73,12 @@ if ~useOutcomesForInhibitionPlot
     %bar(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,beh.inhFx.values.nTrials,...
     %    'BarWidth',0.95,'FaceAlpha',0.6); 
     
-    bar(beh.trial.stopOutcomesBySsd.ssdVrCount,table2array(beh.trial.stopOutcomesBySsd(:,2:end)),'stacked');
+    hh = bar(beh.trial.stopOutcomesBySsd.ssdVrCount,table2array(beh.trial.stopOutcomesBySsd(:,2:end)),'stacked');
+    set(hh,{'FaceColor'},histColors(1:numel(hh)),'EdgeColor','none','FaceAlpha',0.7);
     
-    %legend(beh.trial.stopOutcomesBySsd.Properties.VariableNames(2:end),'Box','off','Location','northwest');
+    legend(['pNC',beh.trial.stopOutcomesBySsd.Properties.VariableNames(2:end)],'Box','off','Location','northwest');
     
-    ylim([0 max(beh.inhFx.values.nTrials)*1.1])
+    ylim([0 max(beh.inhFx.values.nTrials)*yscale])
     set(gca, 'SortMethod', 'depth')
     ylabel('# STOP trials')
 else
@@ -85,9 +86,9 @@ else
     axes(h_inhbFx)
     addPlotZoom();
     yyaxis('left');
-    plot(beh.inhFx.ssdStatsAll.mean_UseSsdIdx+1, beh.inhFx.values.pNC_,'o-b','LineWidth',2,'MarkerSize',14);
+    plot(beh.inhFx.ssdStatsAll.mean_UseSsdIdx+1, beh.inhFx.values.pNC_,'o-k','LineWidth',1.5,'MarkerSize',8);
     hold on
-    plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdIdx+1, beh.inhFx.values.pNC_(beh.inhFx.values.pNC_<1.0),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
+    % plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdIdx+1, beh.inhFx.values.pNC_(beh.inhFx.values.pNC_<1.0),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
     hold on
     xticks(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount)
     ylim([0 1.1])
@@ -98,12 +99,14 @@ else
     yyaxis('right');
     %bar(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,beh.inhFx.values.nTrials,...
     %    'BarWidth',0.95,'FaceAlpha',0.6);
- 
-    bar(beh.trial.stopOutcomesBySsd.ssdVrCount,table2array(beh.trial.stopOutcomesBySsd(:,2:end)),'stacked');
     
-    legend([{'';''};beh.trial.stopOutcomesBySsd.Properties.VariableNames(2:end)],'Box','off','Location','northwest');
+    hh = bar(beh.trial.stopOutcomesBySsd.ssdVrCount,table2array(beh.trial.stopOutcomesBySsd(:,2:end)),'stacked');
+    set(hh,{'FaceColor'},histColors(1:numel(hh),:),'EdgeColor','none','FaceAlpha',0.7);
     
-    ylim([0 max(beh.inhFx.values.nTrials)*1.1])
+    legend(['pNC',beh.trial.stopOutcomesBySsd.Properties.VariableNames(2:end)],'Box','off','Location','northwest');
+    
+    
+    ylim([0 max(beh.inhFx.values.nTrials)*yscale])
     set(gca, 'SortMethod', 'depth')
     ylabel('# STOP trials')
 end
@@ -306,7 +309,7 @@ function addPlotZoom()
     set(gca,'ButtonDownFcn',@plotZoom);
 end
 
-function myColors =getColors()
+function [myColors, histColors] =getColors()
     myColors = struct();
 
     myColors.blue =[0,0,1];
@@ -318,5 +321,24 @@ function myColors =getColors()
     myColors.magenta = [1,0,1];
     myColors.white = [1,1,1];
     myColors.gray_5 = [0.5,0.5,0.5];
+    
+    % default colors for stacked histogram
+    histColors = {...
+        [0     0.447 0.741]
+        [0.929 0.694 0.125]
+        [0.466 0.674 0.188]
+        [0.635 0.078 0.184]
+        [0.85  0.325 0.098]
+        [0.494 0.184 0.556]
+        [0.85  0.325 0.098]
+        [0.494 0.184 0.556]
+        [0.301 0.745 0.933]
+        [0     0.447 0.741]
+        [0.929 0.694 0.125]
+        [0.466 0.674 0.188]...
+        };
+    
+
+    
     
 end
