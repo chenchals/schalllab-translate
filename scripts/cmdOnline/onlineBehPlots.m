@@ -1,5 +1,5 @@
 function onlineBehPlots(beh)
-useOutcomesForInhibitionPlot = 0;
+useOutcomesForInhibitionPlot = 1;
 figure;
 h_rwrdByTrial = subplot(321);
 h_inhbFx = subplot(322);
@@ -86,7 +86,7 @@ else
     axes(h_inhbFx)
     addPlotZoom();
     yyaxis('left');
-    plot(beh.inhFx.ssdStatsAll.mean_UseSsdIdx+1, beh.inhFx.values.pNC_,'o-k','LineWidth',1.5,'MarkerSize',8);
+    plot(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount, beh.inhFx.values.pNC_,'o-k','LineWidth',1.5,'MarkerSize',8);
     hold on
     % plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdIdx+1, beh.inhFx.values.pNC_(beh.inhFx.values.pNC_<1.0),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
     hold on
