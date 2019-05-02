@@ -1,14 +1,12 @@
-function [beh,Task,TaskInfos] = onlineBeh()
+function [beh,Task,TaskInfos] = onlineBeh(session,online)
 %ONLINEBEH Summary of this function goes here
 %   Detailed explanation goes here
 
 %% Set up session location and ProcLib Location
 monitorRefreshHz = 60;
-online = 0;
 %% Session
-session = 'Joule-190424-091618';
 if online
-    sessionDir = fullfile('D:/Synapse/Tanks/CMD_TSK_029-190212-102605',session);
+    sessionDir = fullfile('D:/Synapse/Tanks/CMD_TSK_029_Beh-190426-091850',session);
     proclibDir = 'T:/Tempo/rigProcLibs/schalllab-rig029/ProcLib/CMD';
     processedDir = '';
 else

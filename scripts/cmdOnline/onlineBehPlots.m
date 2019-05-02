@@ -1,6 +1,6 @@
 function onlineBehPlots(beh)
 useOutcomesForInhibitionPlot = 1;
-figure;
+figure('units','normalized','outerposition',[0 0 1 1])
 h_rwrdByTrial = subplot(321);
 h_inhbFx = subplot(322);
 h_cumlRwrdBlk = subplot(323);
