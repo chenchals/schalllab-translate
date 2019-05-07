@@ -137,12 +137,12 @@ beh.raceModel.inh_SSD = round(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount * refresh
 beh.raceModel.inh_pNC = beh.inhFx.values.pNC;
 beh.raceModel.inh_nTr = round(beh.inhFx.ssdStatsAll.GroupCount);
 
-
 % Create Inhibition Function Graph
 [beh.raceModel.WeibullParams,beh.raceModel.WeibullErr,beh.raceModel.WeibullPredY,beh.raceModel.WeibullFit] = ...
     fitWeibull(beh.raceModel.inh_SSD,beh.raceModel.inh_pNC,beh.raceModel.inh_nTr);
 
-% Wieb...
+[beh.raceModel.oldWeibullParams,beh.raceModel.oldWeibullErr,beh.raceModel.oldWeibullPredY,beh.raceModel.oldWeibullFit] = ...
+    legacy_sef_fitWeibull(beh.raceModel.inh_SSD,beh.raceModel.inh_pNC,beh.raceModel.inh_nTr);
 
 %% Extract Reactions times
 rtBins = (0:550);

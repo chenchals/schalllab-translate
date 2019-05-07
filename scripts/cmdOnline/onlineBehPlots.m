@@ -54,14 +54,14 @@ title('Trial outcomes - Stacked [pre-SSD, post-SSD]')
 
 %% Inhibition fx plot - Using taskInfos.Is.... vars
 yscale = 1.18;
+[~,weibullY] = WeibullFx(beh.raceModel.WeibullParams,beh.raceModel.inh_SSD);
 if ~useOutcomesForInhibitionPlot
     axes(h_inhbFx)
     addPlotZoom();
     yyaxis('left');
     plot(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount, beh.inhFx.values.pNC,'o-k','LineWidth',1.5,'MarkerSize',8);
     hold on
-    % overplot symbols for values less than 1.0
-    % plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdVrCount, beh.inhFx.values.pNC(beh.inhFx.values.pNC<1.0),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
+    plot(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,weibullY,'*:r','LineWidth',2,'MarkerSize',10);
     
     xticks(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount)
     ylim([0 yscale])
@@ -70,13 +70,11 @@ if ~useOutcomesForInhibitionPlot
     grid on
     title('Inhibition function')
     yyaxis('right');
-    %bar(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,beh.inhFx.values.nTrials,...
-    %    'BarWidth',0.95,'FaceAlpha',0.6); 
     
     hh = bar(beh.trial.stopOutcomesBySsd.ssdVrCount,table2array(beh.trial.stopOutcomesBySsd(:,2:end)),'stacked');
     set(hh,{'FaceColor'},histColors(1:numel(hh)),'EdgeColor','none','FaceAlpha',0.7);
     
-    legend(['pNC',beh.trial.stopOutcomesBySsd.Properties.VariableNames(2:end)],'Box','off','Location','northwest');
+    legend([{'pNC' 'WeibullFit'},beh.trial.stopOutcomesBySsd.Properties.VariableNames(2:end)],'Box','off','Location','northwest');
     
     ylim([0 max(beh.inhFx.values.nTrials)*yscale])
     set(gca, 'SortMethod', 'depth')
@@ -88,8 +86,8 @@ else
     yyaxis('left');
     plot(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount, beh.inhFx.values.pNC_,'o-k','LineWidth',1.5,'MarkerSize',8);
     hold on
-    % plot(beh.inhFx.ssdStatsCancelled.mean_UseSsdIdx+1, beh.inhFx.values.pNC_(beh.inhFx.values.pNC_<1.0),'d','MarkerSize', 8, 'MarkerFaceColor','k','MarkerEdgeColor','y');
-    hold on
+    plot(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,weibullY,'*:r','LineWidth',2,'MarkerSize',10);
+
     xticks(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount)
     ylim([0 1.1])
     ylabel('pNC')
@@ -97,13 +95,11 @@ else
     grid on
     title('Inhibition function')
     yyaxis('right');
-    %bar(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount,beh.inhFx.values.nTrials,...
-    %    'BarWidth',0.95,'FaceAlpha',0.6);
     
     hh = bar(beh.trial.stopOutcomesBySsd.ssdVrCount,table2array(beh.trial.stopOutcomesBySsd(:,2:end)),'stacked');
     set(hh,{'FaceColor'},histColors(1:numel(hh),:),'EdgeColor','none','FaceAlpha',0.7);
     
-    legend(['pNC',beh.trial.stopOutcomesBySsd.Properties.VariableNames(2:end)],'Box','off','Location','northwest');
+    legend([{'pNC' 'WeibullFit'},beh.trial.stopOutcomesBySsd.Properties.VariableNames(2:end)],'Box','off','Location','northwest');
     
     
     ylim([0 max(beh.inhFx.values.nTrials)*yscale])

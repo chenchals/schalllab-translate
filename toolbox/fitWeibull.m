@@ -65,15 +65,18 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
 %
 
 %% Choose algorithm to use or Force Genetic Algorithm
-   forceGA = 0;
+% Set default to use FMINCON
    useFmincon = 1;
+   forceGA = 0;
    toolboxes = ver;
    toolboxes = cellstr(char(toolboxes.Name));
-   if forceGA && sum(strcmpi(toolboxes,'Global Optimization Toolbox'))
-       forceGA = 1;
-   else
-       forceGA = 0;
-       warning('Global Optimization Toolbox not present. NOT using GENETIC ALGORITHM');
+   if forceGA
+       if sum(strcmpi(toolboxes,'Global Optimization Toolbox'))
+           forceGA = 1;
+       else
+           forceGA = 0;
+           warning('Global Optimization Toolbox not present. NOT using GENETIC ALGORITHM');
+       end
    end
    
    if useFmincon && sum(strcmpi(toolboxes,'Optimization Toolbox'))
@@ -93,8 +96,8 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
         'Display','none',...
         'MaxIter',100000,...
         'MaxFunEvals',100000,...
-        'TolX',1e-6,...
-        'TolFun',1e-6, ...
+        'TolX',1e-12,...
+        'TolFun',1e-12, ...
         'OutputFcn',[],...
         'PlotFcns',[],...
         'UseParallel',0,...
@@ -115,14 +118,13 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
     % check number of elements
     assert(numel(inh_SSD)==numel(inh_pNC),'fitWeibull:InputSizeMismatch',...
         sprintf('Number of elements in inh_SSD [%d] must match number of elements in inh_pNC [%d]',numel(inh_SSD),numel(inh_pNC)))
-    nGroups = numel(inh_SSD);
     % Check weights
     if nargin == 3
         assert(numel(inh_SSD)==numel(inh_pNC),'fitWeibull:InputWeightsMismatch',...
             sprintf('Number of elements in inh_nTr [%d] must match number of elements in inh_SSD [%d]',numel(inh_nTr),numel(inh_SSD)))
         inh_nTr = inh_nTr(:);
     else
-        inh_nTr = ones(nGroups,1);
+        inh_nTr = ones(numel(inh_SSD),1);
     end
     
 %% Clean inputs and sort
@@ -132,10 +134,11 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
     nanIdx = isnan(ssd) | isnan(pNC);
     ssd(nanIdx) = [];
     pNC(nanIdx) = [];
+    weights(nanIdx) = [];
     % sort data
     [ssd, idx] = sort(ssd);
     pNC = pNC(idx);
-    
+    weights = weights(idx);
 %% Specify model parameters and bounds
     % alpha: time at which inhition function reaches 67% probability
     alpha = 200;
@@ -153,7 +156,8 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
     % force bounds max to 1 and/or min to 0
     if pNC(end) > .9 
         loBound(3) = 0.9;
-    elseif pNC(end) == 1
+    end
+    if pNC(end) == 1
         loBound(3) = 1;
     end
     if pNC(1) == 0
@@ -167,7 +171,7 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
 
 %% Use fmincon or fminsearchbnd depending on presence of optimization toolbox - GA is too slow
    if forceGA
-       fprintf('Using GA (Genetic Algorithm)...\n')
+       fprintf('Using GA (Genetic Algorithm)...\n') %#ok<UNRCH>
        % Genetic algorithm --> very, very slow... do not use
        gaOptions = searchOptions;
        if displayProgress(2)
@@ -176,41 +180,20 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
            gaOptions.PlotFcns=[];
        end
        [bestFitParams,minDiscrepancyFn,exitFlag,fitOutput] = ...
-           ga(@(param) weibullErr(param,ssd,pNC),numel(param),[],[],[],[],loBound,upBound,[],gaOptions);
+           ga(@(param) WeibullFx(param,ssd,pNC),numel(param),[],[],[],[],loBound,upBound,[],gaOptions);
    elseif useFmincon
        fprintf('Using FMINCON...\n')
        [bestFitParams,minDiscrepancyFn,exitFlag,fitOutput] = ...
-           fmincon(@(param) weibullErr(param,ssd,pNC),param,[],[],[],[],loBound,upBound,[],searchOptions);
+           fmincon(@(param) WeibullFx(param,ssd,pNC),param,[],[],[],[],loBound,upBound,[],searchOptions);
    else
        fprintf('Using FMINSEARCHBND...\n')
        [bestFitParams,minDiscrepancyFn,exitFlag,fitOutput] = ...
-           fminsearchbnd(@(param) weibullErr(param,ssd,pNC),param,loBound,upBound,searchOptions);
+           fminsearchbnd(@(param) WeibullFx(param,ssd,pNC),param,loBound,upBound,searchOptions);
    end
     
-   weibullY = weibullFx(bestFitParams,(0:max(inh_SSD)+10));
+   [~, weibullY] = WeibullFx(bestFitParams,(0:max(inh_SSD)+10));
 %%
 
-end
-
-function [sse, yPred] = weibullErr(coeffs, x, y)
-    % This is the objective function to minimize
-    % Sum of squared errors method (SSE):
-    %generate predictions
-    %yPred = coeffs(3) - ((exp(-((x./coeffs(1)).^coeffs(2)))).*(coeffs(3)-coeffs(4)));
-    yPred = weibullFx(coeffs,x);
-    % % If we need a decreasing Weibull, do that here
-    % if mean(diff(yData)) < 0
-    %     ypred = 1-ypred;
-    % end
-
-    % Sum of squared errors method (SSE):
-    %compute SSE
-    sse=sum((yPred-y).^2);
-end
-
-function [yVals] = weibullFx(coeffs,x)
-    yVals = coeffs(3) - ((exp(-((x./coeffs(1)).^coeffs(2)))).*(coeffs(3)-coeffs(4)));
-    yVals = yVals(:);
 end
 
 function stop = plotProgress(xOutputfcn, optimValues, state, varargin)

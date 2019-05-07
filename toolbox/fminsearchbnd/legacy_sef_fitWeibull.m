@@ -139,15 +139,12 @@ end
         'TolFun',1e-6, ...
         'FunValCheck','off',...
         'UseParallel','always',...
-        'OutputFcn', @firstOutputFunction,...  
-        'PlotFcns',@firstPlotFunction);
-  
+        'OutputFcn', [],...  
+        'PlotFcns',[]);
+        % 'OutputFcn', @firstOutputFunction,... 
+        % 'PlotFcns',@firstPlotFunction
+    [bestFitParams, minDiscrepancyFn, exitFlag, fitOutput] = SEF_Toolbox_fminsearchbnd(@(param) Weibull_error(inh_SSD, inh_pNC, param),param,lower_bounds,upper_bounds,searchOptions);
 
-    options = optimset('MaxIter', 100000,'MaxFunEvals', 100000,'useparallel','always');
-    %     options = optimset('MaxIter', 100,'MaxFunEvals', 100,'useparallel','always');
-        [bestFitParams, minDiscrepancyFn, exitFlag, fitOutput] = SEF_Toolbox_fminsearchbnd(@(param) Weibull_error(inh_SSD, inh_pNC, param),param,lower_bounds,upper_bounds,searchOptions);
-
-        
 %5)Debugging: test-plot
 alpha=bestFitParams(1);
 beta=bestFitParams(2);
@@ -159,7 +156,6 @@ end
 weibullY = ypred;
 % hold on
 % plot(1:max(inh_SSD)+10,weibullY,'marker','o','linestyle','none')
-
 
 end
 
