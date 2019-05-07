@@ -1,6 +1,9 @@
 function [beh,Task,TaskInfos] = onlineBeh(session,online)
 %ONLINEBEH Summary of this function goes here
 %   Detailed explanation goes here
+% Usage:
+% offline:
+% [beh,Task,TaskInfos] = onlineBeh('Joule-190424-130233',0);
 
 %% Set up session location and ProcLib Location
 monitorRefreshHz = 60;
@@ -136,8 +139,8 @@ beh.raceModel.inh_nTr = round(beh.inhFx.ssdStatsAll.GroupCount);
 
 
 % Create Inhibition Function Graph
-[beh.raceModel.WeibParams,beh.raceModel.minDiscrepancyFn,beh.raceModel.exitflag, beh.raceModel.output, beh.raceModel.weibullY] = ...
-    sef_fitWeibull(beh.raceModel.inh_SSD,beh.raceModel.inh_pNC,beh.raceModel.inh_nTr);
+[beh.raceModel.WeibullParams,beh.raceModel.WeibullErr,beh.raceModel.WeibullPredY,beh.raceModel.WeibullFit] = ...
+    fitWeibull(beh.raceModel.inh_SSD,beh.raceModel.inh_pNC,beh.raceModel.inh_nTr);
 
 % Wieb...
 
