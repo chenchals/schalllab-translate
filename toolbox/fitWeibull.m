@@ -1,9 +1,21 @@
 function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibull(inh_SSD, inh_pNC, inh_nTr, varargin)
 %FITWEIBULL Fit a Weibull function to the given data
-%
-% Given data which describe points on the x and y axes, Weibull uses a
-% genetic algorithm approach to find parameters which minimize sum of
-% squares error based on the Weibull function:
+% Usage:
+% Fastest:
+% [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] =
+%     fitWeibull(inh_SSD,inh_pNC,inh_nTr);
+% Slowest:
+% [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = ...
+%     fitWeibull(inh_SSD,inh_pNC,inh_nTr,'plotProgress','printProgress');
+% Plot error after iteration:
+% [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = ...
+%     fitWeibull(inh_SSD,inh_pNC,inh_nTr,'plotProgress')
+% Print best fit params for each iteration:
+% [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = ...
+%     fitWeibull(inh_SSD,inh_pNC,inh_nTr,'printProgress')
+% 
+% Given data which describe points on the x and y axes, firWeibull finds
+% parameters which minimize sum of squares error based on the Weibull function: 
 %
 %    yData = gamma - ((exp(-((xData./alpha).^beta))).*(gamma-delta))
 %
@@ -20,21 +32,45 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
 %   bestFitParams: a vector of optimum coeffecients of fit 
 %                  [alpha beta gamma delta]           
 %   minDiscrepancyFn: sum of squared errors at bestFitParams  
+%   weibullY: a vector of predicted Y-values that can be used to plot over
+%             the inhibition fx
+%   fitOutput: The output of the fitting routine (fminsearch)
+%   exitFlag: Status of the fit
 %
-%   see also GET_SSRT, GA, GAOPTIMSET
+%   see also FMINCON FMINSEARCHBND LEGACY_SEF_FITWEIBULL FMINSEARCH
 %
 % Author: david.c.godlove@vanderbilt.edu 
 % Date: 2010/10/23
 % Last modification: 2019/05/03
-
 % /////////////////// Modifications ////////////////////////
 % Revision History:
 % 2019/05/03 chenchal subraveti
 %       Adapted from: SEF_beh_fitWeibull.m
+%       Retained setting of bounds and initial params
 %       Removed option for 'pops' as it is not used.
 % 2019/05/07 chenchal subraveti
-%      If optimization toobox is not present: use fminsearchbnd
-%      If optimization toobox is present: Use fmincon
+%      If optimization toobox is not present: use fminsearchbnd (slower)
+%      If optimization toobox is present: Use fmincon (faster)
+%      Added 'printProgress' and 'plotProgress' options
+%      legacy_sef_fitweibull did *not* use genetic algoritm. Tried ga, but was extremely slow   
+
+%% Choose algorithm to use or Force Genetic Algorithm
+   forceGA = 0;
+   useFmincon = 1;
+   toolboxes = ver;
+   toolboxes = cellstr(char(toolboxes.Name));
+   if forceGA && sum(strcmpi(toolboxes,'Global Optimization Toolbox'))
+       forceGA = 1;
+   else
+       forceGA = 0;
+       warning('Global Optimization Toolbox not present. NOT using GENETIC ALGORITHM');
+   end
+   
+   if useFmincon && sum(strcmpi(toolboxes,'Optimization Toolbox'))
+       useFmincon = 1;
+   else
+       useFmincon = 0;
+   end
 
 %% options for display
    displayProgress = [0 0];
@@ -42,14 +78,17 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
       displayProgress = contains({'printProgress','plotProgress'},varargin,'IgnoreCase',true);
    end
 %% Search options
+     % UseParallel is truned off takes time to start and is slower
     searchOptions = struct(...
         'Display','none',...
         'MaxIter',100000,...
         'MaxFunEvals',100000,...
         'TolX',1e-6,...
         'TolFun',1e-6, ...
-        'FunValCheck','off',...
-        'UseParallel','always');
+        'OutputFcn',[],...
+        'PlotFcns',[],...
+        'UseParallel',0,...
+        'FunValCheck','off');  
      if displayProgress(1)
          searchOptions.Display = 'iter';
      end
@@ -117,13 +156,27 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
     pNC = cell2mat(pNC);
 
 %% Use fmincon or fminsearchbnd depending on presence of optimization toolbox - GA is too slow
-   if license('test','Optimization_Toolbox')
+   if forceGA
+       fprintf('Using GA (Genetic Algorithm)...\n')
+       % Genetic algorithm --> very, very slow... do not use
+       gaOptions = searchOptions;
+       if displayProgress(2)
+           gaOptions.PlotFcns=@gaplotbestf;
+       else
+           gaOptions.PlotFcns=[];
+       end
+       [bestFitParams,minDiscrepancyFn,exitFlag,fitOutput] = ...
+           ga(@(param) weibullErr(param,ssd,pNC),numel(param),[],[],[],[],loBound,upBound,[],gaOptions);
+   elseif useFmincon
        fprintf('Using FMINCON...\n')
-       [bestFitParams,minDiscrepancyFn,exitFlag,fitOutput] = fmincon(@(param) weibullErr(param,ssd,pNC),param,[],[],[],[],loBound,upBound,[],searchOptions);
+       [bestFitParams,minDiscrepancyFn,exitFlag,fitOutput] = ...
+           fmincon(@(param) weibullErr(param,ssd,pNC),param,[],[],[],[],loBound,upBound,[],searchOptions);
    else
        fprintf('Using FMINSEARCHBND...\n')
-       [bestFitParams,minDiscrepancyFn,exitFlag,fitOutput] = fminsearchbnd(@(param) weibullErr(param,ssd,pNC),param,loBound,upBound,searchOptions);
+       [bestFitParams,minDiscrepancyFn,exitFlag,fitOutput] = ...
+           fminsearchbnd(@(param) weibullErr(param,ssd,pNC),param,loBound,upBound,searchOptions);
    end
+    
    weibullY = weibullFx(bestFitParams,(0:max(inh_SSD)+10));
 %%
 
@@ -149,8 +202,6 @@ function [yVals] = weibullFx(coeffs,x)
     yVals = coeffs(3) - ((exp(-((x./coeffs(1)).^coeffs(2)))).*(coeffs(3)-coeffs(4)));
     yVals = yVals(:);
 end
-
-
 
 function stop = plotProgress(xOutputfcn, optimValues, state, varargin)
     % create an print function for the fMinSearch
