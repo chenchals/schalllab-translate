@@ -1,7 +1,7 @@
 function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibull(inh_SSD, inh_pNC, inh_nTr, varargin)
 %FITWEIBULL Fit a Weibull function to the given data
 % Usage:
-% Fastest:
+% Fastest:(default) using fmincon
 % [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] =
 %     fitWeibull(inh_SSD,inh_pNC,inh_nTr);
 % Slowest:
@@ -37,7 +37,7 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
 %   fitOutput: The output of the fitting routine (fminsearch)
 %   exitFlag: Status of the fit
 %
-%   see also FMINCON FMINSEARCHBND LEGACY_SEF_FITWEIBULL FMINSEARCH
+%   see also FMINCON FMINSEARCHBND GA LEGACY_SEF_FITWEIBULL FMINSEARCH
 %
 % Author: david.c.godlove@vanderbilt.edu 
 % Date: 2010/10/23
@@ -52,7 +52,17 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
 %      If optimization toobox is not present: use fminsearchbnd (slower)
 %      If optimization toobox is present: Use fmincon (faster)
 %      Added 'printProgress' and 'plotProgress' options
-%      legacy_sef_fitweibull did *not* use genetic algoritm. Tried ga, but was extremely slow   
+%      legacy_sef_fitweibull did *not* use genetic algoritm. Tried ga, but was extremely slow 
+%      Added flag for forceGA (to force Genetic Algorithm - checks for Global Optimization Toolbox) 
+%      Default is set to useFmincon (checks for Optimization Toolbox)
+%      If Optimization Toolbox is absent, then uses FMINSEARCHBND call
+%      Only one of the algorithms is used
+%      ForceGA flag is statically turned OFF. you have to edit the
+%      fitWeibull.m file to turn back on
+%      UseParallel is turned OFF since, all alogrithms are tested to run
+%      faster without the parallelization (more overhead for small dataset,
+%      I guess) 
+%
 
 %% Choose algorithm to use or Force Genetic Algorithm
    forceGA = 0;
