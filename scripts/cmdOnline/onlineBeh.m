@@ -4,6 +4,7 @@ function [beh,Task,TaskInfos] = onlineBeh()
 
 %% Set up session location and ProcLib Location
 monitorRefreshHz = 60;
+refreshTime = 1000/monitorRefreshHz;
 online = 0;
 %% Session
 session = 'Joule-190424-091618';
@@ -128,6 +129,18 @@ for ii = 1:numel(uniqSsdIdx)
     beh.trial.stopOutcomesBySsd{ii,'NonCancelErrPre'} = sum(t.sum_IsNonCancelledBrk(t.IsStopSignalOn==0,:));
     beh.trial.stopOutcomesBySsd{ii,'NonCancelErrPost'} = sum(t.sum_IsNonCancelledBrk(t.IsStopSignalOn==1,:));
 end
+
+%% Extract Race Model variables
+beh.raceModel.inh_SSD = round(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount * refreshTime);
+beh.raceModel.inh_pNC = beh.inhFx.values.pNC;
+beh.raceModel.inh_nTr = round(beh.inhFx.ssdStatsAll.GroupCount);
+
+
+% Create Inhibition Function Graph
+[beh.raceModel.WeibParams,beh.raceModel.minDiscrepancyFn,beh.raceModel.exitflag, beh.raceModel.output, beh.raceModel.weibullY] = ...
+    sef_fitWeibull(beh.raceModel.inh_SSD,beh.raceModel.inh_pNC,beh.raceModel.inh_nTr);
+
+% Wieb...
 
 %% Extract Reactions times
 rtBins = (0:550);
