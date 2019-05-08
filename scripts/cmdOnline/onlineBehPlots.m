@@ -54,7 +54,7 @@ title('Trial outcomes - Stacked [pre-SSD, post-SSD]')
 
 %% Inhibition fx plot - Using taskInfos.Is.... vars
 yscale = 1.18;
-[~,weibullY] = WeibullFx(beh.raceModel.WeibullParams,beh.raceModel.inh_SSD);
+[~,weibullY] = WeibullFx(beh.raceModel.Params,beh.raceModel.inh_SSD);
 if ~useOutcomesForInhibitionPlot
     axes(h_inhbFx)
     addPlotZoom();

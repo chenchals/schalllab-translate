@@ -16,9 +16,9 @@ if online
     processedDir = '';
 else
     drive = '/Volumes/schalllab'; 
-    sessionDir = fullfile(drive,'/Users/Chenchal/Tempo_NewCode/Joule',session);
+    sessionDir = fullfile(drive,'data/Joule/cmanding/beh/tdtRaw',session);
     proclibDir = fullfile(sessionDir,'ProcLib/CMD');
-    processedDir = fullfile(drive,'/Users/Chenchal/Tempo_NewCode/dataProcessed',session);
+    processedDir = fullfile(drive,'data/Joule/cmanding/beh/tdtMatlab',session);
 end
 
 %% Proclib
@@ -133,16 +133,15 @@ for ii = 1:numel(uniqSsdIdx)
 end
 
 %% Extract Race Model variables
-beh.raceModel.inh_SSD = round(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount * refreshTime);
-beh.raceModel.inh_pNC = beh.inhFx.values.pNC;
-beh.raceModel.inh_nTr = round(beh.inhFx.ssdStatsAll.GroupCount);
+inh_SSD = round(beh.inhFx.ssdStatsAll.mean_UseSsdVrCount * refreshTime);
+inh_pNC = beh.inhFx.values.pNC;
+inh_nTr = round(beh.inhFx.ssdStatsAll.GroupCount);
 
 % Create Inhibition Function Graph
-[beh.raceModel.WeibullParams,beh.raceModel.WeibullErr,beh.raceModel.WeibullPredY,beh.raceModel.WeibullFit] = ...
-    fitWeibull(beh.raceModel.inh_SSD,beh.raceModel.inh_pNC,beh.raceModel.inh_nTr);
+[beh.raceModel] = fitWeibull(inh_SSD,inh_pNC,inh_nTr);
 
-[beh.raceModel.oldWeibullParams,beh.raceModel.oldWeibullErr,beh.raceModel.oldWeibullPredY,beh.raceModel.oldWeibullFit] = ...
-    legacy_sef_fitWeibull(beh.raceModel.inh_SSD,beh.raceModel.inh_pNC,beh.raceModel.inh_nTr);
+[beh.oldRaceModel.Params,beh.oldRaceModel.Err,beh.oldRaceModel.PredY,beh.oldRaceModel.Fit] = ...
+    legacy_sef_fitWeibull(inh_SSD,inh_pNC,inh_nTr);
 
 %% Extract Reactions times
 rtBins = (0:550);

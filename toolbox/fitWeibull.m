@@ -1,4 +1,5 @@
-function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibull(inh_SSD, inh_pNC, inh_nTr, varargin)
+function [raceModel] = fitWeibull(inh_SSD, inh_pNC, inh_nTr, varargin)
+%function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag,raceModel] = fitWeibull(inh_SSD, inh_pNC, inh_nTr, varargin)
 %FITWEIBULL Fit a Weibull function to the given data
 % Usage:
 % Fastest:(default) using fmincon
@@ -64,6 +65,17 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
 %      I guess) 
 %
 
+%% Create output struct
+   fields = {'inh_SSD','inh_pNC','inh_nTr',... % input values
+             'fx','Params','Err',... % function best fit-params, sse
+             'PredY','Fit','ExitFlag'... % fit results
+       };
+   raceModel = cell2struct(cell(numel(fields),1),fields);
+   raceModel.fx = @WeibullFx;
+   raceModel.inh_SSD = inh_SSD;
+   raceModel.inh_pNC = inh_pNC;
+   raceModel.inh_nTr = inh_nTr;
+   
 %% Choose algorithm to use or Force Genetic Algorithm
 % Set default to use FMINCON
    useFmincon = 1;
@@ -192,7 +204,12 @@ function [bestFitParams,minDiscrepancyFn,weibullY,fitOutput,exitFlag] = fitWeibu
    end
     
    [~, weibullY] = WeibullFx(bestFitParams,(0:max(inh_SSD)+10));
-%%
+%% Populate output struct
+   raceModel.Params = bestFitParams;
+   raceModel.Err = minDiscrepancyFn;
+   raceModel.PredY = weibullY;
+   raceModel.Fit = fitOutput;
+   raceModel.ExitFlag = exitFlag;
 
 end
 
