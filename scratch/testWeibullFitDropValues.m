@@ -35,23 +35,12 @@ prematRespUnsuccesfulStop_preSSD =   TaskInfos.IsStopSignalOn == 0 & (TaskInfos.
 
 
 
+inh_SSD = beh.raceModel.inh_SSD;
+inh_pNC = beh.raceModel.inh_pNC;
+inh_nTr = beh.raceModel.inh_nTr;
 
 
 W.raceModel = fitWeibull(inh_SSD,inh_pNC,inh_nTr);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 %% drop points....
