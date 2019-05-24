@@ -9,3 +9,5 @@ dataProcessed*
 local-data
 translateTdt/getCodeDefs.asv
 translateTdt/TDTTranslator.asv
+scratch/eMouseKS2/drift_simulations/*
+

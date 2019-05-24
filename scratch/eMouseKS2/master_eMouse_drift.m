@@ -1,9 +1,9 @@
-basePath = '/Users/subravcr/Projects/lab-schall/schalllab-translate/scratch/eMouseKS2';
-npyMatlabPath = '/Users/subravcr/Projects/lab-schall/npy-matlab';
-addpath(npyMatlabPath);
+basePath = '~/Projects/lab-schall/schalllab-translate/scratch/eMouseKS2';
+npyMatlabPath = '~/Projects/lab-schall/npy-matlab';
+addpath(genpath(npyMatlabPath));
 %KS2 path -- also has default waveforms for the simulation
 % add Kilosort2 paths to the matlab path
-KS2path = '/Users/subravcr/Projects/lab-schall/Kilosort2';
+KS2path = '~/Projects/lab-schall/Kilosort2';
 if ~contains(matlabpath,'/Kilosort2')
     addpath(KS2path);
     dList = dir(KS2path);
@@ -14,6 +14,7 @@ if ~contains(matlabpath,'/Kilosort2')
 end
 % path to whitened, filtered proc file (on a fast SSD)
 rootH = [basePath '/kilosort_datatemp'];
+if ~exist(rootH,'dir'), mkdir(rootH), end
 % path to config file; if running the default config, no need to change.
 pathToYourConfigFile = [basePath]; % path to config file
 % Run the configuration file, it builds the structure of options (ops)
@@ -22,7 +23,7 @@ run(fullfile(pathToYourConfigFile, 'config_eMouse_drift_KS2.m'))
 %%%%%%%%%%%%%%
 useGPU = 1; % do you have a GPU? Kilosorting 1000sec of 32chan simulated data takes 55 seconds on gtx 1080 + M2 SSD.
 useParPool = 1; % use parpool; will speed up simulation if local cluater has > 10 cores.
-makeNewData = 1; % set this to 0 to just resort a previously created data set
+makeNewData = 0; % set this to 0 to just resort a previously created data set
 sortData = 1;
 runBenchmark = 1; %set to 1 to compare sorted data to ground truth for the simulation
 
