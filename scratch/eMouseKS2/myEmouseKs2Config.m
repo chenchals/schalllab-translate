@@ -1,9 +1,16 @@
 % Modified to use DataAdapter
-s% Channel map file
+% Channel map file
 ops.chanMapFile='/home/subravcr/Projects/lab-schall/schalllab-translate/scratch/eMouseKS2/chanMap_3A_64sites.mat';
 
 % sampling rate
 ops.fs = 30000;
+
+% time range in seconds of data to process
+%ops.trange      = [0 Inf]; % TIME RANGE IN SECONDS TO PROCESS
+ops.trange      = [0 100]; % TIME RANGE IN SECONDS TO PROCESS
+
+% sorting type ...??
+ops.sorting     = 1; % type of sorting, 2 is by rastermap, 1 is old
 
 % frequency for high pass filtering (150)
 ops.fshigh = 150;

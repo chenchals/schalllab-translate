@@ -3,13 +3,15 @@ classdef EMouseDataAdapter < DataAdapter
     %   Detailed explanation goes here
     
     properties (Access=protected)
-     totalNumberOfChannels = 34; %synthetoc data has 34 channels
+     %totalNumberOfChannels = 34; %synthetic data has 34 channels
+     totalNumberOfChannels; %synthetic data KS1 had 34 channels
     end
     
     methods
         % CTOR
-        function obj = EMouseDataAdapter(source)
+        function obj = EMouseDataAdapter(source, nChannels)
             obj.dataSource = source;
+            obj.totalNumberOfChannels = nChannels;
             updateFileHandles(obj);
         end
         

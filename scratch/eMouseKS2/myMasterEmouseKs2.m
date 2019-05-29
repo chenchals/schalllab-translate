@@ -38,9 +38,7 @@ else
     NchanTOT = numel(chanMap);
     ops.fs = fs;
 end
-ops.sorting     = 1; % type of sorting, 2 is by rastermap, 1 is old
 ops.NchanTOT    = NchanTOT; % total number of channels in your recording
-ops.trange      = [0 Inf]; % TIME RANGE IN SECONDS TO PROCESS
 
 %% path to whitened, filtered proc file (on a fast SSD)
 rootH = [basePath '/kilosort_datatemp'];
@@ -55,11 +53,10 @@ ops.fbinary     = fullfile(rootZ,  'sim_binary.imec.ap.bin');
 
 %% Data adapter for reading data
 ops.recordingSystem     = 'emouse'; %emouse, tdt
+ops.dataAdapter = DataAdapter.newDataAdapter(ops.recordingSystem,ops.fbinary,ops.NchanTOT);
 
 ops.dataTypeBytes       = 2; % datatpe for the sample point -int16=2 4=single
 ops.dataTypeString      = 'int16'; % datatype of sample point - 'int16' or 'single'
-ops.percentSamplesToUse = 20; %percentSamplesToUse ; % of data per channel to use. useful for troubleshooting purposes
-
 
 %% Setup for Matlab for processing
 useGPU = 1; % do you have a GPU? Kilosorting 1000sec of 32chan simulated data takes 55 seconds on gtx 1080 + M2 SSD.
@@ -87,7 +84,7 @@ if( sortData )
         gpuDevice(1);   %re-initialize GPU
 
         % preprocess data to create temp_wh.dat
-        rez = preprocessDataSub(ops);
+        rez = preprocessDataKs2(ops);
 
         % pre-clustering to re-order batches by depth
         rez = clusterSingleBatches(rez);

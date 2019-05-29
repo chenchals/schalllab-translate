@@ -23,12 +23,12 @@ classdef TdtDataAdapter < DataAdapter
         end
         
         % Batch read datapoints
-        function [ buffer ] = batchRead(obj, readOffsetAllChan, nChannels, nSamples, dataTypeString, chOffset)
+        function [ buffer ] = batchRead(obj, readOffsetAllChan, nChannels, nSamples, dataTypeString)
             checkChannelCount(obj, nChannels);
             buffer = zeros(nChannels, nSamples);
             headerBytes = 40;
             readOffset = (readOffsetAllChan/nChannels) + headerBytes;
-            myChannels = (1:nChannels)+chOffset;
+            myChannels = (1:nChannels);
             for ch = myChannels
                 fid = obj.fidArray(ch);
                 fseek(fid,readOffset,'bof');

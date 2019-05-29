@@ -1,4 +1,4 @@
-function [rez, DATA] = preprocessDataSub(ops)
+function [rez, DATA] = preprocessDataKs2(ops)
 tic;
 ops.nt0 	= getOr(ops, {'nt0'}, 61);
 ops.nt0min  = getOr(ops, 'nt0min', ceil(20 * ops.nt0/61));
@@ -6,13 +6,28 @@ ops.nt0min  = getOr(ops, 'nt0min', ceil(20 * ops.nt0/61));
 NT       = ops.NT ;
 NchanTOT = ops.NchanTOT;
 
-bytes = get_file_size(ops.fbinary);
-nTimepoints = floor(bytes/NchanTOT/2);
+dataTypeBytes = ops.dataTypeBytes; %2; %int16 4=single
+dataTypeString = ops.dataTypeString; %'int16'; % int16,
+
+%% Change for DataAdapter
+if ~isfield(ops,'dataAdapter')
+    bytes = get_file_size(ops.fbinary);
+    nTimepoints = floor(bytes/NchanTOT/2);
+else
+    dataAdapter = ops.dataAdapter;
+    nTimepoints = dataAdapter.getSampsToRead(NchanTOT);
+    ops.maxSampsToRead = nTimepoints;
+end
+
+%% Range of times to determine the samples to read
+% ops.trange = [beginSampleSeconds endSampleSeconds]
+
 ops.tstart = ceil(ops.trange(1) * ops.fs);
 ops.tend   = min(nTimepoints, ceil(ops.trange(2) * ops.fs));
 ops.sampsToRead = ops.tend-ops.tstart;
 ops.twind = ops.tstart * NchanTOT*2;
 
+% Batches to read
 Nbatch      = ceil(ops.sampsToRead /(NT-ops.ntbuff));
 ops.Nbatch = Nbatch;
 
@@ -38,7 +53,7 @@ end
 ops.Nchan = numel(chanMap);
 ops.Nfilt = getOr(ops, 'nfilt_factor', 4) * ops.Nchan;
 
-rez.ops         = ops;
+rez.ops = ops;
 rez.xc = xc;
 rez.yc = yc;
 
@@ -88,9 +103,14 @@ for ibatch = 1:Nbatch
     else
         ioffset = ops.ntbuff;
     end
-    fseek(fid, offset, 'bof');
     
-    buff = fread(fid, [NchanTOT NTbuff], '*int16');
+    if ~isfield(ops,'dataAdapter')
+        fseek(fid, offset, 'bof');
+        buff = fread(fid, [NchanTOT NTbuff], '*int16');
+    else
+        buff = dataAdapter.batchRead(offset,ops.NchanTOT, NTbuff, dataTypeString);
+    end
+        
     if isempty(buff)
         break;
     end

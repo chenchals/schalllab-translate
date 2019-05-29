@@ -23,10 +23,14 @@ classdef (Abstract=true) DataAdapter < handle
     end
     
     methods (Static)
-        function adapter = newDataAdapter(recordingSystem, source)
+        function adapter = newDataAdapter(recordingSystem, source, varargin)
             switch lower(recordingSystem)
                 case 'emouse'
-                    adapter = EMouseDataAdapter(source);
+                    nChanTot = 34; % default for KS1
+                    if numel(varargin)>0
+                        nChanTot = varargin{1};
+                    end
+                    adapter = EMouseDataAdapter(source,nChanTot);
                 case 'tdt'
                     adapter = TdtDataAdapter(source);
                 otherwise
