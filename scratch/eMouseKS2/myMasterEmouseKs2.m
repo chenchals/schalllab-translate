@@ -52,6 +52,9 @@ if ~exist(resultsPath,'dir'), mkdir(resultsPath), end
 ops.rootZ = resultsPath;
 % find the binary data file here
 ops.fbinary     = fullfile(basePath, '/drift_simulations/test4',  'sim_binary.imec.ap.bin');
+% valid for eMouse only?
+ops.groundTruthFile = fullfile(basePath, '/drift_simulations/test4', 'eMouseGroundTruth.mat'); 
+ops.simulationRecordFile = fullfile(basePath, '/drift_simulations/test4','eMouseSimRecord.mat');
 
 %% Data adapter for reading data
 ops.recordingSystem     = 'emouse'; %emouse, tdt
@@ -137,6 +140,5 @@ end
 
 if runBenchmark
  load(fullfile(resultsPath, 'rezFinal.mat'));
- benchmark_drift_simulation(rez, fullfile(resultsPath, 'eMouseGroundTruth.mat'),...
-     fullfile(resultsPath,'eMouseSimRecord.mat'));
+ benchmark_drift_simulation(rez, ops.groundTruthFile,ops.simulationRecordFile);
 end
