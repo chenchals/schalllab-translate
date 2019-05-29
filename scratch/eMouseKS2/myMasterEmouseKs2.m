@@ -24,20 +24,21 @@ pathToYourConfigFile = basePath; % path to config file
 run(fullfile(pathToYourConfigFile, 'myEmouseKs2Config.m'))
 
 %% Channel Map file
-% Create for this simulation; default is a small 64 site probe with imec 3A geometry.
-fpath    = [basePath '/drift_simulations/test4/']; % where on disk do you want the simulation? ideally an SSD...
-if ~exist(fpath, 'dir'); mkdir(fpath); end
+% default is a small 64 site probe with imec 3A geometry.
 if ~isfield(ops,'chanMapFile')
+    % where on disk do you want the simulation? ideally an SSD...
+    chanMapPath    = [basePath '/drift_simulations/channelMaps/']; 
+    if ~exist(chanMapPath, 'dir'); mkdir(chanMapPath); end
     NchanTOT = 64;
-    chanMapName = make_eMouseChannelMap_3A_short(fpath, NchanTOT);
-    ops.chanMap     = fullfile(basePath, chanMapName);
-else
-    ops.chanMap = ops.chanMapFile;
-    [~,chanMapName] = fileparts(ops.chanMap);
-    load(ops.chanMap)
-    NchanTOT = numel(chanMap);
-    ops.fs = fs;
+    chanMapName = make_eMouseChannelMap_3A_short(chanMapPath, NchanTOT);
+    ops.chanMapFile     = fullfile(basePath, chanMapName);
 end
+
+ops.chanMap = ops.chanMapFile;
+[~,chanMapName] = fileparts(ops.chanMap);
+load(ops.chanMap)
+NchanTOT = numel(chanMap);
+ops.fs = fs;
 ops.NchanTOT    = NchanTOT; % total number of channels in your recording
 
 %% path to whitened, filtered proc file (on a fast SSD)
@@ -45,11 +46,11 @@ rootH = [basePath '/kilosort_datatemp'];
 if ~exist(rootH,'dir'), mkdir(rootH), end
 ops.fproc       = fullfile(rootH, 'temp_wh.dat'); % proc file on a fast SSD
 
-%% path to binary data file
-% find the binary file in this folder
-rootZ     = fpath;
-ops.rootZ = rootZ;
-ops.fbinary     = fullfile(rootZ,  'sim_binary.imec.ap.bin');
+%% path to binary data file and results
+resultsPath     = [basePath '/drift_simulations/test5/'];
+ops.rootZ = resultsPath;
+% find the binary data file here
+ops.fbinary     = fullfile(basePath, '/drift_simulations/test4',  'sim_binary.imec.ap.bin');
 
 %% Data adapter for reading data
 ops.recordingSystem     = 'emouse'; %emouse, tdt
@@ -73,7 +74,7 @@ runBenchmark = 1; %set to 1 to compare sorted data to ground truth for the simul
 % or test the limits of the sorting with different parameters.
 
 if( makeNewData )
-    make_eMouseData_drift(fpath, KS2path, chanMapName, useGPU, useParPool);
+    make_eMouseData_drift(chanMapPath, KS2path, chanMapName, useGPU, useParPool);
 end
 %
 % Run kilosort2 on the simulated data
@@ -107,17 +108,17 @@ if( sortData )
         rez = set_cutoff(rez);
          
         % this saves to Phy
-        rezToPhy(rez, rootZ);
+        rezToPhy(rez, resultsPath);
 
         % discard features in final rez file (too slow to save)
         rez.cProj = [];
         rez.cProjPC = [];
         
-        fname = fullfile(rootZ, 'rezFinal.mat');
+        fname = fullfile(resultsPath, 'rezFinal.mat');
         save(fname, 'rez', '-v7.3');
         
         sum(rez.good>0)
-        fileID = fopen(fullfile(rootZ, 'cluster_group.tsv'),'w');
+        fileID = fopen(fullfile(resultsPath, 'cluster_group.tsv'),'w');
         fprintf(fileID, 'cluster_id%sgroup', char(9));
         fprintf(fileID, char([13 10]));
         for k = 1:length(rez.good)
@@ -129,12 +130,12 @@ if( sortData )
         fclose(fileID);
         
         % remove temporary file
-        % delete(ops.fproc);
+        delete(ops.fproc);
 end
 
 
 if runBenchmark
- load(fullfile(fpath, 'rezFinal.mat'));
- benchmark_drift_simulation(rez, fullfile(fpath, 'eMouseGroundTruth.mat'),...
-     fullfile(fpath,'eMouseSimRecord.mat'));
+ load(fullfile(resultsPath, 'rezFinal.mat'));
+ benchmark_drift_simulation(rez, fullfile(resultsPath, 'eMouseGroundTruth.mat'),...
+     fullfile(resultsPath,'eMouseSimRecord.mat'));
 end

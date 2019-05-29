@@ -1,6 +1,6 @@
 % Modified to use DataAdapter
 % Channel map file
-ops.chanMapFile='/home/subravcr/Projects/lab-schall/schalllab-translate/scratch/eMouseKS2/chanMap_3A_64sites.mat';
+ops.chanMapFile='/home/subravcr/Projects/lab-schall/schalllab-translate/scratch/eMouseKS2/channelMaps/chanMap_3A_64sites.mat';
 
 % sampling rate
 ops.fs = 30000;
