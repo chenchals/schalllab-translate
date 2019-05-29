@@ -35,7 +35,14 @@ ops.GPU                 = 1; % has to be 1, no CPU version yet, sorry
 % ops.Nfilt               = 1024; % max number of clusters
 ops.nfilt_factor        = 4; % max number of clusters per good channel (even temporary ones)
 ops.ntbuff              = 64;    % samples of symmetrical buffer for whitening and spike detection
-ops.NT                  = 64*1024+ ops.ntbuff; % must be multiple of 32 + ntbuff. This is the batch size (try decreasing if out of memory). 
+%ops.NT                  = 64*1024+ ops.ntbuff; % must be multiple of 32 + ntbuff. This is the batch size (try decreasing if out of memory). 
+% GPU Memory limitation : 
+%    6GB use: 64*1024*1024*64  = 4.3GB
+%   11GB use: 64*1024*1024*128 = 8.6GB 
+%   16GB use: 64*1024*1024*192 = 12.9GB
+% intmax('int32')
+ops.NT                  = 64*1024*8 + ops.ntbuff; % must be multiple of 32 + ntbuff. This is the batch size (try decreasing if out of memory). 
+
 ops.whiteningRange      = 32; % number of channels to use for whitening each channel
 ops.nSkipCov            = 25; % compute whitening matrix from every N-th batch
 ops.scaleproc           = 200;   % int16 scaling of whitened data

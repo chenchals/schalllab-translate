@@ -21,16 +21,17 @@ basePath = '~/Projects/lab-schall/schalllab-translate/scratch/eMouseKS2';
 pathToYourConfigFile = basePath; % path to config file
 % Run the configuration file, it builds the structure of options (ops)
 %run(fullfile(pathToYourConfigFile, 'config_eMouse_drift_KS2.m'))
-run(fullfile(pathToYourConfigFile, 'myEmouseKS2Config.m'))
+run(fullfile(pathToYourConfigFile, 'myEmouseKs2Config.m'))
 
 %% Channel Map file
 % Create for this simulation; default is a small 64 site probe with imec 3A geometry.
-%NchanTOT = 64;
-%chanMapName = make_eMouseChannelMap_3A_short(fpath, NchanTOT);
-ops.chanMap     = fullfile(basePath, 'chanMap_3A_64sites.mat');
+fpath    = [basePath '/drift_simulations/test3/']; % where on disk do you want the simulation? ideally an SSD...
+if ~exist(fpath, 'dir'); mkdir(fpath); end
 
-NchanTot        = load(ops.chanMap);
-NchanTot        = numel(NchanTot.chanMap);
+NchanTOT = 64;
+chanMapName = make_eMouseChannelMap_3A_short(fpath, NchanTOT);
+ops.chanMap     = fullfile(basePath, chanMapName);
+
 ops.sorting     = 1; % type of sorting, 2 is by rastermap, 1 is old
 ops.NchanTOT    = NchanTOT; % total number of channels in your recording
 ops.trange      = [0 Inf]; % TIME RANGE IN SECONDS TO PROCESS
@@ -42,8 +43,6 @@ ops.fproc       = fullfile(rootH, 'temp_wh.dat'); % proc file on a fast SSD
 
 %% path to binary data file
 % find the binary file in this folder
-fpath    = [basePath '/drift_simulations/test3/']; % where on disk do you want the simulation? ideally an SSD...
-if ~exist(fpath, 'dir'); mkdir(fpath); end
 rootZ     = fpath;
 ops.rootZ = rootZ;
 ops.fbinary     = fullfile(rootZ,  'sim_binary.imec.ap.bin');
@@ -91,7 +90,6 @@ if( sortData )
         % learnAndSolve8;
         rez = learnAndSolve8b(rez);
         
-
         % final splits
         rez = find_merges(rez, 1);
         
