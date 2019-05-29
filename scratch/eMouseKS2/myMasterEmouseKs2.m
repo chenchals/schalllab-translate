@@ -48,6 +48,7 @@ ops.fproc       = fullfile(rootH, 'temp_wh.dat'); % proc file on a fast SSD
 
 %% path to binary data file and results
 resultsPath     = [basePath '/drift_simulations/test5/'];
+if ~exist(resultsPath,'dir'), mkdir(resultsPath), end
 ops.rootZ = resultsPath;
 % find the binary data file here
 ops.fbinary     = fullfile(basePath, '/drift_simulations/test4',  'sim_binary.imec.ap.bin');
