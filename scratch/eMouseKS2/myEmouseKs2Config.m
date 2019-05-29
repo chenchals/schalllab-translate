@@ -1,34 +1,6 @@
 % Modified to use DataAdapter
-clear ops
-
-% data paths
-basePath =  '~/Projects/lab-schall/schalllab-translate/scratch/eMouseKS2'; % root dir for processed files
-% This will be the session path for processed data also
-fpath    = [basePath '/drift_simulations/test/']; % where on disk do you want the simulation? ideally an SSD...
-% only for generating simulated data
-if ~exist(fpath, 'dir'); mkdir(fpath); end
-
-ops.root                = fpath; % 'openEphys' only: where raw files are
-ops.datatype            = 'dat';  % binary ('dat', 'bin') or 'openEphys'
-ops.fbinary             = fullfile(fpath, 'sim_binary.imec.ap.bin'); % will be created for 'openEphys'
-ops.fproc               = fullfile(fpath, 'temp_wh.dat'); % residual from RAM of preprocessed data
-
-% define the channel map as a filename (string) or simply an array
-ops.chanMap               = fullfile(ops.root, 'chanMap_3A_64sites.mat'); % make this file using make_eMouseChannelMap_3A_short.m
-% ops.chanMap             = 'D:\GitHub\KiloSort2\configFiles\neuropixPhase3A_kilosortChanMap.mat';
-% ops.chanMap = 1:ops.Nchan; % treated as linear probe if no chanMap file
-
-ops.recordingSystem     = 'emouse'; %emouse, tdt
-
-ops.dataTypeBytes       = 2; % datatpe for the sample point -int16=2 4=single
-ops.dataTypeString      = 'int16'; % datatype of sample point - 'int16' or 'single'
-ops.percentSamplesToUse = 20; %percentSamplesToUse ; % of data per channel to use. useful for troubleshooting purposes
-
-% for ops.GPU see below, no CPU sopport for KS2
-ops.parfor              = 1; % whether to use parfor to accelerate some parts of the algorithm
-ops.verbose             = 1; % whether to print command line progress
-ops.showfigures         = 1; % whether to plot figures during optimization
-
+s% Channel map file
+ops.chanMapFile='/home/subravcr/Projects/lab-schall/schalllab-translate/scratch/eMouseKS2/chanMap_3A_64sites.mat';
 
 % sampling rate
 ops.fs = 30000;
@@ -76,7 +48,6 @@ ops.reorder         = 1;       % whether to reorder batches for drift correction
 ops.nskip           = 25;  % how many batches to skip for determining spike PCs
 
 ops.GPU                 = 1; % has to be 1, no CPU version yet, sorry;  whether to run this code on an Nvidia GPU (much faster, mexGPUall first)
-% ops.Nfilt               = 1024; % max number of clusters
 ops.nfilt_factor        = 4; % max number of clusters per good channel (even temporary ones)
 ops.ntbuff              = 64;    % samples of symmetrical buffer for whitening and spike detection
 ops.NT                  = 64*1024+ ops.ntbuff; % must be multiple of 32 + ntbuff. This is the batch size (try decreasing if out of memory).

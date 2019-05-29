@@ -25,13 +25,19 @@ run(fullfile(pathToYourConfigFile, 'myEmouseKs2Config.m'))
 
 %% Channel Map file
 % Create for this simulation; default is a small 64 site probe with imec 3A geometry.
-fpath    = [basePath '/drift_simulations/test3/']; % where on disk do you want the simulation? ideally an SSD...
+fpath    = [basePath '/drift_simulations/test4/']; % where on disk do you want the simulation? ideally an SSD...
 if ~exist(fpath, 'dir'); mkdir(fpath); end
-
-NchanTOT = 64;
-chanMapName = make_eMouseChannelMap_3A_short(fpath, NchanTOT);
-ops.chanMap     = fullfile(basePath, chanMapName);
-
+if ~isfield(ops,'chanMapFile')
+    NchanTOT = 64;
+    chanMapName = make_eMouseChannelMap_3A_short(fpath, NchanTOT);
+    ops.chanMap     = fullfile(basePath, chanMapName);
+else
+    ops.chanMap = ops.chanMapFile;
+    [~,chanMapName] = fileparts(ops.chanMap);
+    load(ops.chanMap)
+    NchanTOT = numel(chanMap);
+    ops.fs = fs;
+end
 ops.sorting     = 1; % type of sorting, 2 is by rastermap, 1 is old
 ops.NchanTOT    = NchanTOT; % total number of channels in your recording
 ops.trange      = [0 Inf]; % TIME RANGE IN SECONDS TO PROCESS
@@ -58,7 +64,7 @@ ops.percentSamplesToUse = 20; %percentSamplesToUse ; % of data per channel to us
 %% Setup for Matlab for processing
 useGPU = 1; % do you have a GPU? Kilosorting 1000sec of 32chan simulated data takes 55 seconds on gtx 1080 + M2 SSD.
 useParPool = 1; % use parpool; will speed up simulation if local cluater has > 10 cores.
-makeNewData = 1; % set this to 0 to just resort a previously created data set
+makeNewData = 0; % set this to 0 to just resort a previously created data set
 sortData = 1;
 runBenchmark = 1; %set to 1 to compare sorted data to ground truth for the simulation
 
