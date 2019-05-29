@@ -47,15 +47,15 @@ if ~exist(rootH,'dir'), mkdir(rootH), end
 ops.fproc       = fullfile(rootH, 'temp_wh.dat'); % proc file on a fast SSD
 
 %% path to binary data file and results
-resultsPath     = [basePath '/drift_simulations/test3/'];
+resultsPath     = [basePath '/drift_simulations/test2/'];
 if ~exist(resultsPath,'dir'), mkdir(resultsPath), end
 ops.rootZ = resultsPath;
 % find the binary data file here
-simulationPath = fullfile(basePath, '/drift_simulations/data');
-ops.fbinary     = fullfile(simulationPath,'sim_binary.imec.ap.bin');
+simulatedath = 
+ops.fbinary     = fullfile(basePath, '/drift_simulations/test4',  'sim_binary.imec.ap.bin');
 % valid for eMouse only?
-ops.groundTruthFile = fullfile(simulationPath,'eMouseGroundTruth.mat'); 
-ops.simulationRecordFile = fullfile(simulationPath,'eMouseSimRecord.mat');
+ops.groundTruthFile = fullfile(basePath, '/drift_simulations/test4', 'eMouseGroundTruth.mat'); 
+ops.simulationRecordFile = fullfile(basePath, '/drift_simulations/test4','eMouseSimRecord.mat');
 
 %% Data adapter for reading data
 ops.recordingSystem     = 'emouse'; %emouse, tdt
