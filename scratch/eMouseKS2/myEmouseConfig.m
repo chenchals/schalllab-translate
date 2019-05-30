@@ -1,13 +1,35 @@
-% Modified to use DataAdapter
+%% Paths
+projectPath = '~/Projects/lab-schall/schalllab-translate-develop';
+resultsBasePath = '~/Projects/lab-schall/schalllab-translate-develop/tempDataProcessed';
 % Channel map file
-ops.chanMapFile='/home/subravcr/Projects/lab-schall/schalllab-translate/scratch/eMouseKS2/channelMaps/chanMap_3A_64sites.mat';
+ops.chanMapPath = fullfile(projectPath,'toolbox/spk-cluster/channelMaps');
+ops.chanMapName='eMouse_64_channels.mat';
+% Data session / file
+ops.dataPath = fullfile(projectPath,'tempData');
+ops.dataSession = 'eMouseSimData';
+ops.dataSessionFile = fullfile(ops.dataPath, ops.dataSession,'sim_binary.imec.ap.bin');
+% valid for eMouse only?
+ops.groundTruthFile = fullfile(ops.dataSession,'eMouseGroundTruth.mat'); 
+ops.simulationRecordFile = fullfile(ops.dataSession,'eMouseSimRecord.mat');
+% Results / output dir / files
+ops.resultsPhyPath = fullfile(resultsBasePath, ops.dataSession, 'phy');
+ops.resultsMatPath = fullfile(resultsBasePath, ops.dataSession);
+% path to whitened filtered proc, after processing this file is deleted
+ops.fproc = fullfile(ops.resultsPhyPath,'temp_wh.dat');
+% Extract results as different channel files with names containg
+% DSP01a,...,DSP32d.. that has spike times, waveforms etc vars
+ops.resultsExtractChannels = 1;
+%% Processing setup
+% Modified to use DataAdapter
+ops.recordingSystem     = 'emouse'; %emouse, tdt
 
 % sampling rate
 ops.fs = 30000;
 
 % time range in seconds of data to process
-ops.trange      = [0 Inf]; % TIME RANGE IN SECONDS TO PROCESS
-%ops.trange      = [0 100]; % TIME RANGE IN SECONDS TO PROCESS
+% TIME RANGE IN SECONDS TO PROCESS
+ops.trange      = [0 Inf]; 
+%ops.trange      = [0 100];
 
 % sorting type ...??
 ops.sorting     = 1; % type of sorting, 2 is by rastermap, 1 is old

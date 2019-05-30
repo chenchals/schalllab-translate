@@ -1,8 +1,12 @@
-function make_eMouseData_drift(fpath, KS2path, chanMapName, useGPU, useParPool)
+function [binaryDataFile,groundTruthFile,simRecordFile] = myMakeEmouseData(simulDataPath, KS2path, chanMapFile, useGPU, useParPool)
 % this script makes a binary file of simulated eMouse recording
 % written by Jennifer Colonell, based on Marius Pachitariu's original eMouse simulator for Kilosort 1
 % Adds the ability to simulate simple drift of the tissue relative to the
 % probe sites.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+binaryDataFile = fullfile(simulDataPath, 'sim_binary.imec.ap.bin');
+groundTruthFile = fullfile(simulDataPath, 'eMouseGroundTruth.mat');
+simRecordFile = fullfile(simulDataPath, 'eMouseSimRecord.mat');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % you can play with the parameters just below here to achieve a signal more similar to your own data!!! 
 norm_amp  = 20; % if 0, use amplitudes of input waveforms; if > 0, set all amplitudes to norm_amp*rms_noise
@@ -64,7 +68,7 @@ end
 %other parameters
 bPair     = 0; % set to 0 for randomly distributed units, 1 for units in pairs
 pairDist  = 50; % distance between paired units
-bPlot     = 0; %make diagnostic plots of waveforms
+bPlot     = 1; %make diagnostic plots of waveforms
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 rng('default');
@@ -72,9 +76,7 @@ rng(101);  % set the seed of the random number generator; default = 101
 
 bitPerUV = 0.42667; %imec 3A or 3B, gain = 500
 
-%  load channel map file built with make_eMouseChannelMap_3A_short.m
-
-chanMapFile = fullfile(fpath, chanMapName);
+%  load channel map file built with make_eMouseChannelMap.m
 load(chanMapFile);
 
 
@@ -98,20 +100,13 @@ for i = 1:nUniqueFiles
     end
 end
 
-
 nFile = length(filePath);
-
-% for i = 1: nFile
-%     fprintf('%s\n',filePath{i});
-% end
-
 
 NN = 0; %number of units included
 uF = {}; %cell array for interpolants
 uR = []; %array of max/min X and Y for points that can be interpolateed
          %structure with uR.maxX, uR.maxY, uR.minX, uR.minY
 origLabel = []; %array of original labels
-
 
 for fileIndex = 1:nFile
     % generate waveforms for the simulation
@@ -131,7 +126,6 @@ for fileIndex = 1:nFile
         fprintf( 'Skipping to next file.');
         continue
     end
-    
     
     nUnit = length(uData.uColl);
     unitRange = NN+1:NN+nUnit;  %for now, using all the units we have
@@ -227,11 +221,6 @@ end
 monSite = zeros(1,NN);
 for i = 1:NN
     [currWav, uSites] = intWav( uF{i}, uX(i), uY(i), uR(i), xcoords, ycoords, connected, nt );
-%         fprintf( 'site %d: ',i);
-%         for uCount = 1:length(uSites)
-%             fprintf( '%d,', uSites(uCount));         
-%         end
-%         fprintf( '\n' );
     monSite(i) = pickMonSite( currWav, uSites, connected );
     if( monSite(i) < 0 )
         fprintf( 'All sites nearby unit %d are not connected. Probably an error.\n', i);
@@ -381,7 +370,7 @@ amps = gamrnd(1/amp_std^2,amp_std^2, nspikes,1);
 buff = 128;
 NT   = 4 * fs + buff; % batch size + buffer
 
-fidW     = fopen(fullfile(fpath, 'sim_binary.imec.ap.bin'), 'w');
+fidW     = fopen(binaryDataFile, 'w');
 
 t_all    = 0;
 
@@ -527,8 +516,8 @@ fclose(fidW); % all done
 gtRes = spk_times + nt/2; % add back the time of the peak for the templates (half the time span of the defined waveforms)
 gtClu = clu;
 
-save(fullfile(fpath, 'eMouseGroundTruth'), 'gtRes', 'gtClu')
-save(fullfile(fpath, 'eMouseSimRecord'), 'yDriftRec' );
+save(groundTruthFile, 'gtRes', 'gtClu')
+save(simRecordFile, 'yDriftRec');
 
 end
 

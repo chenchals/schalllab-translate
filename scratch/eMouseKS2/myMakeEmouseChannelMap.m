@@ -1,4 +1,4 @@
-function [chanMapName] = make_eMouseChannelMap_3A_short(fpath,NchanTOT)
+function [chanMapName] = myMakeEmouseChannelMap(chanMapPath,NchanTOT)
 % create a channel Map file for simulated data on a section of 
 % an imec 3A probe (eMouse)
 
@@ -46,6 +46,7 @@ kcoords = ones(NchanTOT,1);
 % would be good to also save the sampling frequency here
 fs = 30000; 
 
-chanMapName = sprintf('chanMap_3A_%dsites.mat', NchanTOT);
+chanMapName = sprintf('eMouse_%d_channels.mat', NchanTOT);
 
-save(fullfile(fpath, chanMapName), 'chanMap', 'connected', 'xcoords', 'ycoords', 'kcoords', 'fs')
+save(fullfile(chanMapPath, chanMapName), 'chanMap', 'connected', 'xcoords', 'ycoords', 'kcoords', 'fs')
+end

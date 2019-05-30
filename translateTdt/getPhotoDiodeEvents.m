@@ -1,4 +1,4 @@
-function [pdSignal] = getPhotodiodeEvents(pdVolts, samplingFreq, thresholdPercentile)
+function [pdSignal] = getPhotoDiodeEvents(pdVolts, samplingFreq, thresholdPercentile)
 %GETPHOTODIODEEVENTS Photodiode signal processing
 %   Computes threshold value for PD signal, extracts pd-on vectors around
 %   the threshold values, computes signal-rise-end-time for each
