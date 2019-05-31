@@ -68,7 +68,7 @@ end
 %other parameters
 bPair     = 0; % set to 0 for randomly distributed units, 1 for units in pairs
 pairDist  = 50; % distance between paired units
-bPlot     = 1; %make diagnostic plots of waveforms
+bPlot     = 0; %make diagnostic plots of waveforms
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 rng('default');
@@ -368,7 +368,7 @@ amps = gamrnd(1/amp_std^2,amp_std^2, nspikes,1);
 
 %
 buff = 128;
-NT   = 4 * fs + buff; % batch size + buffer
+NT   = 8*4 * fs + buff; % batch size + buffer
 
 fidW     = fopen(binaryDataFile, 'w');
 

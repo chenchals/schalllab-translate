@@ -1,6 +1,6 @@
 %% Paths
-projectPath = '~/Projects/lab-schall/schalllab-translate-develop';
-resultsBasePath = '~/Projects/lab-schall/schalllab-translate-develop/tempDataProcessed';
+projectPath = '~/Projects/lab-schall/schalllab-translate';
+resultsBasePath = '~/Projects/lab-schall/schalllab-translate/tempDataProcessed';
 % Channel map file
 ops.chanMapPath = fullfile(projectPath,'toolbox/spk-cluster/channelMaps');
 ops.chanMapName='eMouse_64_channels.mat';
@@ -9,8 +9,8 @@ ops.dataPath = fullfile(projectPath,'tempData');
 ops.dataSession = 'eMouseSimData';
 ops.dataSessionFile = fullfile(ops.dataPath, ops.dataSession,'sim_binary.imec.ap.bin');
 % valid for eMouse only?
-ops.groundTruthFile = fullfile(ops.dataSession,'eMouseGroundTruth.mat'); 
-ops.simulationRecordFile = fullfile(ops.dataSession,'eMouseSimRecord.mat');
+ops.groundTruthFile = fullfile(ops.dataPath, ops.dataSession,'eMouseGroundTruth.mat'); 
+ops.simulationRecordFile = fullfile(ops.dataPath, ops.dataSession,'eMouseSimRecord.mat');
 % Results / output dir / files
 ops.resultsPhyPath = fullfile(resultsBasePath, ops.dataSession, 'phy');
 ops.resultsMatPath = fullfile(resultsBasePath, ops.dataSession);

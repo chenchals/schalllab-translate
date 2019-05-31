@@ -11,4 +11,5 @@ translateTdt/getCodeDefs.asv
 translateTdt/TDTTranslator.asv
 scratch/eMouseKS2/drift_simulations/*
 scratch/eMouseKS2/kilosort_datatemp/*
-
+temp*
+*.m~

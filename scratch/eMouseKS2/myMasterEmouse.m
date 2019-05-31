@@ -1,11 +1,9 @@
 % Modified to use DataAdapter
 clear ops
-projectPath = '~/Projects/lab-schall/schalllab-translate-develop';
-resultsBasePath = '~/Projects/lab-schall/schalllab-translate-develop/dataProcessed';
+projectPath = '~/Projects/lab-schall/schalllab-translate';
 session = 'scratch/eMouseKS2';
-resultsPhyPath = fullfile(resultsBasePath,session);
 %% Add npy-matlab and Kilosort2 to matlab path
-npyMatlabPath = '~/Projects/lab-schall/npy-matlab';
+npyMatlabPath = '~/Projects/lab-schall/npy-matlab/npy-matlab';
 %KS2 path -- also has default waveforms for the simulation
 % add Kilosort2 paths to the matlab path
 kilosortPath = '~/Projects/lab-schall/Kilosort2';
@@ -26,7 +24,6 @@ ksConfigFile = fullfile(projectPath,session, 'myEmouseConfig.m');
 run(ksConfigFile)
 
 %% Check existence of fields for directory paths and/or files
-changeMe = fullfile(projectPath,'scratch/eMouseKS2');
 % check if channel map file vars exists
 assert(isfield(ops,'chanMapPath') && isfield(ops,'chanMapName'),...
     'ErrorInConfig: Config file does not contain ops.chanMapPath and/or ops.chanMapName');
@@ -84,13 +81,6 @@ ops.rootZ = ops.resultsPhyPath;
 resultsPhyPath = ops.rootZ;
 resultsMatPath = ops.resultsMatPath;
 
-%% Data adapter for reading data
-if strcmp(ops.recordingSystem,'emouse') %emouse, tdt
-    ops.dataAdapter = DataAdapter.newDataAdapter(ops.recordingSystem,ops.fbinary,ops.NchanTOT);
-    ops.dataTypeBytes       = 2; % datatpe for the sample point -int16=2 4=single
-    ops.dataTypeString      = 'int16'; % datatype of sample point - 'int16' or 'single'
-end
-
 %% Channel Map file
 useChanMap = fullfile(ops.resultsMatPath,ops.chanMapName);
 copyfile(ops.chanMapFile, useChanMap,'f');
@@ -99,6 +89,14 @@ load(ops.chanMap)
 NchanTOT = numel(chanMap);
 ops.fs = fs;
 ops.NchanTOT = NchanTOT; % total number of channels in your recording
+
+%% Data adapter for reading data
+if strcmp(ops.recordingSystem,'emouse') %emouse, tdt
+    ops.dataAdapter = DataAdapter.newDataAdapter(ops.recordingSystem,ops.fbinary,ops.NchanTOT);
+    ops.dataTypeBytes       = 2; % datatpe for the sample point -int16=2 4=single
+    ops.dataTypeString      = 'int16'; % datatype of sample point - 'int16' or 'single'
+end
+
 
 
 %% Run kilosort2 on the simulated data
