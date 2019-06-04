@@ -4,8 +4,9 @@ classdef TdtDataAdapter < DataAdapter
     
     methods
         % CTOR
-        function obj = TdtDataAdapter(source)
+        function obj = TdtDataAdapter(source, filePattern)
             obj.dataSource = source;
+            obj.filePattern = filePattern;
             updateFileHandles(obj);
         end
         
@@ -91,7 +92,7 @@ classdef TdtDataAdapter < DataAdapter
         
         function [] = updateFileHandles(obj)
             if exist(obj.dataSource,'dir')==7
-                obj.dirStruct = dir([obj.dataSource '/*_Wav1_Ch*.sev']);
+                obj.dirStruct = dir(fullfile(obj.dataSource, ['*' obj.filePattern '*.sev']));
                 for ch = 1:numel(obj.dirStruct)
                     chStr = ['_Ch' num2str(ch) '.sev'];
                     index = find(contains({obj.dirStruct.name},chStr));

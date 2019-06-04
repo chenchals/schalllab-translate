@@ -32,7 +32,8 @@ classdef (Abstract=true) DataAdapter < handle
                     end
                     adapter = EMouseDataAdapter(source,nChanTot);
                 case 'tdt'
-                    adapter = TdtDataAdapter(source);
+                    filePattern = varargin{1};
+                    adapter = TdtDataAdapter(source, filePattern);
                 otherwise
                     error('Type must be either emouse or tdt');
             end
