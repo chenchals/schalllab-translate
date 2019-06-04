@@ -4,9 +4,8 @@ classdef TdtDataAdapter < DataAdapter
     
     methods
         % CTOR
-        function obj = TdtDataAdapter(source, filePattern)
+        function obj = TdtDataAdapter(source)
             obj.dataSource = source;
-            obj.filePattern = filePattern;
             updateFileHandles(obj);
         end
         
@@ -91,8 +90,9 @@ classdef TdtDataAdapter < DataAdapter
     methods (Access=private)
         
         function [] = updateFileHandles(obj)
-            if exist(obj.dataSource,'dir')==7
-                obj.dirStruct = dir(fullfile(obj.dataSource, ['*' obj.filePattern '*.sev']));
+            dataDir = fileparts(obj.dataSource);
+            if exist(dataDir,'dir')==7
+                obj.dirStruct = dir(obj.dataSource);
                 for ch = 1:numel(obj.dirStruct)
                     chStr = ['_Ch' num2str(ch) '.sev'];
                     index = find(contains({obj.dirStruct.name},chStr));

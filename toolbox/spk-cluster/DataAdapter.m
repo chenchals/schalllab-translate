@@ -4,6 +4,7 @@ classdef (Abstract=true) DataAdapter < handle
         dataSource;
         dirStruct;
         fidArray;
+        filePattern;
     end
     
     methods (Abstract)
@@ -32,8 +33,7 @@ classdef (Abstract=true) DataAdapter < handle
                     end
                     adapter = EMouseDataAdapter(source,nChanTot);
                 case 'tdt'
-                    filePattern = varargin{1};
-                    adapter = TdtDataAdapter(source, filePattern);
+                    adapter = TdtDataAdapter(source);
                 otherwise
                     error('Type must be either emouse or tdt');
             end
