@@ -82,7 +82,6 @@ Wrot = get_whitening_matrix(rez);
 
 fprintf('Time %3.0fs. Loading raw data and applying filters... \n', toc);
 
-fid         = fopen(ops.fbinary, 'r');
 if ~ops.useRAM
     fidW        = fopen(ops.fproc,   'w');
     DATA = [];
@@ -95,7 +94,9 @@ if isfield(ops,'fslow')&&ops.fslow<ops.fs/2
 else
     [b1, a1] = butter(3, ops.fshigh/ops.fs*2, 'high');
 end
-
+if ~isfield(ops,'dataAdapter')
+    fid         = fopen(ops.fbinary, 'r');
+end
 for ibatch = 1:Nbatch
     offset = max(0, ops.twind + 2*NchanTOT*((NT - ops.ntbuff) * (ibatch-1) - 2*ops.ntbuff));
     if offset==0
