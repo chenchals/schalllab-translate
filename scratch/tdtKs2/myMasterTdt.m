@@ -6,7 +6,7 @@ configPath = 'scratch/tdtKs2';
 npyMatlabPath = '~/Projects/lab-schall/npy-matlab/npy-matlab';
 %KS2 path -- also has default waveforms for the simulation
 % add Kilosort2 paths to the matlab path
-kilosortPath = '~/Projects/lab-schall/Kilosort2';
+kilosortPath = '~/Projects/lab-schall/MyKilosort2';
 addKilosort2NpyPaths(kilosortPath,npyMatlabPath);
 
 %% Setup for Matlab for processing

@@ -29,6 +29,7 @@ classdef TdtDataAdapter < DataAdapter
             headerBytes = 40;
             readOffset = (readOffsetAllChan/nChannels) + headerBytes;
             myChannels = (1:nChannels);
+            adcResolution = 10000/(2^16);% in mV?
             for ch = myChannels
                 fid = obj.fidArray(ch);
                 fseek(fid,readOffset,'bof');
@@ -38,7 +39,7 @@ classdef TdtDataAdapter < DataAdapter
                 if isempty(temp)
                     buffer = [];
                 else
-                   buffer(ch-chOffset,1:length(temp)) = temp;
+                   buffer(ch,1:length(temp)) = temp.*adcResolution;
                 end
                 clearvars temp
             end

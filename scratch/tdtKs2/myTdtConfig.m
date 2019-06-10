@@ -1,13 +1,13 @@
 %% Paths
 projectPath = '~/Projects/lab-schall/schalllab-translate';
-resultsBasePath = '/scratch/tempDataProcessed';
+resultsBasePath = '/scratch/KS2/dataProcessed/TESTDATA';
 % Channel map file
 ops.chanMapPath = fullfile(projectPath,'toolbox/spk-cluster/channelMaps');
-ops.chanMapName='tdtSimulator_16_channels.mat';
+ops.chanMapName='tdtSimulator_32_channels.mat';
 % Data session / file
-baseDataPath = '/scratch/data/Joule/cmanding/ephys'; % SSD drive
+baseDataPath = '/scratch/KS2/dataRaw'; % SSD drive
 ops.dataPath = fullfile(baseDataPath,'TESTDATA');
-ops.dataSession = 'Joule-190517-113527';
+ops.dataSession = 'Init_SetUp-160811-145107';
 %ops.dataSessionFile = fullfile(ops.dataPath, ops.dataSession,'sim_binary.imec.ap.bin');
 % valid for eMouse only?
 %ops.groundTruthFile = fullfile(ops.dataPath, ops.dataSession,'eMouseGroundTruth.mat'); 
@@ -31,16 +31,16 @@ ops.fs = 24414;
 
 % time range in seconds of data to process
 % TIME RANGE IN SECONDS TO PROCESS
-ops.trange      = [0 Inf]; 
-%ops.trange      = [0 100];
+%ops.trange      = [0 Inf]; 
+ops.trange      = [0 120];
 
 % sorting type ...??
 ops.sorting     = 1; % type of sorting, 2 is by rastermap, 1 is old
 
 % frequency for high pass filtering (150)
-ops.fshigh = 300;
+ops.fshigh = 150;
 % low frquency, if we need bandpass filtering
-ops.fslow = 0.1;
+ops.fslow = 5000;
 
 % minimum firing rate on a "good" channel (0 to skip)
 ops.minfr_goodchannels = 0.1;
@@ -69,22 +69,22 @@ ops.momentum = [20 400];
 
 % spatial constant in um for computing residual variance of spike
 % KS1: ops.maskMaxChannel, computes nearest neighbors
-ops.sigmaMask = 150;% channel spacing? 
+ops.sigmaMask = 30;% channel spacing? 
 
 % threshold crossings for pre-clustering (in PCA projection space)
 ops.ThPre = 8;
 %% danger, changing these settings can lead to fatal errors
 % options for determining PCs
-ops.spkTh           = -6;      % spike threshold in standard deviations (-6)
+ops.spkTh           = -2;      % spike threshold in standard deviations (-6)
 ops.reorder         = 1;       % whether to reorder batches for drift correction.
-ops.nskip           = 25;  % how many batches to skip for determining spike PCs
+ops.nskip           = 1;  % how many batches to skip for determining spike PCs
 
 ops.GPU                 = 1; % has to be 1, no CPU version yet, sorry;  whether to run this code on an Nvidia GPU (much faster, mexGPUall first)
 ops.nfilt_factor        = 4; % max number of clusters per good channel (even temporary ones)
 ops.ntbuff              = 64;    % samples of symmetrical buffer for whitening and spike detection
 ops.NT                  = 64*1024+ ops.ntbuff; % must be multiple of 32 + ntbuff. This is the batch size (try decreasing if out of memory).
 ops.whiteningRange      = 16; % number of channels to use for whitening each channel
-ops.nSkipCov            = 25; % compute whitening matrix from every N-th batch
+ops.nSkipCov            = 5; % compute whitening matrix from every N-th batch
 ops.scaleproc           = 1;   % int16 scaling of whitened data
 ops.nPCs                = 3; % how many PCs to project the spikes into
 ops.useRAM              = 0; % not yet available
