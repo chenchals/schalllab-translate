@@ -10,16 +10,9 @@ function out = clusterRez2Spikes(sessionDir)
     sampleRate = 24414;
     sample2TimeFactor = (1000/sampleRate);
     % For each session
-
-    %probes = getSubDirs(dir(fullfile(sessions(sessionNum).folder,sessions(sessionNum).name)));
-    probes = getSubDirs(dir(sessionDir));
-    for probeNum = 1: numel(probes)
-        channelNoOffset = (probeNum-1)*nChannels;
-        probe = probes(probeNum);
-        sessionDir = probe.folder;
-        probeDir = fullfile(sessionDir,probe.name);
-        fprintf('Loading %s/rez.mat...',probeDir);
-        load(fullfile(probeDir,'rez.mat'));
+        probeDir = sessionDir;
+        fprintf('Loading %s/rezFinal.mat...',probeDir);
+        load(fullfile(probeDir,'rezFinal.mat'));
         fprintf('done\n');
         size(rez.waves)
         allWaves = rez.waves;
@@ -27,10 +20,10 @@ function out = clusterRez2Spikes(sessionDir)
         clear rez
 
         % Get clusters
-        clusterNums = readNPY(fullfile(probeDir, 'spike_clusters.npy'));% rez.st3(:,5);
+        clusterNums = readNPY(fullfile(probeDir, 'phy/spike_clusters.npy'));% rez.st3(:,5);
         clusterIds = unique(clusterNums);
         % Get timeSamples
-        timeSamples = double(readNPY(fullfile(probeDir,'spike_times.npy')));
+        timeSamples = double(readNPY(fullfile(probeDir,'phy/spike_times.npy')));
 
         unitsPerChannel = zeros(1,nChannels);
 
@@ -70,7 +63,7 @@ function out = clusterRez2Spikes(sessionDir)
             end
             fprintf('\n');
         end
-    end
+ 
 end
 
 function [ out ] = getSubDirs(dirStruct)

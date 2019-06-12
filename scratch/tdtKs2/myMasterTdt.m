@@ -43,7 +43,7 @@ assert(isfield(ops,'recordingSystem') && isfield(ops,'sevFilenamePart'),...
     'ErrorInConfig: Config file does not contain ops.recordingSystem and/or ops.sevFilenamePart');
 ops.rawFilePattern = fullfile(ops.dataPath, ops.dataSession,['*' ops.sevFilenamePart '*.sev']);
 d = dir(ops.rawFilePattern);
-assert(sum(contains({d.name},'_Wav1_'))>0,...
+assert(sum(contains({d.name},ops.sevFilenamePart))>0,...
     sprintf('ErrorInConfig: Waveform/raw data files not found. Searched pattern [%s]', ops.rawFilePattern));
     
 % used for call to DataAdapter
@@ -67,9 +67,9 @@ ops.NchanTOT = NchanTOT; % total number of channels in your recording
 
 %% Data adapter for reading data
 if strcmp(ops.recordingSystem,'tdt') %emouse, tdt
-    ops.dataAdapter = DataAdapter.newDataAdapter(ops.recordingSystem,ops.fbinary);
-    ops.dataTypeBytes       = 2; % datatpe for the sample point -int16=2 4=single
-    ops.dataTypeString      = 'int16'; % datatype of sample point - 'int16' or 'single'
+    ops.dataAdapter = DataAdapter.newDataAdapter(ops.recordingSystem,ops.fbinary,ops.rawDataMultiplier);
+    ops.dataTypeBytes       = 4; % datatpe for the sample point -int16=2 4=single
+    ops.dataTypeString      = 'single'; % datatype of sample point - 'int16' or 'single'
 end
 
 %% Run kilosort2 on the simulated data
