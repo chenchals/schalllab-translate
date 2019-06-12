@@ -1,0 +1,54 @@
+gui/computeWhitening.m:    buff = fread(fid, [NchanTOT NTbuff], '*int16');
+mainLoop/extractPCfromSnippets.m:    dat = fread(fid, [NT ops.Nchan], '*int16');
+mainLoop/learnAndSolve8b.m:    dat = fread(fid, [NT ops.Nchan], '*int16');
+mainLoop/halfwaySplits.m:    dat = fread(fid, [NT ops.Nchan], '*int16');
+mainLoop/extractTemplatesfromSnippets.m:    dat = fread(fid, [NT ops.Nchan], '*int16');
+preProcess/extractPCbatch2.m:dat = fread(fid, [NT ops.Nchan], '*int16');
+preProcess/get_good_channels.m:    buff = fread(fid, [NchanTOT NT], '*int16');
+preProcess/preprocessDataSub.m:    buff = fread(fid, [NchanTOT NTbuff], '*int16');
+preProcess/get_spike_templates.m:    buff = fread(fid, [NchanTOT NTbuff], '*int16');
+preProcess/convertOpenEphysToRawBInary.m:            rawData         = fread(fid{j}, 1000 * (nSamples + 6), '1030*int16', 10, 'b');
+preProcess/get_whitening_matrix.m:    buff = fread(fid, [NchanTOT NTbuff], '*int16');
+preProcess/extractPCbatch.m:dat = fread(fid, [NT ops.Nchan], '*int16');
+preProcess/testExtract.m:dat = fread(fid, [NT ops.Nchan], '*int16');
+
+
+
+++++++++++++++++
+fread(fid, [NchanTOT NTbuff], '*int16')
+buff = dataAdapter.batchRead(offset,ops.NchanTOT, NTbuff, dataTypeString);
+
+
+gui/computeWhitening.m:    buff = fread(fid, [NchanTOT NTbuff], '*int16');
+buff = dataAdapter.batchRead(offset,ops.NchanTOT, NTbuff, dataTypeString);
+
+preProcess/preprocessDataSub.m:    buff = fread(fid, [NchanTOT NTbuff], '*int16');
+buff = dataAdapter.batchRead(offset,ops.NchanTOT, NTbuff, dataTypeString);
+
+
+
+preProcess/get_spike_templates.m:    buff = fread(fid, [NchanTOT NTbuff], '*int16');
+buff = dataAdapter.batchRead(offset,ops.NchanTOT, NTbuff, dataTypeString);
+
+
+preProcess/get_whitening_matrix.m:    buff = fread(fid, [NchanTOT NTbuff], '*int16');
+buff = dataAdapter.batchRead(offset,ops.NchanTOT, NTbuff, dataTypeString);
++++++++++++++++++++
+
+read ==> ops.fproc
+preProcess/extractPCbatch2.m:dat = fread(fid, [NT ops.Nchan], '*int16');
+preProcess/extractPCbatch.m:dat = fread(fid, [NT ops.Nchan], '*int16');
+preProcess/testExtract.m:dat = fread(fid, [NT ops.Nchan], '*int16');
+
+read ==> ops.fproc
+mainLoop/extractPCfromSnippets.m:    dat = fread(fid, [NT ops.Nchan], '*int16');
+mainLoop/learnAndSolve8b.m:    dat = fread(fid, [NT ops.Nchan], '*int16');
+mainLoop/halfwaySplits.m:    dat = fread(fid, [NT ops.Nchan], '*int16');
+mainLoop/extractTemplatesfromSnippets.m:    dat = fread(fid, [NT ops.Nchan], '*int16');
+
+
+
+
+
+
+
