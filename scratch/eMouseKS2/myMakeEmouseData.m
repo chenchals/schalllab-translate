@@ -1,10 +1,23 @@
-function [binaryDataFile,groundTruthFile,simRecordFile] = myMakeEmouseData(simulDataPath, KS2path, chanMapFile, useGPU, useParPool)
+function [binaryDataFile,groundTruthFile,simRecordFile] = myMakeEmouseData(simulDataPath, KS2path, chanMapFile, useGPU, useParPool, varargin)
 % this script makes a binary file of simulated eMouse recording
 % written by Jennifer Colonell, based on Marius Pachitariu's original eMouse simulator for Kilosort 1
 % Adds the ability to simulate simple drift of the tissue relative to the
 % probe sites.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 binaryDataFile = fullfile(simulDataPath, 'sim_binary.imec.ap.bin');
+isTdt = 0;
+if numel(varargin)>0
+    if strcmp(varargin{1},'sev')
+        isTdt = 1;
+        binaryDataFile = fullfile(simulDataPath, 'sim_tdt-yymmdd-hhmmss_Wav1_');
+    elseif strcmp(varargin{1},'bin')
+        binaryDataFile = fullfile(simulDataPath, 'sim_binary.imec.ap.bin');
+    else
+        error('Unknown file extension [%s] for simulation. Choose [bin | sev]',varargin{1}); 
+    end   
+end
+
+
 groundTruthFile = fullfile(simulDataPath, 'eMouseGroundTruth.mat');
 simRecordFile = fullfile(simulDataPath, 'eMouseSimRecord.mat');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -12,13 +25,13 @@ simRecordFile = fullfile(simulDataPath, 'eMouseSimRecord.mat');
 norm_amp  = 20; % if 0, use amplitudes of input waveforms; if > 0, set all amplitudes to norm_amp*rms_noise
 mu_mean   = 0.75; % mean of mean spike amplitudes. Incoming waveforms are in uV; make <1 to make sorting harder
 rms_noise = 12; % rms noise in uV. Will be added to the spike signal. 15-20 uV an OK estimate from real data
-t_record  = 1200; % duration in seconds of simulation. longer is better (and slower!) (1000)
+t_record  = 100; % [1200] duration in seconds of simulation. longer is better (and slower!) (1000)
 fr_bounds = [1 10]; % min and max of firing rates ([1 10])
 tsmooth   = 0.5; % gaussian smooth the noise with sig = this many samples (increase to make it harder) (0.5)
 chsmooth  = 0.5; % smooth the noise across channels too, with this sig (increase to make it harder) (0.5)
 amp_std   = .1; % standard deviation of single spike amplitude variability (increase to make it harder, technically std of gamma random variable of mean 1) (.25)
 fs        = 30000; % sample rate for the simulation. Incoming waveforms must be sampled at this freq.
-nt        = 81; % number of timepoints expected. All waveforms must have this time window
+nt        = 81; % number of timepoints expected. All waveforms must have this time window (the templates used to generate the simulated data)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %drift params. See the comments in calcYPos_v2 for details
 drift.addDrift = 1;
@@ -56,13 +69,6 @@ if useDefault
     fileCopies(1) = 2;
     filePath{2} = fullfile(KS2path,'eMouse_drift','121817_single_unit_waves_allNeg.mat');
     fileCopies(2) = 2;
-else
-    %fill in paths to waveform files 
-    filePath = {};
-    filePath{1} = 'C:\Users\labadmin\Documents\emouse_drift\eMouse\121817_single_unit_waves_allNeg.mat';
-    fileCopies(1) = 1;
-    filePath{2} = 'C:\Users\labadmin\Documents\emouse_drift\UltradenseKS4Jennifer\SpikeMeanWaveforms\kampff_St_unit_waves_allNeg_2X.mat';
-    fileCopies(2) = 1;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %other parameters
@@ -369,9 +375,9 @@ amps = gamrnd(1/amp_std^2,amp_std^2, nspikes,1);
 %
 buff = 128;
 NT   = 8*4 * fs + buff; % batch size + buffer
-
-fidW     = fopen(binaryDataFile, 'w');
-
+if ~isTdt
+   fidW     = fopen(binaryDataFile, 'w');
+end
 t_all    = 0;
 
 if useGPU
@@ -501,7 +507,12 @@ while t_all<t_record
     dat_old    =  dat;
     %convert to 16 bit integers; waveforms are in uV
     dat = int16(bitPerUV * dat);
-    fwrite(fidW, dat(1:(NT-buff),invChanMap)', 'int16');
+    if ~isTdt
+       fwrite(fidW, dat(1:(NT-buff),invChanMap)', 'int16');
+    else
+        writeTdtFiles(binaryDataFile, dat(1:(NT-buff),:),'append');
+    end
+    
     t_all = t_all + (NT-buff)/fs;
     elapsedTime = toc;
     fprintf( 'created %.2f seconds of data; nSpikes %d; calcTime: %.3f\n ', t_all, length(ts), elapsedTime );
@@ -510,8 +521,11 @@ while t_all<t_record
     clear currNSiteArray;
     clear currSiteArray;
 end
-
-fclose(fidW); % all done
+if ~isTdt
+  fclose(fidW); % all done
+else
+  writeTdtFiles([],[],'close');
+end
 
 gtRes = spk_times + nt/2; % add back the time of the peak for the templates (half the time span of the defined waveforms)
 gtClu = clu;
@@ -722,5 +736,30 @@ else
 end
 
 end
+
+function writeTdtFiles(binaryDataFile, tdtData, appendOrClose)
+    persistent fileIds;
+    if strcmp('close',appendOrClose)
+        % write numder of datapoints and frequency?
+        % currently only closing
+        arrayfun(@fclose,fileIds);
+    else
+        [sessionPath,wavFilePattern] = fileparts(binaryDataFile);
+        if ~exist(sessionPath,'dir')
+            mkdir(sessionPath);
+        end
+        d = dir([binaryDataFile '*.sev']);
+        nChans = size(tdtData,2);
+        if isempty(d) || isempty(fileIds)
+            for ii = 1:nChans
+                fileIds(ii) = fopen(fullfile(sessionPath,[wavFilePattern num2str(ii,'Ch%d.sev')]),'w');
+                fwrite(fileIds(ii),zeros(40,1),'int16');
+            end
+        end
+        arrayfun(@(chanNo) fwrite(fileIds(chanNo),tdtData(:,chanNo),'int16'),(1:nChans));
+    end
+
+end
+
 
 

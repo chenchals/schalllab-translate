@@ -5,6 +5,7 @@ classdef (Abstract=true) DataAdapter < handle
         dirStruct;
         fidArray;
         filePattern;
+        rawDataMultiplier;
     end
     
     methods (Abstract)
@@ -32,8 +33,15 @@ classdef (Abstract=true) DataAdapter < handle
                         nChanTot = varargin{1};
                     end
                     adapter = EMouseDataAdapter(source,nChanTot);
+                    adapter.rawDataMultiplier = 1.0;
                 case 'tdt'
+                    if numel(varargin)>0
+                        rawDataMultiplier = varargin{1};
+                    else
+                        rawDataMultiplier = 1.0;
+                    end
                     adapter = TdtDataAdapter(source);
+                    adapter.rawDataMultiplier = rawDataMultiplier;
                 otherwise
                     error('Type must be either emouse or tdt');
             end

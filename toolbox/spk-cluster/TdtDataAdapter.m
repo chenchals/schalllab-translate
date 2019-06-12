@@ -29,6 +29,7 @@ classdef TdtDataAdapter < DataAdapter
             headerBytes = 40;
             readOffset = (readOffsetAllChan/nChannels) + headerBytes;
             myChannels = (1:nChannels);
+            %adcResolution = 10000/(2^16);% in mV?
             for ch = myChannels
                 fid = obj.fidArray(ch);
                 fseek(fid,readOffset,'bof');
@@ -38,7 +39,7 @@ classdef TdtDataAdapter < DataAdapter
                 if isempty(temp)
                     buffer = [];
                 else
-                   buffer(ch-chOffset,1:length(temp)) = temp;
+                   buffer(ch,1:length(temp)) = temp.*obj.rawDataMultiplier;
                 end
                 clearvars temp
             end
@@ -95,7 +96,7 @@ classdef TdtDataAdapter < DataAdapter
                 obj.dirStruct = dir(obj.dataSource);
                 for ch = 1:numel(obj.dirStruct)
                     chStr = ['_Ch' num2str(ch) '.sev'];
-                    index = find(contains({obj.dirStruct.name},chStr));
+                    index = find(contains({obj.dirStruct.name},chStr,'IgnoreCase',true));
                     obj.dirStruct(index).index = ch;
                     fStruct = obj.dirStruct(index);
                     obj.fidArray(ch) = fopen(fullfile(fStruct.folder,fStruct.name),'rb');

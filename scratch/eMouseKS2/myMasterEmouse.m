@@ -6,16 +6,16 @@ session = 'scratch/eMouseKS2';
 npyMatlabPath = '~/Projects/lab-schall/npy-matlab/npy-matlab';
 %KS2 path -- also has default waveforms for the simulation
 % add Kilosort2 paths to the matlab path
-kilosortPath = '~/Projects/lab-schall/Kilosort2';
+kilosortPath = '~/Projects/lab-schall/MyKilosort2';
 addKilosort2NpyPaths(kilosortPath,npyMatlabPath);
 
 %% Setup for Matlab for processing
 useGPU = 1; % do you have a GPU? Kilosorting 1000sec of 32chan simulated data takes 55 seconds on gtx 1080 + M2 SSD.
 useParPool = 1; % use parpool; will speed up simulation if local cluater has > 10 cores.
 makeNewChanMapFile = 0; % set this to 0 to use existing channel map file, 1 to overwrite
-makeNewData = 1; % set this to 0 to just resort a previously created data set, 1 to overwrite
+makeNewData = 0; % set this to 0 to just resort a previously created data set, 1 to overwrite
 sortData = 1;
-runBenchmark = 1; %set to 1 to compare sorted data to ground truth for the simulation
+runBenchmark = 0; %set to 1 to compare sorted data to ground truth for the simulation
 
 %% Read config file for Kilosort processing information / instructions
 % path to config file

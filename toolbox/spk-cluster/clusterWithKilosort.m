@@ -158,8 +158,10 @@ Wrot        = gather_try(Wrot);
 rez.Wrot    = Wrot;
 
 fclose(fidW);
-fclose(fid);
 
+if ~isfield(ops,'dataAdapter')
+    fclose(fid);
+end
 fprintf('Time %3.0fs. Finished preprocessing %d batches. \n', toc, Nbatch);
 
 rez.temp.Nbatch = Nbatch;
