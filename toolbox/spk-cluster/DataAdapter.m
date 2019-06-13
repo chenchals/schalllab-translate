@@ -4,7 +4,6 @@ classdef (Abstract=true) DataAdapter < handle
         dataSource;
         dirStruct;
         fidArray;
-        filePattern;
         rawDataMultiplier;
     end
     

@@ -1,6 +1,6 @@
 %% Pull waveforms and spike times for each cluster... but also figure out the channel
 
-function out = clusterRez2Spikes(sessionDir)
+function out = clusterRez2Spikes_XX(sessionDir)
     out = [];
     % Set defaults
     sampWin = -25:25;

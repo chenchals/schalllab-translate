@@ -1,9 +1,10 @@
-rezFinalPath = '/scratch/ksDataProcessed/SIMULDATA/eMouseSimData';
+%rezFinalPath = '/scratch/ksDataProcessed/SIMULDATA/eMouseSimData';
+rezFinalPath = '/scratch/ksDataProcessed/TESTDATA/Init_SetUp-160811-145107-SD-6';
 rez = load(fullfile(rezFinalPath,'rezFinal.mat'));
 rez = rez.rez;
 ops = rez.ops;
-resultsMatPath = '/scratch/ksDataProcessed/SIMULDATA/eMouseSimData';
-resultsPhyPath = '/scratch/ksDataProcessed/SIMULDATA/eMouseSimData/phy';
+resultsMatPath = rezFinalPath;
+resultsPhyPath = fullfile(rezFinalPath,'phy');
 Fs = ops.fs;
 load(fullfile(resultsMatPath, ops.chanMapName));
 yc = ycoords(connected); xc = xcoords(connected);
