@@ -5,7 +5,7 @@ classdef TdtDataAdapter < DataAdapter
     methods
         % CTOR
         function obj = TdtDataAdapter(source)
-            obj.dataSource = source;
+            obj.datasource = source;
             updateFileHandles(obj);
         end
         
