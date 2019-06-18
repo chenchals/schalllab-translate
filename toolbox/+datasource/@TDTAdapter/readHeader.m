@@ -1,4 +1,5 @@
-function [header] = readHeader(~,sevFile)
+function [header] = readHeader(obj)
+    sevFile = obj.dataFiles{1};
     [~,filename,~] = fileparts(sevFile);
     fid = fopen(sevFile,'rb');
     header = [];

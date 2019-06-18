@@ -2,22 +2,29 @@ classdef (Abstract=true) IDataAdapter < handle
     %IDATAADAPTER Interface for raw data files
     %
     
-    properties (SetAccess=protected,SetObservable=true)
-        dataConfig; % is set in the constructor
-        %         recordingSystem;  % Recording system : TDT, EMouse
-        %         dataPath;         % Path to raw recording file(s)
-        %         session;          % Session name
-        %         dataFiles;         % raw data file(s) pattern
-        
-        
+    properties (SetAccess=protected, SetObservable)
+        recordingSystem;   % Recording system : TDT, EMouse
+        rawDataScaleFactor % Multiplication factor for raw data to convert sample-units to uV       
+        dataPath;          % Path to raw recording file(s)
+        session;           % Session name
+        dataFiles;         % raw data file(s), full path
+        header;            % file header, if any
+        headerOffset;      % Number of header bytes before the first sample
+        fileSizeBytes;     % Size of each dataFile in dataFiles, including header
+        dataForm;          %'int16','single'...
+        dataWidthBytes;    % number of bytes for each sample data point
+        dataSize;          % [nChannels x nSamples]
+        dataFs;            % data sampling frequency
+        nShanks;           % no of vector probes for multi-probe recordings
     end
     
-    properties (SetAccess=protected, SetObservable=true, Transient=true, Dependent=true)
-        isOpen = 0;           % Flag if dataset is ready for reading
+    properties (SetAccess=protected, SetObservable, Transient, Dependent)
         nChannels;            % total number of channels
-        nSamplesPerChannel;   % No of data points for each channel
-        nHeaderBytes;         % Number of header bytes before the first sample
-        
+        nSamplesPerChannel;   % No of data points for each channel      
+    end
+    
+    properties (Hidden, SetAccess=protected, SetObservable, Transient)
+        isOpen = 0;           % Flag if dataset is ready for reading
     end
     
     
@@ -31,16 +38,9 @@ classdef (Abstract=true) IDataAdapter < handle
                         nChannels = varargin{1};
                     end
                     adapter = datasource.BinaryAdapter(source,nChannels);
-                    adapter.dataConfig.rawDataMultiplier = 1.0;
+                    adapter.rawDataScaleFactor = 1.0;
                 case 'tdt'
-                    if numel(varargin)>0
-                        rawDataMultiplier = varargin{1};
-                    else
-                        rawDataMultiplier = 1.0;
-                    end
-                    
-                    adapter = datasource.TDTAdapter(source);
-                    adapter.dataConfig.rawDataMultiplier = rawDataMultiplier;
+                    adapter = datasource.TDTAdapter(source,varargin);
                 otherwise
                     error('Type must be either emouse or tdt');
             end
@@ -54,37 +54,16 @@ classdef (Abstract=true) IDataAdapter < handle
     
     %% Getter/Setter methods
     methods
-        % isOpen
-        function set.isOpen(obj, trueFalse)
-            obj.isOpen = trueFalse;
-        end
-        function [val] = get.isOpen(obj)
-            val = obj.isOpen;
-        end
-        
         % nChannels
-        function set.nChannels(obj, val)
-            obj.nChannels = val;
-        end
         function [val] = get.nChannels(obj)
-            val = obj.nChannels;
+            val = size(obj.dataSize,1);
         end
         
         % nSamplesPerChannel
-        function set.nSamplesPerChannel(obj, val)
-            obj.nSamplesPerChannel = val;
-        end
         function [val] = get.nSamplesPerChannel(obj)
-            val = obj.nSamplesPerChannel;
+            val = size(obj.dataSize,2);
         end
         
-        % nHeaderBytes
-        function set.nHeaderBytes(obj, val)
-            obj.nHeaderBytes = val;
-        end
-        function [val] = get.nHeaderBytes(obj)
-            val = obj.nHeaderBytes;
-        end
         
     end
     
