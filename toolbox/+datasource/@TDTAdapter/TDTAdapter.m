@@ -1,0 +1,76 @@
+classdef TDTAdapter < interface.IDataAdapter
+    %TDTADAPTER Adapter for TD recordings
+    %   
+    
+    properties (Hidden, SetAccess=protected, SetObservable, Transient)
+        memmapDataFiles = {};         % memmamfile of all data files
+        lastSampleRead  = 0;          % same as (readOffsetInbytes-headerBytes)/dataWidth
+        channelOffset = 0;            % channel offset to use for reading, useful when there are 2 probes 
+                                      % ex. 64 channel, 1-32 on probe1 and 33-64 on probe2
+    end
+    
+    methods
+        function obj = TDTAdapter(source,varargin)
+            obj.recordingSystem = 'tdt';
+            try
+                d = dir(source);
+                % sort by channel number
+                [~,chNos]=sort(cellfun(@(x) str2double(x{1}),regexp( {d.name}, '_Ch(\d+)', 'tokens' )));
+                obj.dataFiles = strcat({d(chNos).folder},filesep,{d(chNos).name})';
+                [obj.dataPath,obj.session] = fileparts(fileparts(obj.dataFiles{1}));
+                obj.header = readHeader(obj);
+                obj.headerOffset = 40;
+                obj.fileSizeBytes = obj.header.fileSizeBytes;
+                obj.dataForm = obj.header.dForm;
+                obj.dataWidthBytes = obj.header.sampleWidthBytes;
+                obj.dataFs = obj.header.fs;
+                obj.dataSize = [obj.header.totalNumChannels, ... % nChannels
+                                (obj.fileSizeBytes-obj.headerOffset)/obj.dataWidthBytes...% nSamplesPerChannel
+                               ]; 
+                parser = getArgParser(obj);
+                parse(parser,varargin{1}{:});
+                
+                obj.rawDataScaleFactor = parser.Results.rawDataScaleFactor;
+                obj.nShanks = parser.Results.nShanks;
+            catch ME
+                disp(ME);
+            end
+        end
+        
+%% OLD CODE
+                % Batch read datapoints
+%         function [ buffer ] = batchRead(obj, readOffsetAllChan, nChannels, nSamples, dataTypeString)
+%             checkChannelCount(obj, nChannels);
+%             buffer = zeros(nChannels, nSamples);
+%             headerBytes = 40;
+%             readOffset = (readOffsetAllChan/nChannels) + headerBytes;
+%             myChannels = (1:nChannels);
+
+  %%      
+        % Batch read datapoints
+        function [ buffer ] = batchRead(obj, readOffsetAllChan, nChannels, nSamples, dataTypeString, channelOffset)
+            %batchRead(offset,nChanToT,NTBuff,dataTypeStr)
+            % readOffsetAllChan: ignore - the offset is maintained
+            %                     internally obj.lastSampleRead 
+            % dataTypeString: ignore - is maintained internally
+            %                     obj.dataForm from header in the sev file 
+            obj.channelOffset=channelOffset;
+            buffer = obj.readRaw(nChannels, nSamples);
+        end
+        
+    end
+    
+    methods (Access=private)
+        
+        function [parser] = getArgParser(~)
+            parser = inputParser;
+            fx_posScalar = @(x) isnumeric(x) && isscalar(x) && (x > 0);
+            fx_posInt = @(x) isfinite(x) && isscalar(x) && x==floor(x) && (x > 0);
+           addOptional(parser,'rawDataScaleFactor',1.0,fx_posScalar);
+           addOptional(parser,'nShanks',1,fx_posInt);
+        end
+        
+    end
+    
+end
+
