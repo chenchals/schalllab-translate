@@ -2,6 +2,7 @@ classdef TDTAdapterTest < matlab.unittest.TestCase
     %TDTADAPTERTEST Test TDT data adapter
     %   
     
+    %%
     properties
         adapter;
     end
@@ -60,6 +61,7 @@ classdef TDTAdapterTest < matlab.unittest.TestCase
         end
         
         function testReadRaw(obj)
+            obj.assumeFail();
             nChan =10;
             nSamples = 100;
             dataAdapter = obj.adapter;
@@ -93,7 +95,8 @@ classdef TDTAdapterTest < matlab.unittest.TestCase
             buffer = cell(nBatches,1);
             for ii = 1:nBatches
                 %readOffsetAllChan, nChannels, nSamples, dataTypeString, channelOffset
-                buffer{ii} = dataAdapter.batchRead([],nChan,nSamples,[],0);
+                readOffsetAllChan = max(0, (ii-1)*nSamples*dataAdapter.dataWidthBytes*dataAdapter.nChannelsTotal);
+                buffer{ii} = dataAdapter.batchRead(readOffsetAllChan,nChan,nSamples,[],0);
             end
             buffer = cell2mat(buffer');
             obj.assertEqual([nChan nSamples*nBatches],size(buffer));
@@ -102,6 +105,6 @@ classdef TDTAdapterTest < matlab.unittest.TestCase
 
     end
     
-    
+    %% end
 end
 

@@ -19,7 +19,7 @@ classdef (Abstract=true) IDataAdapter < handle
     end
     
     properties (SetAccess=protected, SetObservable, Transient, Dependent)
-        nChannels;            % total number of channels
+        nChannelsTotal;            % total number of channels
         nSamplesPerChannel;   % No of data points for each channel      
     end
     
@@ -33,14 +33,10 @@ classdef (Abstract=true) IDataAdapter < handle
         function adapter = newDataAdapter(recordingSystem, source, varargin)
             switch lower(recordingSystem)
                 case 'emouse'
-                    nChannels = 34; % default for KS1
-                    if numel(varargin)>0
-                        nChannels = varargin{1};
-                    end
-                    adapter = datasource.BinaryAdapter(source,nChannels);
-                    adapter.rawDataScaleFactor = 1.0;
+                    %nChannels = 34; % default for KS1
+                    adapter = datasource.RawBinAdapter(source,varargin{:});
                 case 'tdt'
-                    adapter = datasource.TDTAdapter(source,varargin);
+                    adapter = datasource.TDTAdapter(source,varargin{:});
                 otherwise
                     error('Type must be either emouse or tdt');
             end
@@ -55,7 +51,7 @@ classdef (Abstract=true) IDataAdapter < handle
     %% Getter/Setter methods
     methods
         % nChannels
-        function [val] = get.nChannels(obj)
+        function [val] = get.nChannelsTotal(obj)
             val = obj.dataSize(1);
         end
         

@@ -9,6 +9,7 @@ classdef TDTAdapter < interface.IDataAdapter
                                       % ex. 64 channel, 1-32 on probe1 and 33-64 on probe2
     end
     
+    %% Public methods
     methods
         function obj = TDTAdapter(source,varargin)
             obj.recordingSystem = 'tdt';
@@ -28,7 +29,7 @@ classdef TDTAdapter < interface.IDataAdapter
                                 (obj.fileSizeBytes-obj.headerOffset)/obj.dataWidthBytes...% nSamplesPerChannel
                                ]; 
                 parser = getArgParser(obj);
-                parse(parser,varargin{1}{:});
+                parse(parser,varargin{:});
                 
                 obj.rawDataScaleFactor = parser.Results.rawDataScaleFactor;
                 obj.nShanks = parser.Results.nShanks;
@@ -36,29 +37,20 @@ classdef TDTAdapter < interface.IDataAdapter
                 disp(ME);
             end
         end
-        
-%% OLD CODE
-                % Batch read datapoints
-%         function [ buffer ] = batchRead(obj, readOffsetAllChan, nChannels, nSamples, dataTypeString)
-%             checkChannelCount(obj, nChannels);
-%             buffer = zeros(nChannels, nSamples);
-%             headerBytes = 40;
-%             readOffset = (readOffsetAllChan/nChannels) + headerBytes;
-%             myChannels = (1:nChannels);
 
-  %%      
         % Batch read datapoints
         function [ buffer ] = batchRead(obj, readOffsetAllChan, nChannels, nSamples, dataTypeString, channelOffset)
             %batchRead(offset,nChanToT,NTBuff,dataTypeStr)
-            % readOffsetAllChan: from where to read next set of nSamples                  
+            % readOffsetAllChan (in bytes): from where to read next set of nSamples (in samples)                 
             % reset the lastSampleRead for readRaw
-            obj.lastSampleRead = readOffsetAllChan/nChannels/obj.dataWidthBytes;
+            obj.lastSampleRead = readOffsetAllChan/obj.nChannelsTotal/obj.dataWidthBytes;
             obj.channelOffset=channelOffset;
             buffer = obj.readRaw(nChannels, nSamples);
         end
         
     end
     
+    %% Private Methods
     methods (Access=private)
         
         function [parser] = getArgParser(~)
