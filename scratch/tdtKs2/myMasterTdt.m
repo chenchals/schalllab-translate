@@ -52,6 +52,9 @@ ops.fbinary = ops.rawFilePattern;
 %% Check and create results directory(ies)
 if ~exist(ops.resultsMatPath,'dir'); mkdir(ops.resultsMatPath); end
 if ~exist(ops.resultsPhyPath,'dir'); mkdir(ops.resultsPhyPath); end
+diary(fullfile(ops.resultsMatPath,'console_output.txt'));
+diary on
+
 ops.rootZ = ops.resultsPhyPath;
 resultsPhyPath = ops.rootZ;
 resultsMatPath = ops.resultsMatPath;
@@ -67,9 +70,12 @@ ops.NchanTOT = NchanTOT; % total number of channels in your recording
 
 %% Data adapter for reading data
 if strcmp(ops.recordingSystem,'tdt') %emouse, tdt
-    ops.dataAdapter = DataAdapter.newDataAdapter(ops.recordingSystem,ops.fbinary,ops.rawDataMultiplier);
+     ops.dataAdapter = interface.IDataAdapter.newDataAdapter(ops.recordingSystem,...
+         ops.fbinary,'rawDataScaleFactor',ops.rawDataMultiplier);    
+    %ops.dataAdapter = DataAdapter.newDataAdapter(ops.recordingSystem,ops.fbinary,ops.rawDataMultiplier);
     ops.dataTypeBytes       = 4; % datatpe for the sample point -int16=2 4=single
     ops.dataTypeString      = 'single'; % datatype of sample point - 'int16' or 'single'
+    ops.headerBytes         = 40;
 end
 
 %% Run kilosort2 on the simulated data
@@ -124,6 +130,8 @@ if( sortData )
         
         % remove temporary file
         delete(ops.fproc);
+        
+        diary off;
 end
 % NA for TDT data
 %if runBenchmark

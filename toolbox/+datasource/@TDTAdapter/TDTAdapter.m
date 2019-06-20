@@ -50,10 +50,9 @@ classdef TDTAdapter < interface.IDataAdapter
         % Batch read datapoints
         function [ buffer ] = batchRead(obj, readOffsetAllChan, nChannels, nSamples, dataTypeString, channelOffset)
             %batchRead(offset,nChanToT,NTBuff,dataTypeStr)
-            % readOffsetAllChan: ignore - the offset is maintained
-            %                     internally obj.lastSampleRead 
-            % dataTypeString: ignore - is maintained internally
-            %                     obj.dataForm from header in the sev file 
+            % readOffsetAllChan: from where to read next set of nSamples                  
+            % reset the lastSampleRead for readRaw
+            obj.lastSampleRead = readOffsetAllChan/nChannels/obj.dataWidthBytes;
             obj.channelOffset=channelOffset;
             buffer = obj.readRaw(nChannels, nSamples);
         end

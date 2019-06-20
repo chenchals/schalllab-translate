@@ -95,9 +95,8 @@ if strcmp(ops.recordingSystem,'emouse') %emouse, tdt
     ops.dataAdapter = DataAdapter.newDataAdapter(ops.recordingSystem,ops.fbinary,ops.NchanTOT);
     ops.dataTypeBytes       = 2; % datatpe for the sample point -int16=2 4=single
     ops.dataTypeString      = 'int16'; % datatype of sample point - 'int16' or 'single'
+    ops.headerBytes         = 0;
 end
-
-
 
 %% Run kilosort2 on the simulated data
 if( sortData ) 

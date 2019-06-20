@@ -56,12 +56,12 @@ classdef (Abstract=true) IDataAdapter < handle
     methods
         % nChannels
         function [val] = get.nChannels(obj)
-            val = size(obj.dataSize,1);
+            val = obj.dataSize(1);
         end
         
         % nSamplesPerChannel
         function [val] = get.nSamplesPerChannel(obj)
-            val = size(obj.dataSize,2);
+            val = obj.dataSize(2);
         end
         
         

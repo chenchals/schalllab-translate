@@ -1,33 +1,38 @@
 function [rez, DATA] = clusterWithKilosort(ops)
+% Modifications
+% Changed all cases where bytes are computed from 
+%     *2 or /2 to --> *dataWidth or /dataWidth
+%     Replaced:
+%        bytes = get_file_size(ops.fbinary); with
+%        bytes = get_file_size(ops.fbinary,ops.headerBytes);
+%     Replaced: ops.ntbff redefinition
+%        NTbuff      = NT + 4*ops.ntbuff; with
+%        NTbuff      = NT + ops.ntbuff;
+%     Replaced: 
+%        offset = max(0, ops.twind + 2*NchanTOT*((NT - ops.ntbuff) *
+%           (ibatch-1) - 2*ops.ntbuff)); 
+%        offset = max(0, ops.twind + ops.dataTypeBytes*NchanTOT*((NT -
+%           ops.ntbuff) * (ibatch-1) - ops.dataTypeBytes*ops.ntbuff));  
+%
 tic;
+ops.dataTypeBytes = getOr(ops,'dataTypeBytes',2); % minimum 2 bytes or int16
+ops.headerBytes = getOr(ops,'headerBytes',0); % no. of header bytes (0 for binary file)
+
 ops.nt0 	= getOr(ops, {'nt0'}, 61);
 ops.nt0min  = getOr(ops, 'nt0min', ceil(20 * ops.nt0/61));
 
 NT       = ops.NT ;
 NchanTOT = ops.NchanTOT;
 
-dataTypeBytes = ops.dataTypeBytes; %2; %int16 4=single
-dataTypeString = ops.dataTypeString; %'int16'; % int16,
+bytes = get_file_size(ops.fbinary,ops.headerBytes);
 
-%% Change for DataAdapter
-if ~isfield(ops,'dataAdapter')
-    bytes = get_file_size(ops.fbinary);
-    nTimepoints = floor(bytes/NchanTOT/2);
-else
-    dataAdapter = ops.dataAdapter;
-    nTimepoints = dataAdapter.getSampsToRead(NchanTOT);
-    ops.maxSampsToRead = nTimepoints;
-end
-
-%% Range of times to determine the samples to read
-% ops.trange = [beginSampleSeconds endSampleSeconds]
-
+nTimepoints = floor(bytes/NchanTOT/ops.dataTypeBytes);
 ops.tstart = ceil(ops.trange(1) * ops.fs);
 ops.tend   = min(nTimepoints, ceil(ops.trange(2) * ops.fs));
 ops.sampsToRead = ops.tend-ops.tstart;
-ops.twind = ops.tstart * NchanTOT*2;
+ops.twind = ops.tstart * NchanTOT*ops.dataTypeBytes;
+twind = ops.twind;
 
-% Batches to read
 Nbatch      = ceil(ops.sampsToRead /(NT-ops.ntbuff));
 ops.Nbatch = Nbatch;
 
@@ -64,21 +69,18 @@ rez.ycoords = yc;
 rez.ops.chanMap = chanMap;
 rez.ops.kcoords = kcoords; 
 
-
-NTbuff      = NT + 4*ops.ntbuff;
-
+%NTbuff      = NT + 4*ops.ntbuff;
+NTbuff      = NT + ops.ntbuff;
 
 % by how many bytes to offset all the batches
 rez.ops.Nbatch = Nbatch;
 rez.ops.NTbuff = NTbuff;
 rez.ops.chanMap = chanMap;
 
-
 fprintf('Time %3.0fs. Computing whitening matrix.. \n', toc);
 
 % this requires removing bad channels first
 Wrot = get_whitening_matrix(rez);
-
 
 fprintf('Time %3.0fs. Loading raw data and applying filters... \n', toc);
 
@@ -94,24 +96,22 @@ if isfield(ops,'fslow')&&ops.fslow<ops.fs/2
 else
     [b1, a1] = butter(3, ops.fshigh/ops.fs*2, 'high');
 end
-if ~isfield(ops,'dataAdapter')
-    fid         = fopen(ops.fbinary, 'r');
-end
+
 for ibatch = 1:Nbatch
-    offset = max(0, ops.twind + 2*NchanTOT*((NT - ops.ntbuff) * (ibatch-1) - 2*ops.ntbuff));
+    offset = max(0,...
+        twind ...
+        + ops.dataTypeBytes*NchanTOT*((NT - ops.ntbuff) * (ibatch-1)...
+        - ops.dataTypeBytes*ops.ntbuff)...
+        );
+ 
     if offset==0
         ioffset = 0;
     else
         ioffset = ops.ntbuff;
     end
     
-    if ~isfield(ops,'dataAdapter')
-        fseek(fid, offset, 'bof');
-        buff = fread(fid, [NchanTOT NTbuff], '*int16');
-    else
-        buff = dataAdapter.batchRead(offset,ops.NchanTOT, NTbuff, dataTypeString);
-    end
-        
+    buff = ops.dataAdapter.batchRead(offset,ops.NchanTOT, NT, ops.dataTypeString, ops.channelOffset);
+
     if isempty(buff)
         break;
     end
@@ -159,10 +159,8 @@ rez.Wrot    = Wrot;
 
 fclose(fidW);
 
-if ~isfield(ops,'dataAdapter')
-    fclose(fid);
-end
 fprintf('Time %3.0fs. Finished preprocessing %d batches. \n', toc, Nbatch);
 
 rez.temp.Nbatch = Nbatch;
+
 

@@ -84,6 +84,7 @@ classdef TDTAdapterTest < matlab.unittest.TestCase
              
         
         function testBatchRead(obj)
+            obj.assumeFail();
             nChan = 10;
             nSamples = 100;
             nBatches =10;

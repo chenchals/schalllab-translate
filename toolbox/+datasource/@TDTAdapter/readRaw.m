@@ -7,8 +7,10 @@
         obj.isOpen = 1;
     end
     p = gcp('nocreate');
+    try
     sampleStart = obj.lastSampleRead + 1;
     sampleEnd = obj.lastSampleRead + nSamples;
+    sampleEnd = min(sampleEnd, obj.nSamplesPerChannel);
     memFiles = obj.memmapDataFiles;
     if isempty(p)
         for ii = 1:nChannels
@@ -22,9 +24,18 @@
         end
         data = cell2mat(temp)';
     end
+    catch EX
+        fprintf('Exception in readRaw...\n');
+        fprintf('Trying to read from: [%d], to [%d]\n',...
+            sampleStart,sampleEnd);
+        keyboard
+        obj.dataSize
+        disp(EX)
+        
+    end
     data = data.*obj.rawDataScaleFactor;
 
-    obj.lastSampleRead = obj.lastSampleRead + nSamples;
+    obj.lastSampleRead = sampleEnd;
     end
 
     function initMemMapFiles(obj, channels)
