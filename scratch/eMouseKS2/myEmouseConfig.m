@@ -1,5 +1,6 @@
 %% Paths
 ops.fig = 0;
+ops.channelOffset = 0;
 projectPath = '~/Projects/lab-schall/schalllab-translate';
 resultsBasePath = '/scratch/ksDataProcessed/SIMULDATA';
 % Channel map file

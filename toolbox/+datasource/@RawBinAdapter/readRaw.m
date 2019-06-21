@@ -12,7 +12,9 @@ function [data] = readRaw(obj, nChannels, nSamples)
         sampleEnd = obj.lastSampleRead + (nChannels*nSamples);
         sampleEnd = min(sampleEnd, obj.nSamplesPerChannel*obj.nChannelsTotal);
         memFiles = obj.memmapDataFiles;
-        data = reshape(memFiles{1}.Data(sampleStart:sampleEnd),[nChannels nSamples]);
+        temp = memFiles{1}.Data(sampleStart:sampleEnd);
+        % when we read last chunk there may not be nSamples
+        data = reshape(temp,[nChannels, numel(temp)/nChannels]);
     catch EX
         fprintf('Exception in readRaw...\n');
         fprintf('Trying to read from: [%d], to [%d]\n',...

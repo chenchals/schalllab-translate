@@ -92,7 +92,7 @@ ops.NchanTOT = NchanTOT; % total number of channels in your recording
 
 %% Data adapter for reading data
 if strcmp(ops.recordingSystem,'emouse') %emouse, tdt
-    ops.dataAdapter = DataAdapter.newDataAdapter(ops.recordingSystem,ops.fbinary,ops.NchanTOT);
+    ops.dataAdapter = interface.IDataAdapter.newDataAdapter(ops.recordingSystem,ops.fbinary,ops.NchanTOT);
     ops.dataTypeBytes       = 2; % datatpe for the sample point -int16=2 4=single
     ops.dataTypeString      = 'int16'; % datatype of sample point - 'int16' or 'single'
     ops.headerBytes         = 0;
