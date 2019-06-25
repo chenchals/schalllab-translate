@@ -32,7 +32,8 @@ classdef TDTAdapter < interface.IDataAdapter
                 parse(parser,varargin{:});
                 
                 obj.rawDataScaleFactor = parser.Results.rawDataScaleFactor;
-                obj.nShanks = parser.Results.nShanks;
+                obj.nProbes = parser.Results.nProbes;
+                obj.nShanks = 1;
             catch ME
                 disp(ME);
             end
@@ -58,7 +59,7 @@ classdef TDTAdapter < interface.IDataAdapter
             fx_posScalar = @(x) isnumeric(x) && isscalar(x) && (x > 0);
             fx_posInt = @(x) isfinite(x) && isscalar(x) && x==floor(x) && (x > 0);
            addOptional(parser,'rawDataScaleFactor',1.0,fx_posScalar);
-           addOptional(parser,'nShanks',1,fx_posInt);
+           addOptional(parser,'nProbes',1,fx_posInt);
         end
         
     end

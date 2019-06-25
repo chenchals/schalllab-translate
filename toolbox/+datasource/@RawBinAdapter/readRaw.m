@@ -8,13 +8,16 @@ function [data] = readRaw(obj, nChannels, nSamples)
     end
     %p = gcp('nocreate'); can we use a parallel lookup in a matrix?
     try
+        if obj.lastSampleRead == obj.nSamplesPerChannel
+            data = [];
+            return;
+        end
+        % Read data from *all* channels
         sampleStart = obj.lastSampleRead + 1;
-        sampleEnd = obj.lastSampleRead + (nChannels*nSamples);
+        sampleEnd = obj.lastSampleRead + (obj.nChannelsTotal*nSamples);
         sampleEnd = min(sampleEnd, obj.nSamplesPerChannel*obj.nChannelsTotal);
         memFiles = obj.memmapDataFiles;
-        temp = memFiles{1}.Data(sampleStart:sampleEnd);
-        % when we read last chunk there may not be nSamples
-        data = reshape(temp,[nChannels, numel(temp)/nChannels]);
+        data = reshape(memFiles{1}.Data(sampleStart:sampleEnd),[obj.nChannelsTotal nSamples]);
     catch EX
         fprintf('Exception in readRaw...\n');
         fprintf('Trying to read from: [%d], to [%d]\n',...
@@ -27,7 +30,7 @@ function [data] = readRaw(obj, nChannels, nSamples)
     % For a binary file with a vector of data,
     % if we read less than max channels, offset pointer to channel#1 for next read
     if (nChannels < obj.nChannelsTotal)
-        sampleEnd = sampleEnd + nSamples*(obj.nChannelsTotal - nChannels);
-        obj.lastSampleRead =  min(sampleEnd,obj.nSamplesPerChannel*obj.nChannelsTotal);
+        data = data(1:nChannels,:);
     end
 end
+

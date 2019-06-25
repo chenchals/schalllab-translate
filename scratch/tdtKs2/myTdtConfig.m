@@ -7,8 +7,6 @@ projectPath = '~/Projects/lab-schall/schalllab-translate';
 % in TESTDATA/[session] files:
 % Init_SetUp-160715-150111 : 2-probes(32 chans each);
 %         use for ops.chanMapName: 'linear-probes-2-32-chan-150mu.mat'
-% Init_SetUp-160811-145107 : 1-probes(32 chans each);
-%         use for ops.chanMapName: 'linear-probes-1-32-chan-150mu.mat'
 % ops.dataPath = '/scratch/ksData/TESTDATA';
 % resultsBasePath = '/scratch/ksDataProcessed/TESTDATA';
 % ops.dataSession = 'Init_SetUp-160811-145107';
@@ -40,7 +38,7 @@ ops.fproc = fullfile(ops.resultsPhyPath,'temp_wh.dat');
 ops.resultsExtractChannels = 1;
 %% Processing setup
 % Modified to use DataAdapter
-ops.recordingSystem     = 'tdt'; %emouse, tdt
+ops.recordingSystem     = 'sev'; %emouse, tdt
 % the raw file where waveforms for each channel is stored
 % example file: CMD_TSK_029_EphysMulti-190510-092724_Joule-190517-113527_Wav1_Ch14.sev
 ops.sevFilenamePart = '_Wav1_';% '_Wav1_';

@@ -12,7 +12,7 @@ classdef RawBinAdapter < interface.IDataAdapter
     %% Public methods
     methods
          function obj = RawBinAdapter(source,varargin)
-            obj.recordingSystem = 'emouse';
+            obj.recordingSystem = 'bin';
             try
                 d = dir(source);
                 % sort by channel number
@@ -24,16 +24,17 @@ classdef RawBinAdapter < interface.IDataAdapter
                 obj.fileSizeBytes = d(1).bytes;
                 obj.dataForm = 'int16';
                 obj.dataWidthBytes = 2;
-                obj.dataFs = 30000;
                 
                 parser = getArgParser(obj);
                 parse(parser,varargin{:});
                 
-                obj.dataSize = [parser.Results.nChannels, ... % nChannels
+               obj.dataSize = [parser.Results.nChannels, ... % nChannels
                                 (obj.fileSizeBytes-obj.headerOffset)/obj.dataWidthBytes/parser.Results.nChannels...% nSamplesPerChannel
                                ]; 
                 obj.rawDataScaleFactor = parser.Results.rawDataScaleFactor;
-                obj.nShanks = 0;
+                obj.dataFs = parser.Results.fs;
+                obj.nProbes = 1;
+                obj.nShanks = 1;
             catch ME
                 disp(ME);
             end
@@ -58,6 +59,7 @@ classdef RawBinAdapter < interface.IDataAdapter
             %fx_posInt = @(x) (x>=16);% minimum 16 channels
            parser.addOptional('nChannels',1);
            parser.addOptional('rawDataScaleFactor',1.0);
+           parser.addOptional('fs',30000);
         end
     end
     

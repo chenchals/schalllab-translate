@@ -15,7 +15,10 @@ classdef (Abstract=true) IDataAdapter < handle
         dataWidthBytes;    % number of bytes for each sample data point
         dataSize;          % [nChannels x nSamples]
         dataFs;            % data sampling frequency
-        nShanks;           % no of vector probes for multi-probe recordings
+        nShanks;           % no of arrays on a single probes for (neupixel type...)
+        nProbes;           % no of probes in a single session
+        minDataVal;
+        maxDataVal;
     end
     
     properties (SetAccess=protected, SetObservable, Transient, Dependent)
@@ -32,10 +35,10 @@ classdef (Abstract=true) IDataAdapter < handle
     methods (Static)
         function adapter = newDataAdapter(recordingSystem, source, varargin)
             switch lower(recordingSystem)
-                case 'emouse'
+                case 'bin'
                     %nChannels = 34; % default for KS1
                     adapter = datasource.RawBinAdapter(source,varargin{:});
-                case 'tdt'
+                case 'sev'
                     adapter = datasource.TDTAdapter(source,varargin{:});
                 otherwise
                     error('Type must be either emouse or tdt');

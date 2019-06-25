@@ -16,7 +16,7 @@ classdef TDTAdapterTest < matlab.unittest.TestCase
     %% SETUP: Class level 
     methods(TestClassSetup)
         function setupProps(obj)
-            obj.recordingSystem = 'tdt';
+            obj.recordingSystem = 'sev';
             obj.datasource = '/scratch/ksData/TESTDATA/Init_SetUp-160715-150111/*_Wav1_*.sev';
             obj.dataMultiplier = 1E6;
         end
@@ -61,7 +61,7 @@ classdef TDTAdapterTest < matlab.unittest.TestCase
         end
         
         function testReadRaw(obj)
-            obj.assumeFail();
+            %obj.assumeFail();
             nChan =10;
             nSamples = 100;
             dataAdapter = obj.adapter;
