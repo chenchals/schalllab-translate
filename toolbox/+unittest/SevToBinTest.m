@@ -16,7 +16,7 @@ classdef SevToBinTest < matlab.unittest.TestCase
         function setupProps(obj)
             obj.tdtProps.recordingSystem = 'sev';
             obj.tdtProps.datasource = '/scratch/ksData/TESTDATA/Init_SetUp-160715-150111/*_Wav1_*.sev';
-            obj.tdtProps.dataMultiplier = 1E6;
+            obj.tdtProps.dataMultiplier = 1E6;%multiplier used during write to binary
             obj.binProps.recordingSystem = 'bin';
             obj.binProps.datasource = '/scratch/ksData/TESTDATA/Init_SetUp-160715-150111/Init_SetUp-160715-150111.bin';
             obj.binProps.dataMultiplier = 1;

@@ -69,7 +69,7 @@ rez.ycoords = yc;
 rez.ops.chanMap = chanMap;
 rez.ops.kcoords = kcoords; 
 
-%NTbuff      = NT + 4*ops.ntbuff;
+NTbuff      = NT + 4*ops.ntbuff;
 
 % by how many bytes to offset all the batches
 rez.ops.Nbatch = Nbatch;

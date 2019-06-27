@@ -7,11 +7,11 @@ projectPath = '~/Projects/lab-schall/schalllab-translate';
 % in TESTDATA/[session] files:
 % Init_SetUp-160715-150111 : 2-probes(32 chans each);
 %         use for ops.chanMapName: 'linear-probes-2-32-chan-150mu.mat'
-ops.dataPath = '/scratch/ksData/TESTDATA';
-resultsBasePath = '/scratch/ksDataProcessed/TESTDATA';
-ops.dataSession = 'Init_SetUp-160715-150111';
+ops.dataPath = '/scratch/Chenchal/cmdBinaryRepo';
+resultsBasePath = '/scratch/ksDataProcessed/cmdBinaryRepo';
+ops.dataSession = 'eulsef20120910c-01';
 ops.dataSessionFile = fullfile(ops.dataPath, ops.dataSession,[ops.dataSession '.bin']);
-ops.rawDataMultiplier = 1E6; % Ensure raw values are in uV
+ops.rawDataMultiplier = 1; % Ensure raw values are in uV
 %%
 % Data session / file
 % in Joule/cmanding/ephys/TESTDATA/[session]/ files:

@@ -24,9 +24,8 @@ function [nSampTOT] = writeBinary(obj)
        if ~isempty(data)
            fwrite(fidw,data(:)','int16');
            nSampTOT = nSampTOT + numel(data);
-           [ii toc]
+           fprintf('Wrote batch %i of %i, %.4f\n',ii,nBatches,toc);
        end
    end
    fclose(fidw);
 end
- 
