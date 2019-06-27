@@ -1,61 +1,17 @@
-%% Paths
-ops.fig = 0;
-ops.channelOffset = 0;
-projectPath = '~/Projects/lab-schall/schalllab-translate';
-% SSD drive
-%%
-% in TESTDATA/[session] files:
-% Init_SetUp-160715-150111 : 2-probes(32 chans each);
-%         use for ops.chanMapName: 'linear-probes-2-32-chan-150mu.mat'
-ops.dataPath = '/scratch/Chenchal/cmdBinaryRepo';
-resultsBasePath = '/scratch/ksDataProcessed/cmdBinaryRepo';
-ops.dataSession = 'eulsef20120910c-01';
-ops.dataSessionFile = fullfile(ops.dataPath, ops.dataSession,[ops.dataSession '.bin']);
-ops.rawDataMultiplier = 1; % Ensure raw values are in uV
-%%
-% Data session / file
-% in Joule/cmanding/ephys/TESTDATA/[session]/ files:
-% Joule-190510-111052 *only* Lfp1
-%         use for ops.chanMapName: 'linear-probes-1-16-chan-150mu.mat'
-% Joule-190513-110456 *raw* RSn1, Wav1, Lfp1, and others 
-% Joule-190517-111405 *only* RSn1
-% Joule-190517-113527 Wav1, Lfp1, and others
-% 
-%  ops.dataPath = '/scratch/ksData/Joule/cmanding/ephys/TESTDATA';
-%  resultsBasePath = '/scratch/ksDataProcessed/Joule/cmanding/ephys/TESTDATA';
-%  ops.dataSession = 'Joule-190517-113527';
-%  ops.rawDataMultiplier = 1E6; % For TDT simulator values range form -5 - +5 (volts?)...??
-%% Channel map file
-ops.chanMapPath = fullfile(projectPath,'toolbox/spk-cluster/channelMaps');
-ops.chanMapName='linear-probes-2-32-chan-150mu.mat';
 
-% Results / output dir / files
-ops.resultsPhyPath = fullfile(resultsBasePath, ops.dataSession, 'phy');
-ops.resultsMatPath = fullfile(resultsBasePath, ops.dataSession);
-% path to whitened filtered proc, after processing this file is deleted
-ops.fproc = fullfile(ops.resultsPhyPath,'temp_wh.dat');
-% Extract results as different channel files with names containg
-% DSP01a,...,DSP32d.. that has spike times, waveforms etc vars
-ops.resultsExtractChannels = 1;
-%% Processing setup
-% Modified to use DataAdapter
-ops.recordingSystem     = 'bin'; %emouse:bin, tdt:sev
-% the raw file where waveforms for each channel is stored
-% example file: CMD_TSK_029_EphysMulti-190510-092724_Joule-190517-113527_Wav1_Ch14.sev
-ops.sevFilenamePart = '_Wav1_';% '_Wav1_';
 % sampling rate
-ops.fs = 24414;
+ops.fs = 40000;
 
 % time range in seconds of data to process
 % TIME RANGE IN SECONDS TO PROCESS
 %ops.trange      = [0 60]; 
-ops.trange      = [0 180];
+ops.trange      = [0 Inf];
 
 % sorting type ...??
 ops.sorting     = 1; % type of sorting, 2 is by rastermap, 1 is old
 
 % frequency for high pass filtering (150)
-ops.fshigh = 150;
+ops.fshigh = 300;
 % low frquency, if we need bandpass filtering
 % ops.fslow = 5000;
 
