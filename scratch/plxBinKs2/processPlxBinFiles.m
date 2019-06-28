@@ -15,9 +15,10 @@ resultsBasePath = '/scratch/ksDataProcessed/cmdBinaryRepo';
 addKilosort2NpyPaths(kilosortPath,npyMatlabPath);
 % get sessions...(only binary files, int16, )
 sessions = dir(fullfile(dataPath,'*.bin'));
-
+sessions([sessions.bytes]==0)=[];
 %% Process..for each session.....
 for jj = 1:numel(sessions)
+    try
     % Read config file
     % Run the configuration file, it builds the structure of options (ops)
     run(ksConfigFile)
@@ -49,6 +50,10 @@ for jj = 1:numel(sessions)
     rez = myMasterPlxBin(ops);
     clear ops rez
     toc
+
+    catch ME
+        disp(getReport(ME,'extended'));
+    end
     diary off
 end
 

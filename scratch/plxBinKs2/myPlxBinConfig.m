@@ -4,7 +4,7 @@ ops.fs = 40000;
 
 % time range in seconds of data to process
 % TIME RANGE IN SECONDS TO PROCESS
-%ops.trange      = [0 60]; 
+%ops.trange      = [0 2000]; 
 ops.trange      = [0 Inf];
 
 % sorting type ...??
