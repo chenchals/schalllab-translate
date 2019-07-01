@@ -1,6 +1,6 @@
 
 % sampling rate
-ops.fs = 40000;
+ops.fs = 24414; %40000;
 
 % time range in seconds of data to process
 % TIME RANGE IN SECONDS TO PROCESS
@@ -35,7 +35,7 @@ ops.lam = 10;%[10 30];
 ops.AUCsplit = 0.9;
 
 % minimum spike rate (Hz), if a cluster falls below this for too long it gets removed
-ops.minFR = 1/500; %1/50;
+ops.minFR = 1/50; %1/50;
 
 % number of samples to average over (annealed from first to second value)
 ops.momentum = [20 400];
@@ -45,19 +45,19 @@ ops.momentum = [20 400];
 ops.sigmaMask = 150;% channel spacing? 
 
 % threshold crossings for pre-clustering (in PCA projection space)
-ops.ThPre = 6;
+ops.ThPre = 4;
 %% danger, changing these settings can lead to fatal errors
 % options for determining PCs
-ops.spkTh           = -6;      % spike threshold in standard deviations (-6)
+ops.spkTh           = -4;      % spike threshold in standard deviations (-6)
 ops.reorder         = 1;       % whether to reorder batches for drift correction.
-ops.nskip           = 25;  % how many batches to skip for determining spike PCs
+ops.nskip           = 5;  % how many batches to skip for determining spike PCs
 
 ops.GPU                 = 1; % has to be 1, no CPU version yet, sorry;  whether to run this code on an Nvidia GPU (much faster, mexGPUall first)
 ops.nfilt_factor        = 4; % max number of clusters per good channel (even temporary ones)
 ops.ntbuff              = 64;    % samples of symmetrical buffer for whitening and spike detection
 ops.NT                  = 64*8*1024+ ops.ntbuff; % must be multiple of 32 + ntbuff. This is the batch size (try decreasing if out of memory).
-ops.whiteningRange      = 16; % number of channels to use for whitening each channel
-ops.nSkipCov            = 25; %5; % compute whitening matrix from every N-th batch
+ops.whiteningRange      = 1; % number of channels to use for whitening each channel
+ops.nSkipCov            = 5; %5; % compute whitening matrix from every N-th batch
 ops.scaleproc           = 200; % int16 scaling of whitened data
 ops.nPCs                = 3; % how many PCs to project the spikes into
 ops.useRAM              = 0; % not yet available

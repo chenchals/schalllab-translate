@@ -1,61 +1,17 @@
-%% Paths
-ops.fig = 0;
-ops.channelOffset = 0;
-projectPath = '~/Projects/lab-schall/schalllab-translate';
-% SSD drive
-%%
-% in TESTDATA/[session] files:
-% Init_SetUp-160715-150111 : 2-probes(32 chans each);
-%         use for ops.chanMapName: 'linear-probes-2-32-chan-150mu.mat'
-ops.dataPath = '/scratch/ksData/TESTDATA';
-resultsBasePath = '/scratch/ksDataProcessed/TESTDATA';
-ops.dataSession = 'Init_SetUp-160715-150111';
-ops.dataSessionFile = fullfile(ops.dataPath, ops.dataSession,[ops.dataSession '.bin']);
-ops.rawDataMultiplier = 1E6; % Ensure raw values are in uV
-%%
-% Data session / file
-% in Joule/cmanding/ephys/TESTDATA/[session]/ files:
-% Joule-190510-111052 *only* Lfp1
-%         use for ops.chanMapName: 'linear-probes-1-16-chan-150mu.mat'
-% Joule-190513-110456 *raw* RSn1, Wav1, Lfp1, and others 
-% Joule-190517-111405 *only* RSn1
-% Joule-190517-113527 Wav1, Lfp1, and others
-% 
-%  ops.dataPath = '/scratch/ksData/Joule/cmanding/ephys/TESTDATA';
-%  resultsBasePath = '/scratch/ksDataProcessed/Joule/cmanding/ephys/TESTDATA';
-%  ops.dataSession = 'Joule-190517-113527';
-%  ops.rawDataMultiplier = 1E6; % For TDT simulator values range form -5 - +5 (volts?)...??
-%% Channel map file
-ops.chanMapPath = fullfile(projectPath,'toolbox/spk-cluster/channelMaps');
-ops.chanMapName='linear-probes-2-32-chan-150mu.mat';
 
-% Results / output dir / files
-ops.resultsPhyPath = fullfile(resultsBasePath, ops.dataSession, 'phy');
-ops.resultsMatPath = fullfile(resultsBasePath, ops.dataSession);
-% path to whitened filtered proc, after processing this file is deleted
-ops.fproc = fullfile(ops.resultsPhyPath,'temp_wh.dat');
-% Extract results as different channel files with names containg
-% DSP01a,...,DSP32d.. that has spike times, waveforms etc vars
-ops.resultsExtractChannels = 1;
-%% Processing setup
-% Modified to use DataAdapter
-ops.recordingSystem     = 'bin'; %emouse:bin, tdt:sev
-% the raw file where waveforms for each channel is stored
-% example file: CMD_TSK_029_EphysMulti-190510-092724_Joule-190517-113527_Wav1_Ch14.sev
-ops.sevFilenamePart = '_Wav1_';% '_Wav1_';
 % sampling rate
-ops.fs = 24414;
+ops.fs = 24414; %40000;
 
 % time range in seconds of data to process
 % TIME RANGE IN SECONDS TO PROCESS
-%ops.trange      = [0 60]; 
-ops.trange      = [0 180];
+%ops.trange      = [0 2000]; 
+ops.trange      = [0 Inf];
 
 % sorting type ...??
 ops.sorting     = 1; % type of sorting, 2 is by rastermap, 1 is old
 
 % frequency for high pass filtering (150)
-ops.fshigh = 150;
+ops.fshigh = 300;
 % low frquency, if we need bandpass filtering
 % ops.fslow = 5000;
 
@@ -79,7 +35,7 @@ ops.lam = 10;%[10 30];
 ops.AUCsplit = 0.9;
 
 % minimum spike rate (Hz), if a cluster falls below this for too long it gets removed
-ops.minFR = 1/500; %1/50;
+ops.minFR = 1/50; %1/50;
 
 % number of samples to average over (annealed from first to second value)
 ops.momentum = [20 400];
@@ -89,19 +45,19 @@ ops.momentum = [20 400];
 ops.sigmaMask = 150;% channel spacing? 
 
 % threshold crossings for pre-clustering (in PCA projection space)
-ops.ThPre = 6;
+ops.ThPre = 4;
 %% danger, changing these settings can lead to fatal errors
 % options for determining PCs
-ops.spkTh           = -6;      % spike threshold in standard deviations (-6)
+ops.spkTh           = -4;      % spike threshold in standard deviations (-6)
 ops.reorder         = 1;       % whether to reorder batches for drift correction.
-ops.nskip           = 25;  % how many batches to skip for determining spike PCs
+ops.nskip           = 5;  % how many batches to skip for determining spike PCs
 
 ops.GPU                 = 1; % has to be 1, no CPU version yet, sorry;  whether to run this code on an Nvidia GPU (much faster, mexGPUall first)
 ops.nfilt_factor        = 4; % max number of clusters per good channel (even temporary ones)
 ops.ntbuff              = 64;    % samples of symmetrical buffer for whitening and spike detection
 ops.NT                  = 64*8*1024+ ops.ntbuff; % must be multiple of 32 + ntbuff. This is the batch size (try decreasing if out of memory).
-ops.whiteningRange      = 16; % number of channels to use for whitening each channel
-ops.nSkipCov            = 25; %5; % compute whitening matrix from every N-th batch
+ops.whiteningRange      = 1; % number of channels to use for whitening each channel
+ops.nSkipCov            = 5; %5; % compute whitening matrix from every N-th batch
 ops.scaleproc           = 200; % int16 scaling of whitened data
 ops.nPCs                = 3; % how many PCs to project the spikes into
 ops.useRAM              = 0; % not yet available
