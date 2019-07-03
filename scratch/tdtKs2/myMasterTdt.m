@@ -74,7 +74,7 @@ function [rez] = myMasterTdt(ops)
         fclose(fileID);
 
         % remove temporary file
-        delete(ops.fproc);
+        % delete(ops.fproc);
     end
 end
 
