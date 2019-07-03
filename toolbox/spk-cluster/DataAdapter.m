@@ -4,7 +4,6 @@ classdef (Abstract=true) DataAdapter < handle
         dataSource;
         dirStruct;
         fidArray;
-        rawDataMultiplier;
     end
     
     methods (Abstract)
@@ -24,23 +23,12 @@ classdef (Abstract=true) DataAdapter < handle
     end
     
     methods (Static)
-        function adapter = newDataAdapter(recordingSystem, source, varargin)
+        function adapter = newDataAdapter(recordingSystem, source)
             switch lower(recordingSystem)
                 case 'emouse'
-                    nChanTot = 34; % default for KS1
-                    if numel(varargin)>0
-                        nChanTot = varargin{1};
-                    end
-                    adapter = EMouseDataAdapter(source,nChanTot);
-                    adapter.rawDataMultiplier = 1.0;
+                    adapter = EMouseDataAdapter(source);
                 case 'tdt'
-                    if numel(varargin)>0
-                        rawDataMultiplier = varargin{1};
-                    else
-                        rawDataMultiplier = 1.0;
-                    end
                     adapter = TdtDataAdapter(source);
-                    adapter.rawDataMultiplier = rawDataMultiplier;
                 otherwise
                     error('Type must be either emouse or tdt');
             end
