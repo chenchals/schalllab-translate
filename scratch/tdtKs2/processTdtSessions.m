@@ -18,7 +18,7 @@ sessions = dir(fullfile(dataPath,'Joule*'));
 %% use ksBinaryFormat
 useKsBinaryFormat = true;
 %% Process..for each session.....
-for jj = 2:2 %numel(sessions)
+for jj = 1:1 %numel(sessions)
     try
     % Read config file
     % Run the configuration file, it builds the structure of options (ops)
