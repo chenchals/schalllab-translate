@@ -3,18 +3,18 @@ projectPath = '~/Projects/lab-schall/schalllab-translate';
 npyMatlabPath = '~/Projects/lab-schall/npy-matlab/npy-matlab';
 kilosortPath = '~/Projects/lab-schall/MyKilosort2';
 % will be already in path: lok: toolbox/spk-cluster/channelMaps
-chanMapFilename='linear-probes-1-32-chan-150mu.mat';
-nChannelsRecorded = 32;
+chanMapFilename='linear-probes-2-32-chan-150mu.mat';
+nChannelsRecorded = 64;
 % SSD drive
 % in cmdBinaryRepo/[session] files: are countermanding files
 ksConfigFile = fullfile(projectPath,'scratch/tdtKs2/myTdtConfig.m');
-dataPath = '/scratch/subravcr/ksData/Rig029';
-resultsBasePath = '/scratch/subravcr/ksDataProcessed/Rig029';
+dataPath = '/scratch/subravcr/ksData/TESTDATA';
+resultsBasePath = '/scratch/subravcr/ksDataProcessed/TESTDATA';
 
 %% Setup for Matlab for processing
 % Add npy-matlab and Kilosort2 to matlab path
 addKilosort2NpyPaths(kilosortPath,npyMatlabPath);
-sessions = dir(fullfile(dataPath,'Joule*'));
+sessions = dir(fullfile(dataPath,'Init*'));
 %% use ksBinaryFormat
 useKsBinaryFormat = true;
 %% Process..for each session.....
