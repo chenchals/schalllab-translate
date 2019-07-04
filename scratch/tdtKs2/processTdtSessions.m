@@ -16,7 +16,7 @@ resultsBasePath = '/scratch/subravcr/ksDataProcessed/TESTDATA';
 addKilosort2NpyPaths(kilosortPath,npyMatlabPath);
 sessions = dir(fullfile(dataPath,'Init*'));
 %% use ksBinaryFormat
-useKsBinaryFormat = true;
+useKsBinaryFormat = false;
 %% Process..for each session.....
 for jj = 1:1 %numel(sessions)
     try
