@@ -3,22 +3,22 @@ projectPath = '~/Projects/lab-schall/schalllab-translate';
 npyMatlabPath = '~/Projects/lab-schall/npy-matlab/npy-matlab';
 kilosortPath = '~/Projects/lab-schall/MyKilosort2';
 % will be already in path: lok: toolbox/spk-cluster/channelMaps
-chanMapFilename='linear-probes-2-32-chan-150mu.mat';
-nChannelsRecorded = 64;
+chanMapFilename='linear-probes-1-32-chan-150mu.mat';
+nChannelsRecorded = 32;
 % SSD drive
 % in cmdBinaryRepo/[session] files: are countermanding files
 ksConfigFile = fullfile(projectPath,'scratch/tdtKs2/myTdtConfig.m');
-dataPath = '/scratch/subravcr/ksData/TESTDATA';
-resultsBasePath = '/scratch/subravcr/ksDataProcessed/TESTDATA';
+dataPath = '/scratch/subravcr/ksData/Rig029';
+resultsBasePath = '/scratch/subravcr/ksDataProcessed/Rig029';
 
 %% Setup for Matlab for processing
 % Add npy-matlab and Kilosort2 to matlab path
 addKilosort2NpyPaths(kilosortPath,npyMatlabPath);
-sessions = dir(fullfile(dataPath,'Init*'));
+sessions = dir(fullfile(dataPath,'Joule*'));
 %% use ksBinaryFormat
 useKsBinaryFormat = false;
 %% Process..for each session.....
-for jj = 1:1 %numel(sessions)
+for jj = 1:numel(sessions)
     try
     % Read config file
     % Run the configuration file, it builds the structure of options (ops)
@@ -34,7 +34,7 @@ for jj = 1:1 %numel(sessions)
         ops.recordingSystem   = 'bin'; %emouse:bin, tdt:sev
         ops.dataSessionFile = fullfile(dataPath,...
                                ops.dataSession,...
-                               [ops.dataSession '_Wav1.bin']);
+                               [ops.dataSession '.bin']);
         ops.rawDataMultiplier = 1; % Ensure raw values are in uV
         ops.resultsPhyPath = fullfile(resultsBasePath, ops.dataSession, 'phyWav1Bin');
     else % use tdtd format sev files
@@ -42,8 +42,8 @@ for jj = 1:1 %numel(sessions)
         ops.dataSessionFile = fullfile(dataPath,...
                                ops.dataSession,...
                                '*_Wav1_*.sev');
-        ops.rawDataMultiplier = 4096; % Ensure raw values are in uV
-        ops.resultsPhyPath = fullfile(resultsBasePath, ops.dataSession, 'phy');
+        ops.rawDataMultiplier = 1E3; % Ensure raw values are in uV
+        ops.resultsPhyPath = fullfile(resultsBasePath, ops.dataSession, 'phySev');
     end
     % Modified to use DataAdapter
     % Results / output dir / files

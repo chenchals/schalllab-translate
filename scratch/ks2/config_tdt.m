@@ -1,4 +1,4 @@
-ops.chanMap             = '/home/subravcr/Projects/SpikeSorting/Kilosort2/tdt-linear-1-32-150um.mat';
+ops.chanMap             = '/home/subravcr/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-2-32-chan-150mu.mat';
 % ops.chanMap = 1:ops.Nchan; % treated as linear probe if no chanMap file
 
 % waveform samples ==> below does not work...?

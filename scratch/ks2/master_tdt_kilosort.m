@@ -1,19 +1,19 @@
 %% you need to change most of the paths in this block
 
-addpath(genpath('/home/subravcr/Projects/SpikeSorting/Kilosort2')) % path to kilosort folder
-addpath('/home/subravcr/Projects/SpikeSorting/npy-matlab/npy-matlab')
+addpath(genpath('/home/subravcr/Projects/lab-schall/Kilosort2')) % path to kilosort folder
+addpath('/home/subravcr/Projects/lab-schall/npy-matlab/npy-matlab')
 
-pathToYourConfigFile = '/home/subravcr/Projects/SpikeSorting/Kilosort2'; % take from Github folder and put it somewhere else (together with the master_file)
+pathToYourConfigFile = '/home/subravcr/Projects/lab-schall/schalllab-translate/scratch/ks2'; % take from Github folder and put it somewhere else (together with the master_file)
 run(fullfile(pathToYourConfigFile, 'config_tdt.m'))
-rootH = '/scratch/ksDataProcessed/Rig029/Joule-190702-115514/phy-ks2-tom1-2';
+rootH = '/scratch/subravcr/ksDataProcessed/TESTDATA/Init_SetUp-160715-150111/phy_binKs2'; %Init_SetUp-160715-150111.bin';
 ops.fproc       = fullfile(rootH, 'temp_wh.dat'); % proc file on a fast SSD
-ops.chanMap = fullfile(pathToYourConfigFile, 'tdt-linear-1-32-150um.mat');
+%ops.chanMap = fullfile(pathToYourConfigFile, 'tdt-linear-2-32-150um.mat');
 
 ops.trange = [0 Inf]; % time range to sort
-ops.NchanTOT    = 32; % total number of channels in your recording
+ops.NchanTOT    = 64; % total number of channels in your recording
 
 % the binary file is in this folder
-rootZ = '/scratch/ksDataProcessed/Rig029/Joule-190702-115514/phy-ks2-tom1-2';
+rootZ = rootH;
 
 %% this block runs all the steps of the algorithm
 fprintf('Looking for data inside %s \n', rootZ)
