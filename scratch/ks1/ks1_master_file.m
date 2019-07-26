@@ -17,7 +17,7 @@ rez                = fitTemplates(rez, DATA, uproj);  % fit templates iterativel
 rez                = fullMPMU(rez, DATA);% extract final spike times (overlapping extraction)
 
 % AutoMerge. rez2Phy will use for clusters the new 5th column of st3 if you run this)
-%     rez = merge_posthoc2(rez);
+rez = merge_posthoc2(rez);
 
 % save matlab results file
 save(fullfile(ops.root,  'rez.mat'), 'rez', '-v7.3');
