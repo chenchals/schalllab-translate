@@ -1,8 +1,9 @@
 
-dataPath     = 'schalllab/data/Joule/cmanding/ephys/TESTDATA/In-Situ';
+dataPath     = '/mnt/teba/data/Joule/cmanding/ephys/TESTDATA/In-Situ';
 analysisDir = '/scratch/subravcr/ksDataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ';
 session     ='Joule-190725-111500';
-
+chanMapFile = '/home/subravcr/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-4-chan-150um.mat';
+nChan = 4;
 sessionAnalysisDir = fullfile(analysisDir,session);
 
 %% Params and configuration for Kilosort2
@@ -12,12 +13,9 @@ npyPths = genpath('~/Projects/lab-schall/npy-matlab');
 addpath(npyPths);
 
 %% Data stuff
-% define the channel map as a filename (string) or simply an array
-% ops.chanMap             = fullfile(ops.root, 'forPRBimecP3opt3.mat'); % make this file using createChannelMapFile.m
-ops.chanMap = 1:ops.Nchan; % treated as linear probe if a chanMap file 
 ops.dataDir             = fullfile(dataPath,session);   
 ops.datatype            = 'tdt2Bin';  % binary ('dat', 'bin') or 'openEphys'
-ops.root                = fullfile(sessionAnalysisDir,sessionName);
+ops.root                = fullfile(sessionAnalysisDir,session);
 ops.fbinary             = fullfile(ops.root, [session '.bin']); % will be created for 'openEphys'
 rootZ                   = fullfile(ops.root,'ks2');
 ops.fproc               = fullfile(rootZ, 'temp_wh.dat'); % residual from RAM of preprocessed data
@@ -25,12 +23,26 @@ ops.trange              = [0 Inf];	% time range to sort
 % need ops.nt0 for fitTemplates
 ops.nt0                 = 61; % length of samples for waveform data?
 
+% Create non-existent dirs
+if ~exist(ops.root,'dir')
+    mkdir(ops.root);
+end
+if ~exist(rootZ,'dir')
+    mkdir(rootZ);
+end
+% Other params
 ops.fs                  = 24414;        % sampling rate
-ops.NchanTOT            = 4;           % total number of channels
-ops.Nchan               = 4;           % number of active channels 
+ops.NchanTOT            = nChan;           % total number of channels
+ops.Nchan               = nChan;           % number of active channels 
 ops.Nfilt               = 128;           % number of filters to use (512, should be a multiple of 32)     
 ops.nNeighPC            = []; % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
 ops.nNeigh              = []; % visualization only (Phy): number of neighboring templates to retain projections of (16)
+%% Channel map file
+% define the channel map as a filename (string) or simply an array
+[~,fn]=fileparts(chanMapFile);
+dest = fullfile(ops.root,[fn '.mat']);
+copyfile(chanMapFile, dest,'f');
+ops.chanMap             = dest; % make this file using createChannelMapFile.m
 
 % frequency for high pass filtering (150)
 ops.fshigh = 150;   
@@ -85,7 +97,7 @@ tic
 
 if strcmp(ops.datatype , 'tdt2Bin')
     if ~exist(ops.fbinary,'file')        
-        ops = convertTdt2Bin(ops); 
+        convertTdt2Bin(ops); 
     end
 end
 

@@ -23,10 +23,10 @@ outputFile = ops.fbinary;
 % whereas if we save as int16(uVolts), we use a conversion factor of 1.0 in
 % doing spike sorting
 scaleFactor = 1E3;
-for f = 1:size(sess)
-    ds = fullfile(sess(f).folder,sess(f).name,'*_Wav1_*.sev');
+
+    ds = fullfile(ops.dataDir,'*_Wav1_*.sev');
     T = interface.IDataAdapter.newDataAdapter('sev',ds,'rawDataScaleFactor',scaleFactor);
     nsamp = T.writeBinary(outputFile);
-end
+
 
 end
