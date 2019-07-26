@@ -1,9 +1,11 @@
 
-dataPath     = 'schalllab/data/Joule/cmanding/ephys/TESTDATA/In-Situ';
+dataPath     = '/mnt/teba/data/Joule/cmanding/ephys/TESTDATA/In-Situ';
 analysisDir = '/scratch/subravcr/ksDataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ';
 session     ='Joule-190725-111500';
-
+chanMapFile = '/home/subravcr/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-4-chan-150um.mat';
+nChan = 4;
 sessionAnalysisDir = fullfile(analysisDir,session);
+
 
 %% Params and configuration for Kilosort1
 ks2Paths = genpath('~/Projects/lab-schall/KiloSort');
@@ -12,12 +14,9 @@ npyPths = genpath('~/Projects/lab-schall/npy-matlab');
 addpath(npyPths);
 
 %% Data stuff
-% define the channel map as a filename (string) or simply an array
-% ops.chanMap             = fullfile(ops.root, 'forPRBimecP3opt3.mat'); % make this file using createChannelMapFile.m
-ops.chanMap = 1:ops.Nchan; % treated as linear probe if a chanMap file 
 ops.dataDir             = fullfile(dataPath,session);   
 ops.datatype            = 'tdt2Bin';  % binary ('dat', 'bin') or 'openEphys'
-ops.root                = fullfile(sessionAnalysisDir,sessionName);
+ops.root                = sessionAnalysisDir;
 rootZ                   = fullfile(ops.root,'ks1');
 ops.fbinary             = fullfile(ops.root, [session '.bin']); % will be created for 'openEphys'
 ops.fproc               = fullfile(rootZ, 'temp_wh.dat'); % residual from RAM of preprocessed data
@@ -26,17 +25,32 @@ ops.trange              = [0 Inf];	% time range to sort
 % need ops.nt0 for fitTemplates
 ops.nt0 = 61; % length of samples for waveform data? 
 
+% Create non-existent dirs
+if ~exist(ops.root,'dir')
+    mkdir(ops.root);
+end
+if ~exist(rootZ,'dir')
+    mkdir(rootZ);
+end
+
+%% Other params
 ops.fs                  = 24414;        % sampling rate
 ops.NchanTOT            = 4;           % total number of channels
 ops.Nchan               = 4;           % number of active channels 
 ops.Nfilt               = 138;           % number of filters to use (512, should be a multiple of 32)     
-ops.nNeighPC            = []; % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
-ops.nNeigh              = []; % visualization only (Phy): number of neighboring templates to retain projections of (16)
+ops.nNeighPC            = 1; % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
+ops.nNeigh              = 1; % visualization only (Phy): number of neighboring templates to retain projections of (16)
+%% Channel map file
+% define the channel map as a filename (string) or simply an array
+[~,fn]=fileparts(chanMapFile);
+dest = fullfile(ops.root,[fn '.mat']);
+copyfile(chanMapFile, dest,'f');
+ops.chanMap             = dest; % make this file using createChannelMapFile.m
 
 % options for channel whitening
 ops.whitening           = 'full'; % type of whitening (default 'full', for 'noSpikes' set options for spike detection below)
 ops.nSkipCov            = 1; % compute whitening matrix from every N-th batch
-ops.whiteningRange      = 32; % how many channels to whiten together (Inf for whole probe whitening, should be fine if Nchan<=32)
+ops.whiteningRange      = Inf; % how many channels to whiten together (Inf for whole probe whitening, should be fine if Nchan<=32)
 
 % other options for controlling the model and optimization
 ops.Nrank               = 3;    % matrix rank of spike template model (3)
@@ -98,7 +112,7 @@ end
 
 if strcmp(ops.initialize, 'fromData')
     % do scaled kmeans to initialize the algorithm (not sure if functional yet for CPU)
-    optimizePeaks(uproj);
+    optimizePeaks(ops, uproj);
 end
 %%
 [rez] = fitTemplates(rez, DATA, uproj); 

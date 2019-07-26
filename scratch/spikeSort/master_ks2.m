@@ -19,7 +19,7 @@ ops.root                = sessionAnalysisDir;
 ops.fbinary             = fullfile(ops.root, [session '.bin']); % will be created for 'openEphys'
 rootZ                   = fullfile(ops.root,'ks2');
 ops.fproc               = fullfile(rootZ, 'temp_wh.dat'); % residual from RAM of preprocessed data
-ops.trange              = [0 Inf];	% time range to sort
+ops.trange              = [0 100];	% time range to sort
 % need ops.nt0 for fitTemplates
 ops.nt0                 = 61; % length of samples for waveform data?
 
@@ -30,7 +30,7 @@ end
 if ~exist(rootZ,'dir')
     mkdir(rootZ);
 end
-% Other params
+%% Other params
 ops.fs                  = 24414;        % sampling rate
 ops.NchanTOT            = nChan;           % total number of channels
 ops.Nchan               = nChan;           % number of active channels 
