@@ -15,7 +15,7 @@ addpath(npyPths);
 %% Data stuff
 ops.dataDir             = fullfile(dataPath,session);   
 ops.datatype            = 'tdt2Bin';  % binary ('dat', 'bin') or 'openEphys'
-ops.root                = fullfile(sessionAnalysisDir,session);
+ops.root                = sessionAnalysisDir;
 ops.fbinary             = fullfile(ops.root, [session '.bin']); % will be created for 'openEphys'
 rootZ                   = fullfile(ops.root,'ks2');
 ops.fproc               = fullfile(rootZ, 'temp_wh.dat'); % residual from RAM of preprocessed data
