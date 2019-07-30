@@ -2,7 +2,7 @@
 % For a description of these parameters, including legal options, see https://jrclust.readthedocs.io/en/latest/parameters/index.html
 
 % USAGE PARAMETERS
-outputDir = '/scratch/subravcr/ksDataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ/Joule-190725-111052/jrclust'; % Directory in which to place output files (Will output to the same directory as this file if empty)
+outputDir = '/scratch/subravcr/ksDataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ/Joule-190725-111500/jrclust'; % Directory in which to place output files (Will output to the same directory as this file if empty)
 batchMode = 1; % Suppress message boxes in favor of console messages
 verbose = 1; % (formerly fVerbose) Be chatty when processing
 
@@ -19,7 +19,7 @@ useParfor = 1; % (formerly fParfor) Use parfor where appropriate
 % PROBE PARAMETERS
 probePad = [12, 12]; % (formerly vrSiteHW) Recording contact pad size (in μm) (Height x width)
 shankMap = [1, 2, 3, 4]; % (formerly viShank_site) Shank ID of each site
-siteLoc = [1, 1; 2, 2; 3, 3; 4, 4]; % (formerly mrSiteXY) Site locations (in μm) (x values in the first column, y values in the second column)
+siteLoc = [100, 50; 200, 100; 300, 150; 400, 200]; % (formerly mrSiteXY) Site locations (in μm) (x values in the first column, y values in the second column)
 siteMap = [1, 2, 3, 4]; % (formerly viSite2Chan) Map of channel index to site ID (The mapping siteMap(i) = j corresponds to the statement 'site i is stored as channel j in the recording')
 
 % RECORDING FILE PARAMETERS
@@ -27,7 +27,7 @@ bitScaling = 1;%2.3438; % (formerly uV_per_bit) ADC bit scaling factor (Conversi
 dataType = 'int16'; % (formerly vcDataType) Format of raw recordings
 headerOffset = 0; % (formerly header_offset) Recording file header offset (in bytes)
 nChans = 4; % Number of channels stored in recording file (Distinct from the number of AP sites)
-rawRecordings = {'/scratch/subravcr/ksDataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ/Joule-190725-111052/Joule-190725-111052.bin'}; % Path or paths to raw recordings to sort
+rawRecordings = {'/scratch/subravcr/ksDataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ/Joule-190725-111500/Joule-190725-111500.bin'}; % Path or paths to raw recordings to sort
 recordingFormat = 'SpikeGLX'; % Format of raw recording
 sampleRate = 24414; % (formerly sRateHz) Sampling rate (in Hz) of raw recording
 tallSkinny = 1; % (formerly fTranspose_bin) Recording will be interpreted as nChannels x nSamples if true
@@ -51,17 +51,17 @@ userFiltKernel = []; % (formerly vnFilter_user) User-specified filter kernel (Ig
 
 % SPIKE DETECTION PARAMETERS
 blankPeriod = 5; % (formerly blank_period_ms) Duration of blanking period (in ms) when the common mean exceeds blankThresh
-CARMode = 'mean'; % (formerly vcCommonRef) The meaning of 'average' in 'common average reference'
+CARMode = 'median'; %'mean'; % (formerly vcCommonRef) The meaning of 'average' in 'common average reference'
 evtDetectRad = 50; % (formerly maxDist_site_um) Maximum distance (in μm) to search over for duplicate peaks
 evtWindow = [-0.25, 0.75]; % (formerly spkLim_ms) Time range (in ms) of filtered spike waveforms, centered at the peak
 nSiteDir = 0; % (formerly maxSite) Number of neighboring sites to group in either direction (nSitesEvt is set to 1 + 2*nSiteDir - nSitesExcl)
 nSitesExcl = 0; % (formerly nSites_ref) Number of sites to exclude from the spike waveform group for feature extraction
-qqFactor = 10;%5; % Spike detection threshold factor (Thr = qqFactor*med(abs(x-med(x)))/0.6745)
+qqFactor = 6; %10; %5; % Spike detection threshold factor (Thr = qqFactor*med(abs(x-med(x)))/0.6745)
 refracInt = 0.25; % (formerly spkRefrac_ms) Spike refractory period (in ms)
-detectBipolar = 0; % (formerly fDetectBipolar) Detect positive as well as negative peaks
+detectBipolar = 1; % (formerly fDetectBipolar) Detect positive as well as negative peaks
 evtManualThresh = []; % (formerly spkThresh_uV) Manually-set spike detection threshold (in μV)
 evtWindowRaw = [-0.5, 1.5]; % (formerly spkLim_raw_ms) Time range (in ms) of raw spike waveforms, centered at the peak
-groupShank = 0; % (formerly fGroup_shank) Group all sites on the same shank if true
+groupShank = 1; % (formerly fGroup_shank) Group all sites on the same shank if true
 minNeighborsDetect = 0; % (formerly nneigh_min_detect) Minimum number of sample neighbors exceeding threshold for a sample to be considered a peak
 realignTraces = 0; % (formerly fRealign_spk) Realign spike traces after subtracting local CAR (Realign if 1, perform subpixel interpolation if 2)
 spikeThreshMax = []; % (formerly spkThresh_max_uV) Maximum absolute amplitude (in μV) permitted for spikes
@@ -71,7 +71,7 @@ threshFile = ''; % (formerly vcFile_thresh) Path to .mat file storing the spike 
 clusterFeature = 'pca'; % (formerly vcFet) The feature to extract from your spike waveforms in order to cluster them
 evtGroupRad = 75; % (formerly maxDist_site_spk_um) Maximum distance (in μm) for extracting spike waveforms
 nPCsPerSite = 3; % (formerly nPcPerChan) Number of principal components to compute per site
-extractAfterDetect = 0; % Extract features only after detecting all spikes across all files if true (This is effectively set to true if you specify clusterFeature='gpca')
+extractAfterDetect = 1; % Extract features only after detecting all spikes across all files if true (This is effectively set to true if you specify clusterFeature='gpca')
 interpPC = 1; % (formerly fInterp_fet) Interpolate 1st principal vector to maximize projection of spikes if true
 nPeaksFeatures = 2; % (formerly nFet_use) Number of potential peaks to use when computing features
 
