@@ -1,7 +1,7 @@
 
 dataPath     = '/mnt/teba/data/Joule/cmanding/ephys/TESTDATA/In-Situ';
 analysisDir = '/scratch/subravcr/ksDataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ';
-session     ='Joule-190725-111500';
+session     = 'Joule-190725-111052';%'Joule-190725-111500';
 chanMapFile = '/home/subravcr/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-4-chan-150um.mat';
 nChan = 4;
 sessionAnalysisDir = fullfile(analysisDir,session);

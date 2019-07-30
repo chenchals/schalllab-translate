@@ -1,8 +1,8 @@
 
-dataPath     = '/mnt/teba/data/Joule/cmanding/ephys/TESTDATA/In-Situ';
+dataPath     = '/scratch/subravcr/ksData/Joule/cmanding/ephys/TESTDATA/In-Situ';
 analysisDir = '/scratch/subravcr/ksDataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ';
-session     ='Joule-190725-111500';
-chanMapFile = '/home/subravcr/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-4-chan-150um.mat';
+session     = 'Joule-190725-111052';%'Joule-190725-111052'; %'Joule-190725-111500';
+chanMapFile = '/Users/subravcr/Projects/lab-schall/schalllab-translate-develop/toolbox/spk-cluster/channelMaps/linear-probes-1-4-chan-150um.mat';
 nChan = 4;
 sessionAnalysisDir = fullfile(analysisDir,session);
 
@@ -37,9 +37,9 @@ end
 ops.fs                  = 24414;        % sampling rate
 ops.NchanTOT            = 4;           % total number of channels
 ops.Nchan               = 4;           % number of active channels 
-ops.Nfilt               = 138;           % number of filters to use (512, should be a multiple of 32)     
-ops.nNeighPC            = 1; % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
-ops.nNeigh              = 1; % visualization only (Phy): number of neighboring templates to retain projections of (16)
+ops.Nfilt               = 32;           % number of filters to use (512, should be a multiple of 32)     
+ops.nNeighPC            = []; % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
+ops.nNeigh              = []; % visualization only (Phy): number of neighboring templates to retain projections of (16)
 %% Channel map file
 % define the channel map as a filename (string) or simply an array
 [~,fn]=fileparts(chanMapFile);
@@ -78,7 +78,7 @@ ops.initialize      = 'fromData'; %'fromData' or 'no'
 ops.spkTh           = -4.5;      % spike threshold in standard deviations (4)
 ops.loc_range       = [3  1];  % ranges to detect peaks; plus/minus in time and channel ([3 1])
 ops.long_range      = [30  6]; % ranges to detect isolated peaks ([30 6])
-ops.maskMaxChannels = 5;       % how many channels to mask up/down ([5])
+ops.maskMaxChannels = 0;       % how many channels to mask up/down ([5])
 ops.crit            = .65;     % upper criterion for discarding spike repeates (0.65)
 ops.nFiltMax        = 10000;   % maximum "unique" spikes to consider (10000)
 
@@ -95,7 +95,7 @@ ops.ForceMaxRAMforDat   = 20e9; %0e9;  % maximum RAM the algorithm will try to u
 %% directives
 ops.verbose             = 1;
 ops.showfigures         = 0;
-ops.GPU                 = 1; % has to be 1, no CPU version yet, sorry
+ops.GPU                 = 0; % has to be 1, no CPU version yet, sorry
 ops.parfor              = 1;
 
 %%
