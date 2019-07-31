@@ -23,10 +23,10 @@ classdef (Abstract=true) DataAdapter < handle
     end
     
     methods (Static)
-        function adapter = newDataAdapter(recordingSystem, source)
+        function adapter = newDataAdapter(recordingSystem, source, nChanTot)
             switch lower(recordingSystem)
                 case 'emouse'
-                    adapter = EMouseDataAdapter(source);
+                    adapter = EMouseDataAdapter(source,nChanTot);
                 case 'tdt'
                     adapter = TdtDataAdapter(source);
                 otherwise
