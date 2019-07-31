@@ -4,6 +4,7 @@ data
 TDTMatlabSDK
 KalebCodes
 translateTdt.zip
+ksDataProcessed/*
 dataProcessed/*
 dataProcessed*
 local-data
