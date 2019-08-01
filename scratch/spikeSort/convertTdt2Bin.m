@@ -22,7 +22,7 @@ outputFile = ops.fbinary;
 % but then we would need to use a ADC conversion factor for spike sorting
 % whereas if we save as int16(uVolts), we use a conversion factor of 1.0 in
 % doing spike sorting
-scaleFactor = 1E3;
+scaleFactor = 1E6;
 
     ds = fullfile(ops.dataDir,'*_Wav1_*.sev');
     T = interface.IDataAdapter.newDataAdapter('sev',ds,'rawDataScaleFactor',scaleFactor);
