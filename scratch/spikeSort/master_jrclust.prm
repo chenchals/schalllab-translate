@@ -2,7 +2,7 @@
 % For a description of these parameters, including legal options, see https://jrclust.readthedocs.io/en/latest/parameters/index.html
 
 % USAGE PARAMETERS
-outputDir = '/scratch/subravcr/ksDataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ/Joule-190725-111500/jrclust'; % Directory in which to place output files (Will output to the same directory as this file if empty)
+outputDir = 'dataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ/Joule-190731-121704/jrclust'; % Directory in which to place output files (Will output to the same directory as this file if empty)
 batchMode = 1; % Suppress message boxes in favor of console messages
 verbose = 1; % (formerly fVerbose) Be chatty when processing
 
@@ -18,8 +18,8 @@ useParfor = 1; % (formerly fParfor) Use parfor where appropriate
 
 % PROBE PARAMETERS
 probePad = [12, 12]; % (formerly vrSiteHW) Recording contact pad size (in μm) (Height x width)
-shankMap = [1, 2, 3, 4]; % (formerly viShank_site) Shank ID of each site
-siteLoc = [100, 50; 200, 100; 300, 150; 400, 200]; % (formerly mrSiteXY) Site locations (in μm) (x values in the first column, y values in the second column)
+shankMap = [1, 1, 1, 1]; % (formerly viShank_site) Shank ID of each site
+siteLoc = [0, 150; 0, 300; 0, 450; 0, 600]; % (formerly mrSiteXY) Site locations (in μm) (x values in the first column, y values in the second column)
 siteMap = [1, 2, 3, 4]; % (formerly viSite2Chan) Map of channel index to site ID (The mapping siteMap(i) = j corresponds to the statement 'site i is stored as channel j in the recording')
 
 % RECORDING FILE PARAMETERS
@@ -27,7 +27,7 @@ bitScaling = 1;%2.3438; % (formerly uV_per_bit) ADC bit scaling factor (Conversi
 dataType = 'int16'; % (formerly vcDataType) Format of raw recordings
 headerOffset = 0; % (formerly header_offset) Recording file header offset (in bytes)
 nChans = 4; % Number of channels stored in recording file (Distinct from the number of AP sites)
-rawRecordings = {'/scratch/subravcr/ksDataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ/Joule-190725-111500/Joule-190725-111500.bin'}; % Path or paths to raw recordings to sort
+rawRecordings = {'data/Joule/cmanding/ephys/TESTDATA/In-Situ/Joule-190731-121704/Joule-190731-121704.bin'}; % Path or paths to raw recordings to sort
 recordingFormat = 'SpikeGLX'; % Format of raw recording
 sampleRate = 24414; % (formerly sRateHz) Sampling rate (in Hz) of raw recording
 tallSkinny = 1; % (formerly fTranspose_bin) Recording will be interpreted as nChannels x nSamples if true
@@ -40,9 +40,9 @@ freqLimBP = [300, 5000]; % (formerly freqLim) Frequency cutoffs for bandpass fil
 ignoreChans = []; % (formerly viChanZero) Channel numbers to ignore manually
 ignoreSites = []; % (formerly viSiteZero) Site IDs to ignore manually
 fftThresh = 0; % (formerly fft_thresh) Threshold (in MADs of power-frequency product) above which to remove frequency outliers
-freqLimNotch = []; % Frequency ranges to exclude for notch filter
+freqLimNotch = [60]; % Frequency ranges to exclude for notch filter
 freqLimStop = []; % Frequency range to exclude for band-stop filter
-gainBoost = 1; % (formerly gain_boost) Scale factor to boost gain in raw recording (Used in filtering operation)
+gainBoost = 2^16; % (formerly gain_boost) Scale factor to boost gain in raw recording (Used in filtering operation)
 loadTimeLimits = []; % (formerly tlim_load) Time range (in s) of samples to load at once (All samples are loaded if empty)
 nDiffOrder = 2; % (formerly nDiff_filt) Order for differentiator filter (Used if and only if filterType is 'sgdiff' or 'ndiff')
 nSamplesPad = 100; % (formerly nPad_filt) Number of samples to overlap between chunks in large files
