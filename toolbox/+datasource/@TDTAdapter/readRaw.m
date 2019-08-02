@@ -4,7 +4,6 @@ data = zeros(nChannels, nSamples);
 channels = (1:nChannels) + obj.channelOffset;
 if ~obj.isOpen
     obj.openDataset(channels);
-    obj.isOpen = 1;
 end
 p = gcp('nocreate');
 try
@@ -35,6 +34,7 @@ catch EX
     disp(EX)
     
 end
-data = data.*obj.rawDataScaleFactor;
+% just return the data
+%data = data.*obj.rawDataScaleFactor;
 end
 

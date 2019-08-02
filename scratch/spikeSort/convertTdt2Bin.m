@@ -1,4 +1,4 @@
-function [ops] = convertTdt2Bin(ops)
+function [ops] = convertTdt2Bin(ops, varargin)
 % convert tdt _Wav1_ or _RSn1_ .sev files into binary file:
 %   no header and
 %   scaled to int16
@@ -22,11 +22,23 @@ outputFile = ops.fbinary;
 % but then we would need to use a ADC conversion factor for spike sorting
 % whereas if we save as int16(uVolts), we use a conversion factor of 1.0 in
 % doing spike sorting
-scaleFactor = 1E6;
-
+%% Double pass the data to find the grand(min, max) of all channels 
+%  so that an appropriate scale factor can be chosen for maximum resolution
+%  for int16 scaling with minimal loss due to conversion form single data
+%  type. It is possible that this max/min may(?) correspond to a spurious
+%  noise spike? So, lets get the 99th percentile of abs. max and scale it
+%  to nearest bits
+    scaleFactor = 1;
+    % assume that the [min, max] volts on any channel for signal will not
+    % exceed [-0.5 0.5] mV
+    int16ScaleFactor = 2^16;
+    if numel(varargin) == 1
+        int16ScaleFactor = varargin{1};
+    end
+    fprintf('Factor for scaling TDT data from single to int16 : %i',int16ScaleFactor); 
     ds = fullfile(ops.dataDir,'*_Wav1_*.sev');
     T = interface.IDataAdapter.newDataAdapter('sev',ds,'rawDataScaleFactor',scaleFactor);
-    nsamp = T.writeBinary(outputFile);
-
+    T.writeBinary(outputFile,int16ScaleFactor);
+    ops.int16ScaleFactor = int16ScaleFactor;
 
 end

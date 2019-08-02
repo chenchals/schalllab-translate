@@ -17,8 +17,7 @@ classdef (Abstract=true) IDataAdapter < handle
         dataFs;            % data sampling frequency
         nShanks;           % no of arrays on a single probes for (neupixel type...)
         nProbes;           % no of probes in a single session
-        minDataVal;
-        maxDataVal;
+        chanMinMaxV;       % [nChannel, 2] min, max valuses for each channel
     end
     
     properties (SetAccess=protected, SetObservable, Transient, Dependent)

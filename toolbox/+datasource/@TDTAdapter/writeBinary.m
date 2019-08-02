@@ -1,4 +1,4 @@
-function [nSampTOT] = writeBinary(obj,outputFile)
+function [nSampTOT] = writeBinary(obj,outputFile,int16ScaleFactor)
 %WRITEBINARY Convert TDT Wav1 data in the multiple files to a single binary
 %            file for Kilosort/ other python software to use
 %   Detailed explanation goes here
@@ -23,7 +23,7 @@ function [nSampTOT] = writeBinary(obj,outputFile)
    fidw = fopen(outputFile,'w');
    tic
    for ii = 1:nBatches
-       data = int16(obj.readRaw(batchSize(1),batchSize(2)));
+       data = int16(obj.readRaw(batchSize(1),batchSize(2)).*int16ScaleFactor);
        if ~isempty(data)
            fwrite(fidw,data(:)','int16');
            nSampTOT = nSampTOT + numel(data);
