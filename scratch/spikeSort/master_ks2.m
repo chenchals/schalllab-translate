@@ -1,11 +1,16 @@
 
-dataPath     = '/home/subravcr/teba/data/Darwin/proNoElongationColor_physio';
-analysisDir = '/home/subravcr/scratch/subravcr/ksDataProcessed/Darwin/proNoElongationColor_physio';
-session     = 'Darwin-190729-112447';%'Joule-190725-111052'; %'Joule-190725-111500';
-chanMapFile = '/home/subravcr/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-32-chan-150mu.mat';
-nChan = 32;
-sessionAnalysisDir = fullfile(analysisDir,session);
+% dataPath     = '/home/subravcr/teba/data/Darwin/proNoElongationColor_physio';
+% analysisDir = '/home/subravcr/scratch/subravcr/ksDataProcessed/Darwin/proNoElongationColor_physio';
+% session     = 'Darwin-190729-112447';%'Joule-190725-111052'; %'Joule-190725-111500';
+% chanMapFile = '/home/subravcr/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-32-chan-150mu.mat';
+% nChan = 32;
 
+dataPath = 'data/Joule/cmanding/ephys/TESTDATA/In-Situ';
+analysisDir = 'dataProcessedJoule/cmanding/ephys/TESTDATA/In-Situ';
+session = 'Joule-190731-121704';
+chanMapFile = '~/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-4-chan-150um.mat';
+sessionAnalysisDir = fullfile(analysisDir,session);
+nChan = 4;
 %% Params and configuration for Kilosort2
 ks2Paths = genpath('~/Projects/lab-schall/Kilosort2');
 addpath(ks2Paths);
@@ -16,7 +21,8 @@ addpath(npyPths);
 ops.dataDir             = fullfile(dataPath,session);   
 ops.datatype            = 'tdt2Bin';  % binary ('dat', 'bin') or 'openEphys'
 ops.root                = sessionAnalysisDir;
-ops.fbinary             = fullfile(ops.root, [session '.bin']); % will be created for 'openEphys'
+% ops.fbinary             = fullfile(ops.root, [session '.bin']); % will be created for 'openEphys'
+ops.fbinary             = fullfile(ops.dataDir, [session '.bin']); % will be created for 'openEphys'
 rootZ                   = fullfile(ops.root,'ks2');
 ops.fproc               = fullfile(rootZ, 'temp_wh.dat'); % residual from RAM of preprocessed data
 ops.trange              = [0 Inf];	% time range to sort
@@ -82,7 +88,7 @@ ops.ntbuff              = 64;    % samples of symmetrical buffer for whitening a
 ops.NT                  = 32*64*1024+ ops.ntbuff; % must be multiple of 32 + ntbuff. This is the batch size (try decreasing if out of memory). 
 ops.whiteningRange      = 32; % number of channels to use for whitening each channel
 ops.nSkipCov            = 1; % compute whitening matrix from every N-th batch
-ops.scaleproc           = 1;   % int16 scaling of whitened data
+ops.scaleproc           = 2^16;   % int16 scaling of whitened data
 ops.nPCs                = 3; % how many PCs to project the spikes into
 ops.useRAM              = 0; % not yet available
 
