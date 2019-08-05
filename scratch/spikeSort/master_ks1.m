@@ -6,7 +6,7 @@
 % nChan = 32;
 
 dataPath = 'data/Joule/cmanding/ephys/TESTDATA/In-Situ';
-analysisDir = 'dataProcessedJoule/cmanding/ephys/TESTDATA/In-Situ';
+analysisDir = 'dataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ';
 session = 'Joule-190731-121704';
 chanMapFile = '~/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-4-chan-150um.mat';
 sessionAnalysisDir = fullfile(analysisDir,session);
@@ -44,8 +44,8 @@ ops.fs                  = 24414;        % sampling rate
 ops.NchanTOT            = nChan;           % total number of channels
 ops.Nchan               = nChan;           % number of active channels 
 ops.Nfilt               = 128;           % number of filters to use (512, should be a multiple of 32)     
-ops.nNeighPC            = [1]; % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
-ops.nNeigh              = [1]; % visualization only (Phy): number of neighboring templates to retain projections of (16)
+ops.nNeighPC            = [3]; % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
+ops.nNeigh              = [3]; % visualization only (Phy): number of neighboring templates to retain projections of (16)
 %% Channel map file
 % define the channel map as a filename (string) or simply an array
 [~,fn]=fileparts(chanMapFile);

@@ -11,9 +11,9 @@ function [ops] = convertTdt2Bin(ops, varargin)
 % TDT data collection: Usually selected dropdown menu is:
 %     milli volts, float32
 %     Data is saved in millivolts for atleast the *Wav1_.sev files
-if ~exist(ops.root,'dir')
-    mkdir(ops.root);
-end
+%if ~exist(ops.root,'dir')
+%    mkdir(ops.root);
+%end
 
 outputFile = ops.fbinary;
 % conversion factor for micro volts
@@ -35,7 +35,7 @@ outputFile = ops.fbinary;
     if numel(varargin) == 1
         int16ScaleFactor = varargin{1};
     end
-    fprintf('Factor for scaling TDT data from single to int16 : %i',int16ScaleFactor); 
+    fprintf('Factor for scaling TDT data from single to int16 : %i\n',int16ScaleFactor); 
     ds = fullfile(ops.dataDir,'*_Wav1_*.sev');
     T = interface.IDataAdapter.newDataAdapter('sev',ds,'rawDataScaleFactor',scaleFactor);
     T.writeBinary(outputFile,int16ScaleFactor);

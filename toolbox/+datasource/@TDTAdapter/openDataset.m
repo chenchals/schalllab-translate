@@ -13,19 +13,20 @@ function [chanMinMaxV] = openDataset(obj,varargin)
         if isempty(p)
             for ii = 1:numel(channels)
                 ch = channels(ii);
-                minV{ii,1} = min(memFiles{ch}.Data); 
-                maxV{ii,1} = max(memFiles{ch}.Data); 
+                %minV{ii,1} = min(memFiles{ch}.Data); 
+                %maxV{ii,1} = max(memFiles{ch}.Data); 
                
             end
         else
             parfor ii = 1:numel(channels)
                 ch = channels(ii);
-                minV{ii,1} = min(memFiles{ch}.Data); 
-                maxV{ii,1} = max(memFiles{ch}.Data); 
+                %minV{ii,1} = min(memFiles{ch}.Data); 
+                %maxV{ii,1} = max(memFiles{ch}.Data); 
             end
         end        
         
-        obj.chanMinMaxV = [cell2mat(minV) cell2mat(maxV)];
+        %obj.chanMinMaxV = [cell2mat(minV) cell2mat(maxV)];
+        obj.chanMinMaxV = [NaN NaN];
         
         
 %         
