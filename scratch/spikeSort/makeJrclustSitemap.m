@@ -6,6 +6,11 @@ siteMap = 1:nChan;
 shankMap = ones(1,nChan);
 siteLocs = [zeros(1,nChan); siteMap.*150];
 
+%shankMap % (formerly viShank_site) Shank ID of each site
+%siteLoc  % (formerly mrSiteXY) Site locations (in μm) (x values in the first column, y values in the second column)
+%siteMap  % (formerly viSite2Chan) Map of channel index to site ID (The mapping siteMap(i) = j corresponds to the statement 'site i is stored as channel j in the recording')
+
+
 % paste the output strings in master_jrclust.prm
 fprintf('\n********Copy and paste the output strings into')
 fprintf('********master_jrclust.prm file\n');

@@ -1,16 +1,17 @@
 
-% dataPath     = '/home/subravcr/teba/data/Darwin/proNoElongationColor_physio';
-% analysisDir = '/home/subravcr/scratch/subravcr/ksDataProcessed/Darwin/proNoElongationColor_physio';
-% session     = 'Darwin-190729-112447';%'Joule-190725-111052'; %'Joule-190725-111500';
-% chanMapFile = '/home/subravcr/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-32-chan-150mu.mat';
-% nChan = 32;
-
-dataPath = 'data/Joule/cmanding/ephys/TESTDATA/In-Situ';
-analysisDir = 'dataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ';
-session = 'Joule-190731-121704';
-chanMapFile = '~/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-4-chan-150um.mat';
+dataPath     = 'data/Darwin/proNoElongationColor_physio';
+analysisDir = 'dataProcessed/Darwin/proNoElongationColor_physio';
+session     = 'Darwin-190729-112447';%'Joule-190725-111052'; %'Joule-190725-111500';
+chanMapFile = '~/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-32-chan-150mu.mat';
 sessionAnalysisDir = fullfile(analysisDir,session);
-nChan = 4;
+nChan = 32;
+
+% dataPath = 'data/Joule/cmanding/ephys/TESTDATA/In-Situ';
+% analysisDir = 'dataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ';
+% session = 'Joule-190731-121704';
+% chanMapFile = '~/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-4-chan-150um.mat';
+% sessionAnalysisDir = fullfile(analysisDir,session);
+% nChan = 4;
 
 %% Params and configuration for Kilosort1
 ks2Paths = genpath('~/Projects/lab-schall/KiloSort');
@@ -24,7 +25,7 @@ ops.datatype            = 'tdt2Bin';  % binary ('dat', 'bin') or 'openEphys'
 ops.root                = sessionAnalysisDir;
 rootZ                   = fullfile(ops.root,'ks1');
 % ops.fbinary             = fullfile(ops.root, [session '.bin']); % will be created for 'openEphys'
-ops.fbinary             = fullfile(ops.dataDir, [session '.bin']); % will be created for 'openEphys'
+ops.fbinary             = fullfile(ops.root, [session '.bin']); % will be created for 'openEphys'
 ops.fproc               = fullfile(rootZ, 'temp_wh.dat'); % residual from RAM of preprocessed data
 ops.trange              = [0 Inf];	% time range to sort
 
@@ -43,9 +44,9 @@ end
 ops.fs                  = 24414;        % sampling rate
 ops.NchanTOT            = nChan;           % total number of channels
 ops.Nchan               = nChan;           % number of active channels 
-ops.Nfilt               = 128;           % number of filters to use (512, should be a multiple of 32)     
-ops.nNeighPC            = [3]; % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
-ops.nNeigh              = [3]; % visualization only (Phy): number of neighboring templates to retain projections of (16)
+ops.Nfilt               = 1024;           % number of filters to use (512, should be a multiple of 32)     
+ops.nNeighPC            = [12]; % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
+ops.nNeigh              = [16]; % visualization only (Phy): number of neighboring templates to retain projections of (16)
 %% Channel map file
 % define the channel map as a filename (string) or simply an array
 [~,fn]=fileparts(chanMapFile);
@@ -56,16 +57,17 @@ ops.chanMap             = dest; % make this file using createChannelMapFile.m
 % options for channel whitening
 ops.whitening           = 'full'; % type of whitening (default 'full', for 'noSpikes' set options for spike detection below)
 ops.nSkipCov            = 1; % compute whitening matrix from every N-th batch
-ops.whiteningRange      = 1; % how many channels to whiten together (Inf for whole probe whitening, should be fine if Nchan<=32)
+ops.whiteningRange      = nChan; % how many channels to whiten together (Inf for whole probe whitening, should be fine if Nchan<=32)
 
 % other options for controlling the model and optimization
 ops.Nrank               = 3;    % matrix rank of spike template model (3)
 ops.nfullpasses         = 6;    % number of complete passes through data during optimization (6)
 ops.maxFR               = 2000000;  % maximum number of spikes to extract per batch (20000)
 ops.fshigh              = 300;   % frequency for high pass filtering
+ops.fslow               = 5000;
 ops.ntbuff              = 64;    % samples of symmetrical buffer for whitening and spike detection
-ops.scaleproc           = 2^16;   % int16 scaling of whitened data
-ops.NT                  = 32*64*1024+ ops.ntbuff;% this is the batch size (try decreasing if out of memory) 
+ops.scaleproc           = 1;   % int16 scaling of whitened data
+ops.NT                  = 64*1024+ ops.ntbuff;% this is the batch size (try decreasing if out of memory) 
 % for GPU should be multiple of 32 + ntbuff
 
 % these options can improve/deteriorate results. 
@@ -86,7 +88,7 @@ ops.loc_range       = [10  2];  % ranges to detect peaks; plus/minus in time and
 ops.long_range      = [30  2]; % ranges to detect isolated peaks ([30 6])
 ops.maskMaxChannels = 1;       % how many channels to mask up/down ([5])
 ops.crit            = .65;     % upper criterion for discarding spike repeates (0.65)
-ops.nFiltMax        = 10000000;   % maximum "unique" spikes to consider (10000)
+ops.nFiltMax        = 1000000;   % maximum "unique" spikes to consider (10000)
 
 % load predefined principal components 
 dd                  = load('PCspikes2.mat'); % you might want to recompute this from your own data
