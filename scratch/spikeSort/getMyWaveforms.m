@@ -13,7 +13,7 @@ dfStruct=dir(int16DataFile);
 dataType = 'int16';
 dataShape = [nChan,dfStruct.bytes/nChan/2];
 memDataFile=memmapfile(int16DataFile,'Offset', 0, 'Format',{dataType,dataShape,'Data'});
-wfWin = [-30:30];
+wfWin = (1:61)-20;
 fx_rawWf = @(x) memDataFile.Data.Data(:,wfWin+x);
 
 allWf = arrayfun(fx_rawWf,double(spkTimes),'UniformOutput',false);
