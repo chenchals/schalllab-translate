@@ -1,10 +1,10 @@
-
-sessionBaseDir = '/mnt/teba/data/Leonardo/SingleTgt-Go-NoGo';
-baseSaveDir = 'dataProcessed/Leonardo';
-sessName = 'Leonardo-181009-151736';%'Leonardo-181008-142316';
-procLibDir =fullfile(sessionBaseDir,sessName,'ProcLib');
-eventDefFile = fullfile(procLibDir,'EVENTDEF.pro');
-infosDefFile = fullfile(procLibDir,'search/INFOS.pro');
+% 
+% sessionBaseDir = '/mnt/teba/data/Leonardo/SingleTgt-Go-NoGo';
+% baseSaveDir = 'dataProcessed/Leonardo';
+% sessName = 'Leonardo-181009-151736';%'Leonardo-181008-142316';
+% procLibDir =fullfile(sessionBaseDir,sessName,'ProcLib');
+% eventDefFile = fullfile(procLibDir,'EVENTDEF.pro');
+% infosDefFile = fullfile(procLibDir,'search/INFOS.pro');
 
 
 % sessionBaseDir = 'data/Joule';

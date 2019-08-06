@@ -52,13 +52,6 @@ classdef TDTAdapter < interface.IDataAdapter
             buffer = obj.readRaw(nChannels, nSamples);
         end
         
-        function [ chanMinMaxV ] = getMinMaxValues(obj)
-            nChannels = numel(obj.dataFiles);
-            if ~obj.isOpen
-                obj.openDataset();
-            end
-            chanMinMaxV = obj.chanMinMaxV;
-        end
     end
     
     %% Private Methods

@@ -1,5 +1,4 @@
-data/*
-dataProcessed/*
-scratch/eMouseKS2/drift_simulations/*
-scratch/eMouseKS2/kilosort_datatemp/*
+data*
+dataProcessed*
 temp*
+.jrc/*
