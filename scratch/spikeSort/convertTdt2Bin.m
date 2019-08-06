@@ -30,8 +30,9 @@ outputFile = ops.fbinary;
 %  to nearest bits
     scaleFactor = 1;
     % assume that the [min, max] volts on any channel for signal will not
-    % exceed [-0.5 0.5] mV
-    int16ScaleFactor = 2^16;
+    % exceed [-1 1] mV --> [-32768 32767] = [2^15 0 2^15] bits
+    signalMilliVolts = [-1 1];
+    int16ScaleFactor = 2^16/range(signalMilliVolts);
     if numel(varargin) == 1
         int16ScaleFactor = varargin{1};
     end

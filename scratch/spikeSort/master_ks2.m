@@ -8,7 +8,7 @@
 dataPath = 'data/Joule/cmanding/ephys/TESTDATA/In-Situ';
 analysisDir = 'dataProcessed/Joule/cmanding/ephys/TESTDATA/In-Situ';
 session = 'Joule-190731-121704';
-chanMapFile = '~/Projects/lab-schall/schalllab-translate/toolbox/spk-cluster/channelMaps/linear-probes-1-4-chan-150um.mat';
+chanMapFile = '~/Projects/lab-schall/schalllab-translate/scratch/spikeSort/channelMaps/tdt_4Chan-150um.mat';
 sessionAnalysisDir = fullfile(analysisDir,session);
 nChan = 4;
 %% Params and configuration for Kilosort2
@@ -22,11 +22,11 @@ ops.dataDir             = fullfile(dataPath,session);
 ops.datatype            = 'tdt2Bin';  % binary ('dat', 'bin') or 'openEphys'
 ops.root                = sessionAnalysisDir;
 % ops.fbinary             = fullfile(ops.root, [session '.bin']); % will be created for 'openEphys'
-ops.fbinary             = fullfile(ops.dataDir, [session '.bin']); % will be created for 'openEphys'
+ops.fbinary             = fullfile(ops.root, [session '.bin']); % will be created for 'openEphys'
 rootZ                   = fullfile(ops.root,'ks2');
 ops.fproc               = fullfile(rootZ, 'temp_wh.dat'); % residual from RAM of preprocessed data
 % ops.trange              = [0 Inf];	% time range to sort
-ops.trange              = [0 1000];	% time range to sort
+ops.trange              = [0 Inf];	% time range to sort
 % need ops.nt0 for fitTemplates
 ops.nt0                 = 61; % length of samples for waveform data?
 
@@ -41,7 +41,7 @@ end
 ops.fs                  = 24414;        % sampling rate
 ops.NchanTOT            = nChan;           % total number of channels
 ops.Nchan               = nChan;           % number of active channels 
-ops.Nfilt               = 512;           % number of filters to use (512, should be a multiple of 32)     
+ops.Nfilt               = 64;           % number of filters to use (512, should be a multiple of 32)     
 ops.nNeighPC            = [3]; % visualization only (Phy): number of channnels to mask the PCs, leave empty to skip (12)
 ops.nNeigh              = [3]; % visualization only (Phy): number of neighboring templates to retain projections of (16)
 %% Channel map file
@@ -67,7 +67,7 @@ ops.lam                 = [10 30 30];
 ops.AUCsplit            = 0.9; 
 
 % minimum spike rate (Hz), if a cluster falls below this for too long it gets removed
-ops.minFR               = 1/50; 
+ops.minFR               = 0; %1/50; 
 
 % number of samples to average over (annealed from first to second value) 
 ops.momentum            = [20 400]; 
@@ -79,7 +79,7 @@ ops.sigmaMask           = 30;
 ops.ThPre               = 6; 
 %% danger, changing these settings can lead to fatal errors
 % options for determining PCs
-ops.spkTh               = -4;      % spike threshold in standard deviations (-6)
+ops.spkTh               = -4.5;      % spike threshold in standard deviations (-6)
 ops.reorder             = 1;       % whether to reorder batches for drift correction. 
 ops.nskip               = 1;  % how many batches to skip for determining spike PCs
 % ks1: ops.Nfilt               = 960;  % number of filters to use (512, should be a multiple of 32)
